@@ -1,384 +1,686 @@
 /* ============================================================
    GTW BDO — views.js v4.2
-   OB&IB combined view, Manifest, Search AWB, Export, Init
+   OB&IB combined view, Manifest, Search AWB, Sidebar search,
+   Export CSV, Reload, buildAllScanAwbs
    ============================================================ */
 
 // ─── INIT & RELOAD ───
-window.onload = function() { initAllCbs(); reloadAll(); };
+window.addEventListener('DOMContentLoaded', function () {
+  showLoading('Memuat data...');
+  gasGet('getMasterData').then(function (r) {
+    masterData = r || {};
+    populateGlobalIncharge();
+    buildCbOptions();
+    initAllCbs();
+    return Promise.all([
+      gasGet('getObList'),
+      gasGet('getHvsList'),
+      gasGet('getIbList')
+    ]);
+  }).then(function (results) {
+    obData  = (results[0].list || []);
+    hvsData = (results[1].list || []);
+    ibData  = (results[2].list || []);
+    renderObTable();
+    renderHvsTable();
+    renderIbTable();
+    updateObStats();
+    updateHvsStats();
+    updateIbStats();
+    buildAllScanAwbs();
+    hideLoading();
+  }).catch(function (e) {
+    hideLoading();
+    toast('Gagal memuat data: ' + e.message, 'error');
+  });
+});
 
 function reloadAll() {
-  showLoading('Memuat data...');
-  gasGet('getMasterData').then(function(d) {
-    if (d.error) throw new Error(d.error);
-    masterData = d; obData = d.obList || []; hvsData = d.hvsList || []; ibData = d.ibList || [];
-    populateGlobalIncharge(); buildCbOptions();
-    renderObTable(); renderHvsTable(); renderIbTable();
-    updateObStats(); updateHvsStats(); updateIbStats();
-    _mfLoaded = false; _obibData = null;
-    return gasGet('getAllScanAwbs');
-  }).then(function(r) {
-    if (r && r.list) allScanAwbs = r.list;
-    return gasGet('getOBIB');
-  }).then(function(r) {
-    _obibData = r;
+  showLoading('Memuat ulang...');
+  _mfLoaded = false;
+  _obibData = null;
+  Promise.all([
+    gasGet('getObList'),
+    gasGet('getHvsList'),
+    gasGet('getIbList')
+  ]).then(function (results) {
+    obData  = results[0].list || [];
+    hvsData = results[1].list || [];
+    ibData  = results[2].list || [];
+    renderObTable();
+    renderHvsTable();
+    renderIbTable();
+    updateObStats();
+    updateHvsStats();
+    updateIbStats();
+    buildAllScanAwbs();
     hideLoading();
-  }).catch(function(e) { hideLoading(); toast('❌ ' + e.message, 'error'); });
+    toast('Data diperbarui', 'success');
+  }).catch(function (e) {
+    hideLoading();
+    toast('Gagal reload: ' + e.message, 'error');
+  });
 }
 
+// ─── ALL SCAN AWBs (untuk search) ───
 function buildAllScanAwbs() {
-  gasGet('getAllScanAwbs').then(function(r) { if (r && r.list) allScanAwbs = r.list; }).catch(function() { });
+  allScanAwbs = [];
+  function pushArr(arr, type) {
+    arr.forEach(function (item) {
+      if (item._awbs) {
+        item._awbs.forEach(function (awb) {
+          allScanAwbs.push({ awb: awb, noTrack: item.no_track, type: type, tujuan: item.tujuan, incharge: item.incharge, service: item.service, status: item.status, from: item.from || '' });
+        });
+      }
+    });
+  }
+  pushArr(obData,  'ob');
+  pushArr(hvsData, 'hvs');
+  pushArr(ibData,  'ib');
+}
+
+// ═══════════════════════════════════════════════════
+// OB & IB COMBINED VIEW
+// Header 4 baris: Incharge → Kota → Service → Tipe
+// Kolom per tujuan: OUTBOUND | DATE | OUTBOUND HVS | DATE | INBOUND HVS | DATE
+// DATE = mirror tanggal dari data terkait
+// ═══════════════════════════════════════════════════
+
+function renderObibPage() {
+  var wrap = document.getElementById('obibTableWrap');
+  wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat...</div>';
+
+  if (_obibData) {
+    _buildObibTable(_obibData);
+    return;
+  }
+
+  showLoading('Memuat OB & IB...');
+  Promise.all([
+    gasGet('getObibFull'),       // {list: [{no_track, incharge, service, tujuan, kota, created_date, awbs:[]}]}
+    gasGet('getHvsFull'),
+    gasGet('getIbFull')
+  ]).then(function (res) {
+    hideLoading();
+    _obibData = { ob: res[0].list || [], hvs: res[1].list || [], ib: res[2].list || [] };
+    _buildObibTable(_obibData);
+  }).catch(function (e) {
+    hideLoading();
+    wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>Gagal memuat: ' + escH(e.message) + '</div>';
+  });
 }
 
 function reloadObib() {
-  showLoading('Refresh OB & IB...');
-  gasGet('getOBIB').then(function(r) { _obibData = r; hideLoading(); renderObibPage(); }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+  _obibData = null;
+  renderObibPage();
 }
 
-// ─── OB&IB PAGE ───
-// Layout: 4 baris header (Incharge → Kota → Service → Tipe)
-// OUTBOUND/OUTBOUND_HVS: AWB per baris dari dataRows
-// INBOUND_HVS: section blocks dari ibSections
-// DATE: mirror tanggal dari kolom sebelumnya (collapsed rowspan di baris pertama)
-function renderObibPage() {
+function filterObib() {
+  var q = document.getElementById('obibSearch').value.toLowerCase();
+  if (!_obibData) return;
+  var filtered = {
+    ob:  _obibData.ob.filter(function(d){ return _obibMatch(d,q); }),
+    hvs: _obibData.hvs.filter(function(d){ return _obibMatch(d,q); }),
+    ib:  _obibData.ib.filter(function(d){ return _obibMatch(d,q); })
+  };
+  _buildObibTable(filtered);
+}
+
+function _obibMatch(d, q) {
+  if (!q) return true;
+  var haystack = (d.no_track + d.incharge + d.service + (d.tujuan||'') + (d.kota||'') + (d.from||'') + (d.status||'')).toLowerCase();
+  if (haystack.indexOf(q) !== -1) return true;
+  if (d.awbs && d.awbs.some(function(a){ return (a||'').toLowerCase().indexOf(q) !== -1; })) return true;
+  return false;
+}
+
+function _buildObibTable(data) {
   var wrap = document.getElementById('obibTableWrap');
-  if (!_obibData) { wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">table_view</span>Memuat data...</div>'; return; }
-  if (_obibData.error) { wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(_obibData.error) + '</div>'; return; }
 
-  var colDefs = _obibData.colDefs || [];
-  var dataRows = _obibData.dataRows || [];
-  var ibSections = _obibData.ibSections || [];
-  var headerR1 = _obibData.headerR1 || [];
-  var headerR2 = _obibData.headerR2 || [];
-  var headerR3 = _obibData.headerR3 || [];
-  var headerR4 = _obibData.headerR4 || [];
-  var filter = (document.getElementById('obibSearch').value || '').toLowerCase().trim();
+  // Kelompokkan semua data berdasarkan incharge
+  var inchargeMap = {};  // { incharge: { kota, ob:[], hvs:[], ib:[] } }
 
-  if (!colDefs.length) { wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">table_view</span>Tidak ada kolom di sheet OB&IB</div>'; return; }
+  function groupBy(arr, type) {
+    arr.forEach(function (item) {
+      var inc = item.incharge || '—';
+      if (!inchargeMap[inc]) inchargeMap[inc] = { kota: item.kota || inc, ob: [], hvs: [], ib: [] };
+      inchargeMap[inc][type].push(item);
+    });
+  }
+  groupBy(data.ob,  'ob');
+  groupBy(data.hvs, 'hvs');
+  groupBy(data.ib,  'ib');
 
-  var nCols = colDefs.length;
+  var incharges = Object.keys(inchargeMap).sort();
 
-  // Build merged header row
-  function buildMergedHeaderRow(hArr, cellClass) {
-    var cells = []; var i = 0;
-    while (i < nCols) {
-      var val = hArr[i] || ''; var span = 1;
-      while (i + span < nCols && !(hArr[i + span] || '').trim()) span++;
-      cells.push({ val: val, span: span }); i += span;
+  if (!incharges.length) {
+    wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div>';
+    return;
+  }
+
+  // Kumpulkan semua tujuan unik per incharge untuk kolom
+  // Struktur kolom per incharge:
+  //   untuk setiap tujuan OB → kolom OB + DATE
+  //   untuk setiap tujuan HVS → kolom HVS + DATE
+  //   kolom IB (gabungan semua IB incharge tsb)
+
+  // Hitung max rows per incharge = max(max awb ob per tujuan, max awb hvs per tujuan, max ib awb)
+  // Kita render row per AWB index
+
+  var html = '<table class="obib-table"><thead>';
+
+  // ── BARIS 1: INCHARGE (colspan = total kolom per incharge + 1 rn) ──
+  html += '<tr><th class="obib-rn" rowspan="4">#</th>';
+  incharges.forEach(function (inc) {
+    var g = inchargeMap[inc];
+    // hitung total kolom untuk incharge ini
+    var totalCols = _obibColCount(g);
+    html += '<th class="obib-hdr-incharge" colspan="' + totalCols + '">' + escH(inc) + '</th>';
+  });
+  html += '</tr>';
+
+  // ── BARIS 2: KOTA ──
+  html += '<tr>';
+  incharges.forEach(function (inc) {
+    var g = inchargeMap[inc];
+    var totalCols = _obibColCount(g);
+    html += '<th class="obib-hdr-kota" colspan="' + totalCols + '">' + escH(g.kota || inc) + '</th>';
+  });
+  html += '</tr>';
+
+  // ── BARIS 3: SERVICE (per kelompok tujuan / IB) ──
+  html += '<tr>';
+  incharges.forEach(function (inc) {
+    var g = inchargeMap[inc];
+    // OB tujuan groups
+    g.ob.forEach(function (item) {
+      html += '<th class="obib-hdr-service" colspan="2">' + escH(item.service) + '</th>';
+    });
+    // HVS tujuan groups
+    g.hvs.forEach(function (item) {
+      html += '<th class="obib-hdr-service" colspan="2">' + escH(item.service) + '</th>';
+    });
+    // IB — gabungan, gunakan service dari IB pertama
+    if (g.ib.length) {
+      html += '<th class="obib-hdr-service" colspan="' + (g.ib.length * 2) + '">' + escH(g.ib[0].service) + '</th>';
     }
-    return '<tr><th class="obib-rn"></th>' +
-      cells.map(function(c) { return '<th colspan="' + c.span + '" class="' + cellClass + '">' + escH(c.val) + '</th>'; }).join('') +
-    '</tr>';
-  }
+  });
+  html += '</tr>';
 
-  // Tipe kolom → CSS class
-  function typeClass(t) {
-    t = (t || '').toUpperCase();
-    if (t === 'OUTBOUND') return 'outbound';
-    if (t === 'OUTBOUND_HVS') return 'outbound-hvs';
-    if (t === 'INBOUND_HVS') return 'inbound-hvs';
-    if (t === 'DATE') return 'date';
-    return '';
-  }
-  var hdr4Html = '<tr><th class="obib-rn">#</th>' +
-    colDefs.map(function(c) { return '<th class="obib-hdr-type ' + typeClass(c.colType) + '">' + escH(c.colType || '—') + '</th>'; }).join('') +
-  '</tr>';
+  // ── BARIS 4: TIPE KOLOM (Outbound / Date / Outbound HVS / Date / Inbound HVS / Date) ──
+  html += '<tr>';
+  incharges.forEach(function (inc) {
+    var g = inchargeMap[inc];
+    g.ob.forEach(function (item) {
+      html += '<th class="obib-hdr-type outbound">' + escH(item.tujuan) + '</th>';
+      html += '<th class="obib-hdr-type date">DATE</th>';
+    });
+    g.hvs.forEach(function (item) {
+      html += '<th class="obib-hdr-type outbound-hvs">' + escH(item.tujuan) + '</th>';
+      html += '<th class="obib-hdr-type date">DATE</th>';
+    });
+    g.ib.forEach(function (item) {
+      html += '<th class="obib-hdr-type inbound-hvs">' + escH(item.tujuan) + '</th>';
+      html += '<th class="obib-hdr-type date">DATE</th>';
+    });
+  });
+  html += '</tr>';
+  html += '</thead><tbody>';
 
-  // ibSections lookup: service|tujuan → sections[]
-  var ibMap = {};
-  ibSections.forEach(function(sec) {
-    var k = (sec.service || '').toUpperCase() + '|' + (sec.tujuan || '').toUpperCase();
-    if (!ibMap[k]) ibMap[k] = [];
-    ibMap[k].push(sec);
+  // ── ROWS ──
+  // Hitung max rows across all incharges
+  var maxRows = 0;
+  incharges.forEach(function (inc) {
+    var g = inchargeMap[inc];
+    var m = _obibMaxRows(g);
+    if (m > maxRows) maxRows = m;
   });
 
-  // Build INBOUND_HVS cell HTML
-  function buildIbCellHtml(colDef, filterQ) {
-    var k = (colDef.r3 || '').toUpperCase() + '|' + (colDef.r2 || '').toUpperCase();
-    var secs = ibMap[k] || [];
-    if (filterQ) {
-      secs = secs.filter(function(sec) {
-        return (sec.tujuan + sec.from + sec.service + sec.no_track).toLowerCase().indexOf(filterQ) !== -1
-          || (sec.awbs || []).some(function(a) { return (a.awb || '').toLowerCase().indexOf(filterQ) !== -1; });
+  for (var row = 0; row < maxRows; row++) {
+    html += '<tr>';
+    html += '<td class="obib-rn">' + (row + 1) + '</td>';
+    incharges.forEach(function (inc) {
+      var g = inchargeMap[inc];
+      // OB cols
+      g.ob.forEach(function (item) {
+        var awb = (item.awbs || [])[row] || '';
+        var isSelesai = item.status === 'SELESAI';
+        html += '<td class="obib-cell-awb' + (isSelesai ? ' selesai' : '') + '">' + escH(awb) + '</td>';
+        html += '<td class="obib-cell-date">' + (awb ? escH(item.created_date || '') : '') + '</td>';
       });
-    }
-    if (!secs.length) return '<span class="obib-ib-empty">—</span>';
-    return secs.map(function(sec) {
-      var label = (sec.tujuan || '') + (sec.from ? '_(' + sec.from + ')' : '');
-      var awbs = sec.awbs || [];
-      var awbHtml = awbs.length
-        ? awbs.map(function(a) { return '<span>' + escH(a.awb || a) + '</span>'; }).join('')
-        : '<span style="color:var(--gray4);font-style:italic">— kosong —</span>';
-      return '<div class="obib-ib-section">' +
-        '<div class="obib-ib-label">' + escH(label) + '</div>' +
-        '<div class="obib-ib-awb">' + awbHtml + '</div>' +
-      '</div>';
-    }).join('');
-  }
-
-  // Filter dataRows
-  var filteredRows = dataRows;
-  if (filter) {
-    filteredRows = dataRows.filter(function(row) { return row.some(function(cell) { return (cell || '').toLowerCase().indexOf(filter) !== -1; }); });
-  }
-
-  var maxRows = Math.max(filteredRows.length, 1);
-
-  // Build tbody
-  var tbodyHtml = '';
-  if (maxRows === 1 && filteredRows.length === 0) {
-    tbodyHtml += '<tr><td class="obib-rn">1</td>';
-    colDefs.forEach(function(c) {
-      if (c.colType === 'INBOUND_HVS') tbodyHtml += '<td class="obib-cell-ib">' + buildIbCellHtml(c, filter) + '</td>';
-      else tbodyHtml += '<td class="obib-cell-empty"></td>';
-    });
-    tbodyHtml += '</tr>';
-  } else if (filteredRows.length) {
-    filteredRows.forEach(function(row, ri) {
-      tbodyHtml += '<tr><td class="obib-rn">' + (ri + 1) + '</td>';
-      colDefs.forEach(function(c, ci) {
-        var val = row[ci] || '';
-        var ct = (c.colType || '').toUpperCase();
-        if (ct === 'INBOUND_HVS') {
-          if (ri === 0) tbodyHtml += '<td class="obib-cell-ib" rowspan="' + filteredRows.length + '">' + buildIbCellHtml(c, filter) + '</td>';
-          // baris berikutnya tidak perlu td (rowspan)
-        } else if (ct === 'DATE') {
-          tbodyHtml += '<td class="obib-cell-date">' + escH(val) + '</td>';
-        } else if (val) {
-          tbodyHtml += '<td class="obib-cell-awb">' + escH(val) + '</td>';
-        } else {
-          tbodyHtml += '<td class="obib-cell-empty"></td>';
-        }
+      // HVS cols
+      g.hvs.forEach(function (item) {
+        var awb = (item.awbs || [])[row] || '';
+        var isSelesai = item.status === 'SELESAI';
+        html += '<td class="obib-cell-awb obib-hvs' + (isSelesai ? ' selesai' : '') + '">' + escH(awb) + '</td>';
+        html += '<td class="obib-cell-date">' + (awb ? escH(item.created_date || '') : '') + '</td>';
       });
-      tbodyHtml += '</tr>';
+      // IB cols
+      g.ib.forEach(function (item) {
+        var awb = (item.awbs || [])[row] || '';
+        var isSelesai = item.status === 'SELESAI';
+        html += '<td class="obib-cell-awb obib-ib' + (isSelesai ? ' selesai' : '') + '">' + escH(awb) + '</td>';
+        html += '<td class="obib-cell-date">' + (awb ? escH(item.created_date || '') : '') + '</td>';
+      });
     });
-  } else {
-    tbodyHtml = '<tr><td class="obib-rn">—</td>';
-    colDefs.forEach(function(c) {
-      if (c.colType === 'INBOUND_HVS') tbodyHtml += '<td class="obib-cell-ib">' + buildIbCellHtml(c, filter) + '</td>';
-      else tbodyHtml += '<td class="obib-cell-empty"></td>';
-    });
-    tbodyHtml += '</tr>';
+    html += '</tr>';
   }
 
-  var html = '<table class="obib-table">' +
-    '<thead>' +
-      buildMergedHeaderRow(headerR1, 'obib-hdr-incharge') +
-      buildMergedHeaderRow(headerR2, 'obib-hdr-kota') +
-      buildMergedHeaderRow(headerR3, 'obib-hdr-service') +
-      hdr4Html +
-    '</thead>' +
-    '<tbody>' + tbodyHtml + '</tbody>' +
-  '</table>';
+  html += '</tbody></table>';
   wrap.innerHTML = html;
 }
 
-function filterObib() { renderObibPage(); }
+function _obibColCount(g) {
+  // 2 kolom per item OB, 2 per HVS, 2 per IB
+  return (g.ob.length * 2) + (g.hvs.length * 2) + (g.ib.length * 2);
+}
 
-// ─── MANIFEST ───
+function _obibMaxRows(g) {
+  var m = 0;
+  g.ob.forEach(function(i){ if((i.awbs||[]).length > m) m = i.awbs.length; });
+  g.hvs.forEach(function(i){ if((i.awbs||[]).length > m) m = i.awbs.length; });
+  g.ib.forEach(function(i){ if((i.awbs||[]).length > m) m = i.awbs.length; });
+  return m;
+}
+
+// Export OB&IB CSV
+function exportObibCSV() {
+  if (!_obibData) { toast('Muat data dulu', 'error'); return; }
+  var rows = [['INCHARGE','KOTA','TYPE','SERVICE','TUJUAN','AWB','DATE','STATUS']];
+  function addRows(arr, type) {
+    arr.forEach(function(item){
+      (item.awbs || []).forEach(function(awb){
+        rows.push([item.incharge, item.kota||item.incharge, type, item.service, item.tujuan||item.from||'', awb, item.created_date, item.status]);
+      });
+    });
+  }
+  addRows(_obibData.ob,  'OUTBOUND');
+  addRows(_obibData.hvs, 'OUTBOUND HVS');
+  addRows(_obibData.ib,  'INBOUND HVS');
+  _downloadCSV(rows, 'obib_' + _dateStr() + '.csv');
+}
+
+// ═══════════════════════════════════════════════════
+// MANIFEST PAGE
+// ═══════════════════════════════════════════════════
+
 function loadManifestPage() {
-  if (_mfLoaded) { renderManifestSheet(); return; }
-  showLoading('Memuat manifest...');
-  gasGet('getManifestData').then(function(res) {
-    hideLoading();
-    if (res.error) { toast('Error manifest: ' + res.error, 'error'); return; }
-    _mfData = res; _mfLoaded = true; _mfSelRow = -1; _mfSelCol = -1;
-    renderManifestSheet(); setupMfKeyboard();
-  }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+  if (_mfLoaded) return;
+  _mfLoaded = false;
+  reloadManifest();
 }
 
 function reloadManifest() {
-  _mfLoaded = false; _mfData = null; _mfSelRow = -1; _mfSelCol = -1;
-  showLoading('Refresh manifest...');
-  gasGet('getManifestData').then(function(res) {
+  showLoading('Memuat Manifest...');
+  var outer = document.getElementById('mfSheetOuter');
+  outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)"><span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">hourglass_empty</span>Memuat...</div>';
+
+  gasGet('getManifest').then(function (res) {
     hideLoading();
-    if (res.error) { toast('Error: ' + res.error, 'error'); return; }
-    _mfData = res; _mfLoaded = true; renderManifestSheet(); setupMfKeyboard();
-  }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+    _mfData = res || {};
+    _mfLoaded = true;
+    _mfFilter = '';
+    _mfSelRow = -1; _mfSelCol = -1;
+    _mfFilteredRows = [];
+    document.getElementById('manifestSearch').value = '';
+    renderManifest();
+  }).catch(function (e) {
+    hideLoading();
+    document.getElementById('mfSheetOuter').innerHTML = '<div style="padding:40px;text-align:center;color:var(--red)">Gagal memuat manifest: ' + escH(e.message) + '</div>';
+  });
 }
 
-function filterManifest() { _mfFilter = document.getElementById('manifestSearch').value || ''; if (_mfLoaded) renderManifestSheet(); }
+function filterManifest() {
+  _mfFilter = document.getElementById('manifestSearch').value;
+  _mfSelRow = -1; _mfSelCol = -1;
+  renderManifest();
+}
 
-function renderManifestSheet() {
-  if (!_mfData) { document.getElementById('mfSheetOuter').innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)"><span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>Klik Manifest di sidebar</div>'; return; }
-  var hRows = _mfData.headerRows || []; var colDefs = _mfData.colDefs || []; var awbRows = _mfData.awbRows || []; var totalCols = _mfData.totalCols || 0;
-  var fq = _mfFilter.toLowerCase().trim();
-  var filteredAwbRows = awbRows;
-  if (fq) { filteredAwbRows = awbRows.filter(function(row) { return row.some(function(cell) { return (cell || '').toLowerCase().indexOf(fq) !== -1; }); }); }
-  _mfFilteredRows = filteredAwbRows;
-  var incSet = {}; colDefs.forEach(function(c) { if (c.incharge) incSet[c.incharge] = true; });
-  var tujCols = colDefs.filter(function(c) { return !c.isDate && c.tujuan; });
-  var totalAwb = tujCols.reduce(function(s, c) { var cnt = awbRows.filter(function(r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length; return s + cnt; }, 0);
-  document.getElementById('mfTotalCols').innerText = tujCols.length;
-  document.getElementById('mfTotalAwb').innerText = totalAwb;
-  document.getElementById('mfTotalInc').innerText = Object.keys(incSet).length;
-  var nCols = totalCols;
-  function buildSpannedRow(hArr, cellClass) {
-    var cells = []; var i = 0;
-    while (i < nCols) {
-      var val = hArr[i] || '';
-      if (!val) { cells.push({ val: '', span: 1 }); i++; continue; }
-      var span = 1;
-      while (i + span < nCols && (!hArr[i + span] || hArr[i + span] === '')) span++;
-      cells.push({ val: val, span: span }); i += span;
-    }
-    return '<tr><th class="mf-rn" style="z-index:5">#</th>' + cells.map(function(c) { return '<th colspan="' + c.span + '" class="' + cellClass + '">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
+function renderManifest() {
+  var outer = document.getElementById('mfSheetOuter');
+  if (!_mfData || !_mfData.columns) {
+    outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)">Tidak ada data manifest</div>';
+    _updateMfStats(0, 0, 0);
+    return;
   }
-  var row0Html = buildSpannedRow(hRows[0] || [], 'mf-hdr-incharge');
-  var row1Html = buildSpannedRow(hRows[1] || [], 'mf-hdr-service');
-  var row2Html = '<tr><th class="mf-rn">—</th>' + colDefs.map(function(c) { if (c.isDate) return '<th class="mf-hdr-date">DATE</th>'; return '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>'; }).join('') + '</tr>';
-  var dataHtml = filteredAwbRows.length ? filteredAwbRows.map(function(row, ri) {
-    return '<tr class="mf-data-row" data-ri="' + ri + '"><td class="mf-rn">' + (ri + 1) + '</td>' + colDefs.map(function(c, ci) {
-      var val = row[c.colIdx] || ''; var isSel = (_mfSelRow === ri && _mfSelCol === ci);
-      if (c.isDate) return '<td class="mf-cell-date' + (isSel ? ' mf-cell-selected' : '') + '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')">' + escH(val) + '</td>';
-      if (!val) return '<td class="mf-cell-empty' + (isSel ? ' mf-cell-selected' : '') + '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')"></td>';
-      return '<td class="mf-cell-awb' + (isSel ? ' mf-cell-selected' : '') + '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')" title="' + escH(val) + '">' + escH(val) + '</td>';
-    }).join('') + '</tr>';
-  }).join('') : '<tr><td class="mf-rn" style="color:var(--gray5)">—</td><td colspan="' + (nCols || 1) + '" style="text-align:center;padding:20px;color:var(--gray5);font-size:12px">Tidak ada data AWB</td></tr>';
-  var tableHtml = '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
-  document.getElementById('mfSheetOuter').innerHTML = tableHtml;
-  updateMfActiveCellLabel();
+
+  var cols = _mfData.columns; // [{incharge, service, tujuan, dates:[], rows:[[awb,...],[awb,...]]}]
+  var q = (_mfFilter || '').toLowerCase();
+
+  // Filter rows per col
+  var filteredCols = cols.map(function (col) {
+    if (!q) return col;
+    var frows = col.rows.filter(function (row) {
+      return row.some(function (cell) { return (cell || '').toLowerCase().indexOf(q) !== -1; });
+    });
+    return Object.assign({}, col, { rows: frows });
+  }).filter(function (col) {
+    if (!q) return true;
+    if (col.rows.length) return true;
+    return (col.incharge + col.service + col.tujuan).toLowerCase().indexOf(q) !== -1;
+  });
+
+  var maxRows = filteredCols.reduce(function (m, col) { return Math.max(m, col.rows.length); }, 0);
+  _mfFilteredRows = [];
+  for (var i = 0; i < maxRows; i++) _mfFilteredRows.push(i);
+
+  var totalAwb = 0;
+  filteredCols.forEach(function (col) { col.rows.forEach(function (row) { row.forEach(function (c) { if (c) totalAwb++; }); }); });
+  var incharges = [];
+  filteredCols.forEach(function (col) { if (incharges.indexOf(col.incharge) === -1) incharges.push(col.incharge); });
+  _updateMfStats(filteredCols.length, totalAwb, incharges.length);
+
+  if (!filteredCols.length) {
+    outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)">Tidak ada data</div>';
+    return;
+  }
+
+  // Bangun colspan untuk header incharge
+  var incGroups = [];
+  filteredCols.forEach(function (col) {
+    if (!incGroups.length || incGroups[incGroups.length - 1].name !== col.incharge) {
+      incGroups.push({ name: col.incharge, count: 0 });
+    }
+    incGroups[incGroups.length - 1].count += col.dates.length + 1; // +1 for AWB col
+  });
+
+  var html = '<table class="mf-table"><thead>';
+
+  // Row 1: Incharge
+  html += '<tr><th class="mf-rn" rowspan="4">#</th>';
+  incGroups.forEach(function (g) {
+    html += '<th class="mf-hdr-incharge" colspan="' + g.count + '">' + escH(g.name) + '</th>';
+  });
+  html += '</tr>';
+
+  // Row 2: Service
+  html += '<tr>';
+  filteredCols.forEach(function (col) {
+    html += '<th class="mf-hdr-service" colspan="' + (col.dates.length + 1) + '">' + escH(col.service) + '</th>';
+  });
+  html += '</tr>';
+
+  // Row 3: Tujuan
+  html += '<tr>';
+  filteredCols.forEach(function (col) {
+    html += '<th class="mf-hdr-tujuan" colspan="' + (col.dates.length + 1) + '">' + escH(col.tujuan) + '</th>';
+  });
+  html += '</tr>';
+
+  // Row 4: AWB + dates
+  html += '<tr>';
+  filteredCols.forEach(function (col, ci) {
+    html += '<th class="mf-cell-awb" style="background:var(--gray1);font-size:10px;font-weight:700;color:var(--gray5);padding:5px 8px;white-space:nowrap">AWB</th>';
+    col.dates.forEach(function (d, di) {
+      html += '<th class="mf-hdr-date" data-ci="' + ci + '" data-di="' + di + '">' + escH(d) + '</th>';
+    });
+  });
+  html += '</tr></thead><tbody>';
+
+  for (var row = 0; row < maxRows; row++) {
+    html += '<tr class="mf-data-row">';
+    html += '<td class="mf-rn">' + (row + 1) + '</td>';
+    filteredCols.forEach(function (col, ci) {
+      var rowData = col.rows[row] || [];
+      var awb = rowData[0] || '';
+      var selClass = (_mfSelRow === row && _mfSelCol === ci * (col.dates.length + 1)) ? ' mf-cell-selected' : '';
+      var colIdx = ci * 100; // approximation for cell id
+      html += '<td class="mf-cell-awb' + selClass + '" onclick="mfSelect(' + row + ',' + (ci * 100) + ',\'' + escQ(awb) + '\')">' + escH(awb) + '</td>';
+      col.dates.forEach(function (d, di) {
+        var val = rowData[di + 1] || (awb ? d : '');
+        var selClass2 = (_mfSelRow === row && _mfSelCol === ci * 100 + di + 1) ? ' mf-cell-selected' : '';
+        html += '<td class="mf-cell-date' + selClass2 + '" onclick="mfSelect(' + row + ',' + (ci * 100 + di + 1) + ',\'' + escQ(val) + '\')">' + escH(val) + '</td>';
+      });
+    });
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  outer.innerHTML = html;
+
+  // Keyboard Ctrl+C support
+  outer.onkeydown = function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      var sel = outer.querySelector('.mf-cell-selected');
+      if (sel) _copyText(sel.innerText);
+    }
+  };
 }
 
-function mfSelectCell(ri, ci) {
-  _mfSelRow = ri; _mfSelCol = ci;
-  document.querySelectorAll('.mf-cell-selected').forEach(function(el) { el.classList.remove('mf-cell-selected'); });
-  var target = document.querySelector('[data-ri="' + ri + '"][data-ci="' + ci + '"]');
-  if (target) { target.classList.add('mf-cell-selected'); target.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
-  updateMfActiveCellLabel();
+function mfSelect(row, col, val) {
+  _mfSelRow = row; _mfSelCol = col;
+  document.getElementById('mfActiveCell').innerText = val || '—';
+  document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
+  // re-render is expensive; just update class in DOM
+  event.target.classList.add('mf-cell-selected');
   document.getElementById('mfSheetOuter').focus();
 }
 
-function updateMfActiveCellLabel() {
-  var el = document.getElementById('mfActiveCell'); if (!el) return;
-  if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) { el.innerText = '—'; return; }
-  var row = _mfFilteredRows[_mfSelRow]; var colDefs = _mfData.colDefs || []; var c = colDefs[_mfSelCol];
-  if (!row || !c) { el.innerText = '—'; return; }
-  el.innerText = (row[c.colIdx] || '(kosong)');
-}
-
-function setupMfKeyboard() {
-  var outer = document.getElementById('mfSheetOuter');
-  if (!outer || outer._kbSetup) return;
-  outer._kbSetup = true;
-  outer.addEventListener('keydown', function(e) {
-    if (!_mfData) return;
-    var colDefs = _mfData.colDefs || []; var nRows = _mfFilteredRows.length; var nCols = colDefs.length;
-    if (!nRows || !nCols) return;
-    if (_mfSelRow < 0) { _mfSelRow = 0; _mfSelCol = 0; }
-    var moved = false;
-    if (e.key === 'ArrowDown') { e.preventDefault(); _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); _mfSelRow = Math.max(_mfSelRow - 1, 0); moved = true; }
-    else if (e.key === 'ArrowRight') { e.preventDefault(); _mfSelCol = Math.min(_mfSelCol + 1, nCols - 1); moved = true; }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); _mfSelCol = Math.max(_mfSelCol - 1, 0); moved = true; }
-    else if (e.key === 'Tab') { e.preventDefault(); _mfSelCol = (_mfSelCol + 1) % nCols; if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
-    else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); copyMfCell(); return; }
-    if (moved) {
-      document.querySelectorAll('.mf-cell-selected').forEach(function(el) { el.classList.remove('mf-cell-selected'); });
-      var target = document.querySelector('[data-ri="' + _mfSelRow + '"][data-ci="' + _mfSelCol + '"]');
-      if (target) { target.classList.add('mf-cell-selected'); target.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
-      updateMfActiveCellLabel();
-    }
-  });
-}
-
-function copyMfCell() {
-  if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) return;
-  var row = _mfFilteredRows[_mfSelRow]; var colDefs = _mfData.colDefs || []; var c = colDefs[_mfSelCol];
-  if (!row || !c) return;
-  var val = row[c.colIdx] || '';
-  if (!val) { toast('Sel kosong', 'error'); return; }
-  navigator.clipboard.writeText(val).then(function() { showCopyFlash(val); }).catch(function() {
-    var ta = document.createElement('textarea'); ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); showCopyFlash(val); } catch(ex) { toast('Gagal copy', 'error'); }
-    document.body.removeChild(ta);
-  });
-}
-
-function showCopyFlash(val) {
-  var el = document.getElementById('copyFlash'); el.innerText = '✓ Copied: ' + val; el.classList.add('show');
-  clearTimeout(el._t); el._t = setTimeout(function() { el.classList.remove('show'); }, 1200);
-}
-
-// ─── SEARCH AWB ───
-function handleSidebarSearch(e) {
-  var input = document.getElementById('sidebarSearchInput'); var val = input.value.trim();
-  if (e.key === 'Enter' && val) { switchPage('search'); document.getElementById('searchAwbMainInput').value = val; doSearchAwb(val); input.value = ''; }
-}
-
-function doSearchAwb(q) {
-  q = (q || '').trim();
-  var hdr = document.getElementById('searchAwbResult').querySelector('.search-awb-result-hdr');
-  var body = document.getElementById('searchAwbResultBody');
-  if (!q) { hdr.innerHTML = '<span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari'; body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas untuk mencari di semua data</div>'; return; }
-  var ql = q.toLowerCase();
-  var results = allScanAwbs.filter(function(item) { return (item.awb || '').toLowerCase().indexOf(ql) !== -1; });
-  hdr.innerHTML = '<span class="material-icons-round">' + (results.length ? 'check_circle' : 'search_off') + '</span> ' + (results.length ? results.length + ' hasil ditemukan untuk "' + escH(q) + '"' : 'Tidak ada hasil untuk "' + escH(q) + '"');
-  if (!results.length) { body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan di semua data OB, HVS, dan IB</div>'; return; }
-  var typeLabel = { OB: 'Outbound BDO', HVS: 'Outbound HVS', IB: 'Inbound HVS' };
-  var typeIcon = { OB: 'local_shipping', HVS: 'inventory_2', IB: 'move_to_inbox' };
-  body.innerHTML = results.map(function(item) {
-    var t = (item.type || 'OB').toUpperCase();
-    var awbHl = escH(item.awb).replace(new RegExp('(' + escRegex(escH(q)) + ')', 'gi'), '<mark>$1</mark>');
-    return '<div class="search-awb-item">' +
-      '<div class="search-awb-item-icon ' + t.toLowerCase() + '"><span class="material-icons-round">' + typeIcon[t] + '</span></div>' +
-      '<div class="search-awb-item-main">' +
-        '<div class="search-awb-item-awb">' + awbHl + '</div>' +
-        '<div class="search-awb-item-meta">' +
-          '<span class="search-awb-type-tag ' + t.toLowerCase() + '">' + typeLabel[t] + '</span>' +
-          '<span>' + escH(item.incharge || '—') + '</span>' +
-          '<span>•</span><span>' + escH(item.service || '—') + '</span>' +
-          '<span>•</span><span>→ ' + escH(item.tujuan || '—') + '</span>' +
-          (item.from ? '<span>• FROM: ' + escH(item.from) + '</span>' : '') +
-          '<span>•</span><span style="color:var(--gray4)">' + escH(item.date || '') + '</span>' +
-        '</div>' +
-        '<div style="margin-top:3px">NO TRACK: <span class="search-awb-item-notrack" onclick="openDetailModal(\'' + t.toLowerCase() + '\',\'' + escQ(item.noTrack) + '\')">' + escH(item.noTrack) + '</span></div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function clearSearchAwb() { document.getElementById('searchAwbMainInput').value = ''; doSearchAwb(''); }
-
-// ─── EXPORT ───
-function exportCSV() {
-  var page = document.querySelector('.nav-item.active .nav-label');
-  var pname = page ? page.innerText : '';
-  var data, headers, filename;
-  if (pname.indexOf('Outbound BDO') !== -1) { data = filteredData(obData); headers = ['no_track', 'incharge', 'service', 'tujuan', 'created_date', 'status', 'total_awb']; filename = 'OB_export.csv'; }
-  else if (pname.indexOf('Outbound HVS') !== -1) { data = filteredData(hvsData); headers = ['no_track', 'incharge', 'service', 'tujuan', 'created_date', 'status', 'total_awb']; filename = 'HVS_export.csv'; }
-  else if (pname.indexOf('Inbound HVS') !== -1) { data = filteredData(ibData); headers = ['no_track', 'incharge', 'service', 'from', 'tujuan', 'created_date', 'status', 'total_awb']; filename = 'IB_export.csv'; }
-  else { toast('Pilih halaman OB/HVS/IB dulu', 'error'); return; }
-  var csv = headers.join(',') + '\n' + data.map(function(d) { return headers.map(function(h) { return '"' + (d[h] || '') + '"'; }).join(','); }).join('\n');
-  dlCSV(csv, filename);
+function _updateMfStats(cols, awb, inc) {
+  document.getElementById('mfTotalCols').innerText = cols;
+  document.getElementById('mfTotalAwb').innerText = awb;
+  document.getElementById('mfTotalInc').innerText = inc;
 }
 
 function exportManifestCSV() {
-  if (!_mfData) { toast('Manifest belum dimuat', 'error'); return; }
-  var colDefs = _mfData.colDefs || []; var awbRows = _mfData.awbRows || []; var hRows = _mfData.headerRows || [];
-  if (!colDefs.length) { toast('Tidak ada data manifest', 'error'); return; }
-  var h0 = hRows[0] || []; var h1 = hRows[1] || []; var h2 = hRows[2] || [];
-  var csvRows = [];
-  csvRows.push(['#'].concat(h0).map(function(v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(h1).map(function(v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(h2).map(function(v) { return '"' + v + '"'; }).join(','));
-  awbRows.forEach(function(row, i) { csvRows.push(['"' + (i + 1) + '"'].concat(row.map(function(c) { return '"' + (c || '') + '"'; })).join(',')); });
-  dlCSV(csvRows.join('\n'), 'manifest_export.csv');
+  if (!_mfData || !_mfData.columns) { toast('Muat manifest dulu', 'error'); return; }
+  var rows = [['INCHARGE', 'SERVICE', 'TUJUAN', 'AWB', 'DATE']];
+  _mfData.columns.forEach(function (col) {
+    col.rows.forEach(function (row) {
+      rows.push([col.incharge, col.service, col.tujuan, row[0] || '', (col.dates || []).join(' | ')]);
+    });
+  });
+  _downloadCSV(rows, 'manifest_' + _dateStr() + '.csv');
 }
 
-function exportObibCSV() {
-  if (!_obibData) { toast('Data OB&IB belum dimuat', 'error'); return; }
-  var colDefs = _obibData.colDefs || []; var dataRows = _obibData.dataRows || []; var ibSections = _obibData.ibSections || [];
-  var rows = [['TYPE', 'SERVICE', 'FROM', 'TUJUAN_KOTA', 'TUJUAN_IB', 'DATE', 'STATUS', 'TOTAL AWB', 'NO TRACK', 'AWB']];
-  ibSections.forEach(function(sec) {
-    if (sec.awbs && sec.awbs.length) { sec.awbs.forEach(function(a, i) { rows.push(['IB', sec.service, sec.from, sec.tujuan, '', sec.date, sec.status, sec.totalAwb, i === 0 ? sec.no_track : '', a.awb || a]); }); }
-    else rows.push(['IB', sec.service, sec.from, sec.tujuan, '', sec.date, sec.status, sec.totalAwb, sec.no_track, '']);
+// ═══════════════════════════════════════════════════
+// SEARCH AWB
+// ═══════════════════════════════════════════════════
+
+function doSearchAwb(q) {
+  q = (q || '').trim();
+  var hdr  = document.getElementById('searchAwbResult').querySelector('.search-awb-result-hdr');
+  var body = document.getElementById('searchAwbResultBody');
+
+  if (!q) {
+    hdr.innerHTML  = '<span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari';
+    body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas untuk mencari di semua data</div>';
+    return;
+  }
+
+  var ql = q.toLowerCase();
+
+  // Cari di allScanAwbs (data sudah ada di memory dari _awbs jika tersedia)
+  // Kalau tidak ada _awbs, cari dari header data (no_track match)
+  var results = [];
+
+  function searchArr(arr, type) {
+    arr.forEach(function (item) {
+      // Cek apakah AWB ada di _awbs
+      if (item._awbs) {
+        item._awbs.forEach(function (awb) {
+          if ((awb || '').toLowerCase().indexOf(ql) !== -1) {
+            results.push({ awb: awb, noTrack: item.no_track, type: type, tujuan: item.tujuan, incharge: item.incharge, service: item.service, status: item.status, from: item.from || '', date: item.created_date });
+          }
+        });
+      } else {
+        // fallback: cari di no_track / header
+        if ((item.no_track || '').toLowerCase().indexOf(ql) !== -1) {
+          results.push({ awb: q, noTrack: item.no_track, type: type, tujuan: item.tujuan, incharge: item.incharge, service: item.service, status: item.status, from: item.from || '', date: item.created_date });
+        }
+      }
+    });
+  }
+
+  searchArr(obData,  'ob');
+  searchArr(hvsData, 'hvs');
+  searchArr(ibData,  'ib');
+
+  // Juga cari dari allScanAwbs
+  allScanAwbs.forEach(function (r) {
+    if ((r.awb || '').toLowerCase().indexOf(ql) !== -1) {
+      // De-duplicate
+      var dup = results.some(function (x) { return x.awb === r.awb && x.noTrack === r.noTrack; });
+      if (!dup) results.push(r);
+    }
   });
-  colDefs.forEach(function(c, ci) {
-    var ct = (c.colType || '').toUpperCase();
-    if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') { dataRows.forEach(function(row) { var val = row[ci]; if (val) rows.push([ct, c.r3, '-', c.r2, '', '-', '-', '-', '-', val]); }); }
-  });
-  var csv = rows.map(function(r) { return r.map(function(c) { return '"' + (c || '') + '"'; }).join(','); }).join('\n');
-  dlCSV(csv, 'OBIB_export.csv');
+
+  hdr.innerHTML = '<span class="material-icons-round">search</span> ' + results.length + ' hasil untuk <strong>"' + escH(q) + '"</strong>';
+
+  if (!results.length) {
+    // Fetch dari server jika tidak ada di lokal
+    body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">manage_search</span>Mencari di server...</div>';
+    gasGet('searchAwb', { q: q }).then(function (res) {
+      var list = res.list || [];
+      if (!list.length) {
+        hdr.innerHTML  = '<span class="material-icons-round">search</span> 0 hasil untuk <strong>"' + escH(q) + '"</strong>';
+        body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
+        return;
+      }
+      hdr.innerHTML = '<span class="material-icons-round">search</span> ' + list.length + ' hasil untuk <strong>"' + escH(q) + '"</strong>';
+      body.innerHTML = list.map(function (r) { return _searchAwbItem(r, q); }).join('');
+    }).catch(function () {
+      body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
+    });
+    return;
+  }
+
+  body.innerHTML = results.map(function (r) { return _searchAwbItem(r, q); }).join('');
 }
 
-function dlCSV(csv, fn) { var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fn; a.click(); }
+function _searchAwbItem(r, q) {
+  var typeLabel = r.type === 'ob' ? 'Outbound BDO' : r.type === 'hvs' ? 'Outbound HVS' : 'Inbound HVS';
+  var icon = r.type === 'ob' ? 'local_shipping' : r.type === 'hvs' ? 'inventory_2' : 'move_to_inbox';
+  var highlighted = escH(r.awb).replace(new RegExp('(' + escRegex(escH(q)) + ')', 'gi'), '<mark>$1</mark>');
+  var statusTag = r.status === 'SELESAI'
+    ? '<span style="background:var(--green-light);color:var(--green);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">✓ Selesai</span>'
+    : '<span style="background:var(--orange-light);color:var(--orange);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700">● On Proses</span>';
+  return '<div class="search-awb-item">' +
+    '<div class="search-awb-item-icon ' + r.type + '"><span class="material-icons-round">' + icon + '</span></div>' +
+    '<div class="search-awb-item-main">' +
+      '<div class="search-awb-item-awb">' + highlighted + '</div>' +
+      '<div class="search-awb-item-meta">' +
+        '<span class="search-awb-type-tag ' + r.type + '">' + typeLabel + '</span>' +
+        statusTag +
+        (r.noTrack ? '<span class="search-awb-item-notrack" onclick="openDetailModal(\'' + r.type + '\',\'' + escQ(r.noTrack) + '\')">' + escH(r.noTrack) + '</span>' : '') +
+        (r.incharge ? '<span>' + escH(r.incharge) + '</span>' : '') +
+        (r.service  ? '<span>' + escH(r.service)  + '</span>' : '') +
+        (r.from     ? '<span>From: ' + escH(r.from) + '</span>' : '') +
+        (r.tujuan   ? '<span>→ ' + escH(r.tujuan) + '</span>' : '') +
+        (r.date     ? '<span style="color:var(--gray4)">' + escH(r.date) + '</span>' : '') +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function clearSearchAwb() {
+  document.getElementById('searchAwbMainInput').value = '';
+  doSearchAwb('');
+}
+
+// ═══════════════════════════════════════════════════
+// SIDEBAR SEARCH
+// ═══════════════════════════════════════════════════
+
+function handleSidebarSearch(e) {
+  if (e.key !== 'Enter') return;
+  var q = document.getElementById('sidebarSearchInput').value.trim();
+  if (!q) return;
+  switchPage('search');
+  document.getElementById('searchAwbMainInput').value = q;
+  doSearchAwb(q);
+  document.getElementById('sidebarSearchInput').value = '';
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT CSV (main tables)
+// ═══════════════════════════════════════════════════
+
+function exportCSV() {
+  // Export semua halaman yang aktif
+  var active = '';
+  ['ob','hvs','ib','manifest','obib'].forEach(function(p){
+    if (document.getElementById('page-'+p).style.display !== 'none') active = p;
+  });
+  if (active === 'ob')       exportObCSV();
+  else if (active === 'hvs') exportHvsCSV();
+  else if (active === 'ib')  exportIbCSV();
+  else if (active === 'manifest') exportManifestCSV();
+  else if (active === 'obib')    exportObibCSV();
+  else toast('Tidak ada data untuk diexport', 'error');
+}
+
+function exportObCSV() {
+  var d = filteredData(obData);
+  var rows = [['NO TRACK','INCHARGE','SERVICE','TUJUAN','DATE','TOTAL AWB','STATUS']];
+  d.forEach(function(r){ rows.push([r.no_track, r.incharge, r.service, r.tujuan, r.created_date, r.total_awb, r.status]); });
+  _downloadCSV(rows, 'outbound_bdo_' + _dateStr() + '.csv');
+}
+
+function exportHvsCSV() {
+  var d = filteredData(hvsData);
+  var rows = [['NO TRACK','INCHARGE','SERVICE','TUJUAN','DATE','TOTAL AWB','STATUS']];
+  d.forEach(function(r){ rows.push([r.no_track, r.incharge, r.service, r.tujuan, r.created_date, r.total_awb, r.status]); });
+  _downloadCSV(rows, 'outbound_hvs_' + _dateStr() + '.csv');
+}
+
+function exportIbCSV() {
+  var d = filteredData(ibData);
+  var rows = [['NO TRACK','INCHARGE','SERVICE','FROM','TUJUAN','DATE','TOTAL AWB','STATUS']];
+  d.forEach(function(r){ rows.push([r.no_track, r.incharge, r.service, r.from||'', r.tujuan, r.created_date, r.total_awb, r.status]); });
+  _downloadCSV(rows, 'inbound_hvs_' + _dateStr() + '.csv');
+}
+
+// ─── CSV HELPER ───
+function _downloadCSV(rows, filename) {
+  var csv = rows.map(function (r) {
+    return r.map(function (c) {
+      var s = (c === null || c === undefined) ? '' : String(c);
+      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+        s = '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }).join(',');
+  }).join('\r\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href  = url; a.download = filename; a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
+  toast('CSV diunduh: ' + filename, 'success');
+}
+
+function _dateStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// ─── COPY HELPER ───
+function _copyText(text) {
+  if (!text || !text.trim()) return;
+  navigator.clipboard.writeText(text.trim()).then(function () {
+    var el = document.getElementById('copyFlash');
+    el.classList.add('show');
+    setTimeout(function () { el.classList.remove('show'); }, 1200);
+  }).catch(function () {
+    toast('Gagal copy', 'error');
+  });
+}
+
+// ─── CSS tambahan untuk OB&IB ───
+(function () {
+  var style = document.createElement('style');
+  style.textContent = [
+    '.obib-cell-awb.selesai { color: var(--green2); font-style: italic; }',
+    '.obib-cell-awb.obib-hvs { background: var(--purple-light); }',
+    '.obib-cell-awb.obib-hvs.selesai { color: var(--purple); font-style: italic; }',
+    '.obib-cell-awb.obib-ib { background: var(--green-light); }',
+    '.obib-cell-awb.obib-ib.selesai { color: var(--green); font-style: italic; }',
+    '.obib-table-wrap { overflow-x: auto; max-height: calc(100vh - 140px); overflow-y: auto; }',
+    '.obib-table thead { position: sticky; top: 0; z-index: 10; }',
+    '.obib-table .obib-rn { position: sticky; left: 0; z-index: 5; background: var(--gray1); }',
+    '.obib-table thead .obib-rn { z-index: 15; }',
+  ].join('\n');
+  document.head.appendChild(style);
+})();
