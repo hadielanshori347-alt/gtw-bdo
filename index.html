@@ -183,9 +183,17 @@
         <div class="stat-card" style="border-color:var(--gray3)"><div class="stat-label">Sel Aktif</div><div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--gray6);font-family:var(--mono)">—</div></div>
       </div>
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
-        <div style="padding:40px;text-align:center;color:var(--gray5)">
-          <span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>
-          Klik Manifest di sidebar untuk memuat data
+        <!-- Placeholder tombol besar — diganti dengan tabel setelah load -->
+        <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">
+          <span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>
+          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest Hari Ini</div>
+          <div style="font-size:13px;color:var(--gray5);max-width:300px;line-height:1.6">
+            Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.
+          </div>
+          <button class="btn btn-primary" style="padding:13px 32px;font-size:14px;border-radius:10px;gap:10px;margin-top:8px" onclick="loadManifestPage()">
+            <span class="material-icons-round" style="font-size:20px">grid_on</span>
+            Muat Manifest Hari Ini
+          </button>
         </div>
       </div>
     </div>
