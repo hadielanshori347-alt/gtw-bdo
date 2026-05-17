@@ -1,8 +1,6 @@
 /* ============================================================
    GTW BDO — views.js v4.4
-   OB&IB: layout per KOTA (digabung jika sama), AWB turun ke bawah.
-   Header 4 baris: Incharge | Kota | Service | Tipe
-   Data: AWB flat rows ke bawah, DATE mirror per baris.
+   FIX: OB&IB key lookup pakai r2 (kota) bukan r1 (incharge)
    ============================================================ */
 
 // ─── INIT & RELOAD ───
@@ -72,18 +70,14 @@ function buildAllScanAwbs() {
 // ═══════════════════════════════════════════════════════════════════
 // ★★★  OB & IB  COMBINED VIEW  v4.4  ★★★
 //
-// KONSEP:
-//   - Header mengikuti sheet OB&IB (4 baris: Incharge, Kota, Service, Tipe)
-//   - Kolom OUTBOUND     : semua AWB dari (service|kota) yang sama → 1 kolom, turun kebawah
-//   - Kolom OUTBOUND_HVS : sama seperti OUTBOUND tapi sumber SCAN_HVS
-//   - Kolom INBOUND_HVS  : semua record IB yang match (service|kota) → AWB turun kebawah
-//                          Format: TUJUAN_(FROM) → awb1 → awb2 → ...
-//                          Jika ada beberapa record IB, lanjut disambung kebawah
-//   - Kolom DATE         : tanggal per baris AWB (mirror dari kolom data sebelumnya)
+// Header sheet OB&IB (4 baris):
+//   r1 = Incharge  (misal: SUKAJADI)
+//   r2 = Kota      (misal: CIANJUR, TASIK, GARUT)
+//   r3 = Service   (misal: SAMEDAY)
+//   r4 = Tipe      (OUTBOUND, DATE, OUTBOUND_HVS, INBOUND_HVS)
 //
-//   Kota yang sama (misal GTW_GARUT muncul 2x di sheet OB&IB) tetap tampil
-//   sebagai 2 kolom terpisah sesuai posisi di sheet — kecuali backend sudah merge.
-//   Frontend tidak merge; backend yang menentukan kolom via colDefs.
+// Key lookup SCAN_OB/HVS: SERVICE(r3) | KOTA(r2)
+// Key lookup IB:          SERVICE(r3) | TUJUAN(r2)
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
@@ -130,7 +124,8 @@ function _buildObibTable(data) {
 
   var nCols = colDefs.length;
 
-  // ── Lookup IB sections: key = SERVICE|KOTA_TUJUAN ──
+  // ── Lookup IB sections: key = SERVICE(r3)|KOTA(r2) ──
+  // FIX: pakai r2 bukan r1
   var ibMap = {};
   ibSections.forEach(function (sec) {
     var k = (sec.service || '').toUpperCase() + '|' + (sec.tujuan || '').toUpperCase();
@@ -139,18 +134,13 @@ function _buildObibTable(data) {
   });
 
   // ── Build flat rows per kolom ──
-  // flatCol[ci] = array of { cellType, text, date }
-  //   'AWB'        — nomor AWB biasa
-  //   'IB_LABEL'   — header baris TUJUAN_(FROM), bold
-  //   'DATE_VAL'   — tanggal
-  //   'DATE_EMPTY' — kosong (untuk align DATE setelah OB/HVS di baris kosong)
   var flatCol = [];
 
   for (var ci = 0; ci < nCols; ci++) {
     var def = colDefs[ci];
     var ct  = (def.colType || '').toUpperCase();
 
-    // ── OUTBOUND ──
+    // ── OUTBOUND / OUTBOUND_HVS ──
     if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
       var rawEntries = (def.entries && def.entries.length) ? def.entries : (def.flatRows || []);
       var rows = [];
@@ -167,11 +157,10 @@ function _buildObibTable(data) {
 
     // ── INBOUND_HVS ──
     if (ct === 'INBOUND_HVS') {
-      // Match: r3 = service header, r1 = kota header
-      var k    = (def.r3 || '').toUpperCase() + '|' + (def.r1 || '').toUpperCase();
+      // FIX: key pakai r3 (service) | r2 (kota/tujuan)
+      var k    = (def.r3 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase();
       var secs = (ibMap[k] || []).slice();
 
-      // Filter jika ada search
       if (filter) {
         secs = secs.filter(function (sec) {
           var label = (sec.tujuan || '') + (sec.from ? '_(' + sec.from + ')' : '');
@@ -189,10 +178,7 @@ function _buildObibTable(data) {
         var awbs  = sec.awbs || [];
         var date  = sec.date || '';
 
-        // Baris label (TUJUAN_(FROM))
         ibRows.push({ cellType: 'IB_LABEL', text: label, date: date });
-
-        // Baris AWB satu per satu ke bawah
         awbs.forEach(function (a) {
           ibRows.push({ cellType: 'AWB', text: a.awb || a || '', date: date });
         });
@@ -215,7 +201,6 @@ function _buildObibTable(data) {
   for (var ci = 0; ci < nCols; ci++) {
     if (flatCol[ci] !== null) continue;
 
-    // Cari kolom data terdekat di kiri dalam grup r1 yang sama
     var prevCi = -1;
     for (var j = ci - 1; j >= 0; j--) {
       if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
@@ -228,14 +213,10 @@ function _buildObibTable(data) {
     var prevCt   = (colDefs[prevCi].colType || '').toUpperCase();
 
     if (prevCt === 'INBOUND_HVS') {
-      // Untuk IB: DATE mirror di setiap baris (LABEL dan AWB)
       flatCol[ci] = prevRows.map(function (r) {
-        // Baris label IB tidak perlu tampilkan DATE (bisa dibiarkan kosong atau tampil)
-        // Kita tampilkan date di semua baris agar align sempurna
         return { cellType: 'DATE_VAL', text: r.date || '', date: r.date || '' };
       });
     } else {
-      // Untuk OB/HVS: DATE per baris AWB
       flatCol[ci] = prevRows.map(function (r) {
         return { cellType: 'DATE_VAL', text: r.date || '', date: r.date || '' };
       });
@@ -277,8 +258,6 @@ function _buildObibTable(data) {
     return '';
   }
 
-  // Row 4 menampilkan label kolom dari sheet (bisa berisi nama tujuan atau tipe)
-  // Kita tampilkan r4 asli (colType) sebagai header baris ke-4
   var hdr4 = '<tr>' +
     '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
     colDefs.map(function (c) {
@@ -290,7 +269,6 @@ function _buildObibTable(data) {
   var tbodyHtml = '';
 
   if (maxRows === 0) {
-    // Tidak ada data sama sekali
     tbodyHtml = '<tr>' +
       '<td class="obib-rn" style="color:var(--gray5)">—</td>' +
       '<td colspan="' + nCols + '" style="text-align:center;padding:24px;color:var(--gray5);font-size:13px">Belum ada data AWB</td>' +
@@ -306,7 +284,7 @@ function _buildObibTable(data) {
         var ct  = (def.colType || '').toUpperCase();
         var row = ri < arr.length ? arr[ri] : null;
 
-        // ── DATE kolom ──
+        // DATE kolom
         if (ct === 'DATE') {
           if (row && row.text) {
             tbodyHtml += '<td class="obib-cell-date">' + escH(row.text) + '</td>';
@@ -316,21 +294,19 @@ function _buildObibTable(data) {
           continue;
         }
 
-        // ── INBOUND_HVS kolom ──
+        // INBOUND_HVS kolom
         if (ct === 'INBOUND_HVS') {
           if (!row) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:160px"></td>';
           } else if (row.cellType === 'IB_LABEL') {
-            // Baris TUJUAN_(FROM) — bold, background biru muda
             tbodyHtml += '<td class="obib-cell-ib-label">' + escH(row.text) + '</td>';
           } else {
-            // Baris AWB IB — hijau muda
             tbodyHtml += '<td class="obib-cell-ib-awb">' + escH(row.text) + '</td>';
           }
           continue;
         }
 
-        // ── OUTBOUND / OUTBOUND_HVS kolom ──
+        // OUTBOUND / OUTBOUND_HVS kolom
         if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
           if (!row || !row.text) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:140px"></td>';
@@ -341,7 +317,7 @@ function _buildObibTable(data) {
           continue;
         }
 
-        // ── Kolom lain ──
+        // Kolom lain
         tbodyHtml += row && row.text
           ? '<td class="obib-cell-awb">' + escH(row.text) + '</td>'
           : '<td class="obib-cell-empty"></td>';
@@ -389,16 +365,17 @@ function exportObibCSV() {
       entries.forEach(function (e) {
         var awb = e.awb || e.text || '';
         if (!awb) return;
-        rows.push([ct, def.r1, def.r1, def.r3, def.r1, '', e.date || '', awb]);
+        rows.push([ct, def.r1, def.r2, def.r3, def.r2, '', e.date || '', awb]);
       });
     } else if (ct === 'INBOUND_HVS') {
-      var k    = (def.r3 || '').toUpperCase() + '|' + (def.r1 || '').toUpperCase();
+      // FIX: key pakai r3|r2
+      var k    = (def.r3 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase();
       var secs = ibMap[k] || [];
       secs.forEach(function (sec) {
         var label = (sec.tujuan || '') + (sec.from ? '_(' + sec.from + ')' : '');
-        rows.push([ct + '_LABEL', sec.incharge || '', def.r1, def.r3, sec.tujuan || '', sec.from || '', sec.date || '', label]);
+        rows.push([ct + '_LABEL', sec.incharge || '', def.r2, def.r3, sec.tujuan || '', sec.from || '', sec.date || '', label]);
         (sec.awbs || []).forEach(function (a) {
-          rows.push([ct + '_AWB', sec.incharge || '', def.r1, def.r3, sec.tujuan || '', sec.from || '', sec.date || '', a.awb || a || '']);
+          rows.push([ct + '_AWB', sec.incharge || '', def.r2, def.r3, sec.tujuan || '', sec.from || '', sec.date || '', a.awb || a || '']);
         });
       });
     }
