@@ -27,30 +27,25 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--bg);color:var(--text)}
 
-/* ─── PAGES ─── */
 .page{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);z-index:10;transition:transform .28s cubic-bezier(.4,0,.2,1),opacity .28s}
 .page.hidden{transform:translateX(100%);pointer-events:none;opacity:0}
 .page.slide-up{transform:translateY(100%)}
 .page.slide-up.hidden{transform:translateY(100%)}
 
-/* ─── APP BAR ─── */
 .appbar{background:var(--blue);padding:calc(var(--safe-top) + 10px) 14px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .appbar-title{flex:1;color:#fff;font-size:16px;font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appbar-icon{color:#fff;font-size:22px;cursor:pointer;padding:4px;border-radius:6px;background:none;border:none;display:flex;align-items:center;justify-content:center;min-width:36px;min-height:36px}
 .appbar-icon:active{background:rgba(255,255,255,.18)}
 
-/* ─── BOTTOM NAV ─── */
 .bottom-nav{background:var(--surface);border-top:1px solid var(--border);display:flex;padding:6px 0 calc(6px + var(--safe-bot));flex-shrink:0}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:6px 4px;border:none;background:none;color:var(--text3);font-size:9px;font-weight:600;font-family:var(--font);letter-spacing:.3px;text-transform:uppercase;transition:.15s}
 .bn-item.active{color:var(--blue2)}
 .bn-icon{font-size:22px;line-height:1}
 .bn-item.active .bn-icon{color:var(--blue2)}
 
-/* ─── SCROLL CONTENT ─── */
 .scroll-content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:14px 14px calc(14px + var(--safe-bot))}
 .scroll-content.no-pad{padding:0}
 
-/* ─── STATS ROW ─── */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
 .stat-card{background:var(--surface);border-radius:var(--r-sm);border:1px solid var(--border);padding:12px 10px;text-align:center}
 .stat-label{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
@@ -59,7 +54,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .stat-card.green .stat-value{color:var(--green)}
 .stat-card.orange .stat-value{color:var(--orange)}
 
-/* ─── CARDS ─── */
 .card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;margin-bottom:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .card:active{opacity:.85;transform:scale(.99)}
 .card-inner{padding:14px}
@@ -68,7 +62,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .card-sub{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.4}
 .card-bottom{display:flex;gap:8px;align-items:center}
 
-/* ─── BADGES ─── */
 .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
 .badge-proses{background:var(--orange-l);color:var(--orange)}
 .badge-selesai{background:var(--green-l);color:var(--green)}
@@ -76,7 +69,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .badge-purple{background:var(--purple-l);color:var(--purple)}
 .badge-awb{background:var(--blue-l);color:var(--blue);font-family:var(--mono)}
 
-/* ─── BUTTONS ─── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;font-family:var(--font);white-space:nowrap}
 .btn:active{opacity:.8;transform:scale(.98)}
 .btn-primary{background:var(--blue2);color:#fff}
@@ -90,14 +82,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .btn-selesai{flex:1;padding:9px;border-radius:8px;font-size:13px;font-weight:700;background:var(--green-l);color:var(--green);border:none;cursor:pointer}
 .btn-selesai:active{opacity:.8}
 
-/* ─── FORMS ─── */
 .form-group{margin-bottom:14px}
 .form-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px}
 .form-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;transition:.15s;-webkit-appearance:none}
 .form-input:focus{border-color:var(--blue2);box-shadow:0 0 0 3px var(--blue-l)}
 .form-input:disabled{background:var(--bg);color:var(--text3)}
 
-/* ─── SMART CB ─── */
 .scb{position:relative}
 .scb-input{width:100%;padding:12px 40px 12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);color:var(--text);background:var(--surface);outline:none;-webkit-appearance:none;cursor:pointer;transition:.15s}
 .scb-input:focus{border-color:var(--blue2);box-shadow:0 0 0 3px var(--blue-l)}
@@ -112,7 +102,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .scb-opt.sel{color:var(--blue);font-weight:600}
 .scb-empty{padding:12px 14px;font-size:13px;color:var(--text3);font-style:italic}
 
-/* ─── SCAN SECTION ─── */
 .scan-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
 .scan-tab{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;background:var(--bg);color:var(--text2);cursor:pointer;border:1.5px solid transparent;transition:.15s}
 .scan-tab.active{background:var(--blue-l);color:var(--blue2);border-color:var(--blue-m)}
@@ -130,14 +119,23 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .scan-empty{padding:18px;text-align:center;color:var(--text3);font-size:12px}
 .scan-total{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px}
 
-/* ─── CAMERA ─── */
+/* Scan row dengan tombol kamera inline */
+.scan-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.scan-row-inner{flex:1;position:relative;display:flex;align-items:center}
+.scan-row-inner .scan-inp{padding-right:46px}
+.btn-cam-inline{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:var(--blue2);border:none;border-radius:7px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;flex-shrink:0;transition:.15s}
+.btn-cam-inline:active{opacity:.8;transform:translateY(-50%) scale(.94)}
+.btn-cam-inline:disabled{background:var(--border);cursor:not-allowed}
+
+.btn-add-tuj{background:var(--blue-l);color:var(--blue);padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid var(--blue-m)}
+.btn-add-tuj:disabled{opacity:.4;cursor:not-allowed}
+
 .cam-wrap{background:#000;flex-shrink:0;position:relative;overflow:hidden;max-height:55vw}
 .cam-wrap video{width:100% !important;object-fit:cover;display:block}
 .cam-wrap img{width:100% !important}
 #reader{width:100%}
 .cam-err{background:#fff8e1;padding:10px 14px;font-size:12px;color:#6d4c00;display:none;flex-shrink:0}
 
-/* ─── PHOTO PAGE ─── */
 #photoVideo{width:100%;height:100%;object-fit:cover;display:block}
 #photoCanvas{display:none}
 #photoPreview{width:100%;height:100%;object-fit:contain;display:none}
@@ -149,7 +147,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .btn-simpan-foto{background:#1b6e2e;color:#fff}
 .gps-bar{background:#111;color:#aaa;font-size:11px;text-align:center;padding:5px 10px;flex-shrink:0}
 
-/* ─── MODAL OVERLAY ─── */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:.2s}
 .modal-ov.open{opacity:1;pointer-events:auto}
 .modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-height:78vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
@@ -160,7 +157,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .modal-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;padding-bottom:calc(12px + var(--safe-bot))}
 .modal-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:22px;padding:2px}
 
-/* ─── DETAIL PAGE ─── */
 .detail-section{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);margin-bottom:10px;overflow:hidden}
 .detail-field{padding:12px 14px;border-bottom:1px solid var(--bg)}
 .detail-field:last-child{border-bottom:none}
@@ -177,7 +173,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .awb-row:last-child{border-bottom:none}
 .awb-row::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--blue2);flex-shrink:0}
 
-/* ─── SEARCH AWB ─── */
 .search-hero{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:16px;margin-bottom:12px}
 .search-inp-row{display:flex;gap:8px;align-items:center}
 .search-main-inp{flex:1;padding:12px 14px;border:2px solid var(--blue2);border-radius:var(--r-sm);font-size:14px;font-family:var(--mono);color:var(--text);outline:none}
@@ -196,33 +191,27 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .search-item-meta{font-size:11px;color:var(--text3);line-height:1.6}
 .search-empty{padding:28px;text-align:center;color:var(--text3);font-size:13px}
 
-/* ─── LOADING ─── */
 #gloading{position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
 .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue2);border-radius:50%;animation:spin .6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #gloading-txt{font-size:13px;color:var(--text2);font-weight:500}
 
-/* ─── TOAST ─── */
 #gtoast{position:fixed;bottom:calc(72px + var(--safe-bot));left:14px;right:14px;background:var(--text);color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.18);text-align:center}
 #gtoast.success{background:var(--green)}
 #gtoast.error{background:var(--red)}
 
-/* ─── INCHARGE WIDGET ─── */
 .ic-widget{background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid rgba(255,255,255,.25);flex-shrink:0;max-width:140px}
 .ic-dot{width:7px;height:7px;border-radius:50%;background:#aaa;flex-shrink:0;transition:.3s}
 .ic-dot.on{background:#4CAF50;box-shadow:0 0 0 2px rgba(76,175,80,.3)}
 .ic-name{color:#fff;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
 
-/* ─── TABS ─── */
 .tab-bar{background:var(--surface);border-bottom:1px solid var(--border);display:flex;flex-shrink:0}
 .tab-item{flex:1;text-align:center;padding:12px 0;font-size:12px;font-weight:700;color:var(--text3);border-bottom:3px solid transparent;cursor:pointer;transition:.15s;text-transform:uppercase;letter-spacing:.3px}
 .tab-item.active{color:var(--blue2);border-bottom-color:var(--blue2)}
 
-/* ─── FAB ─── */
 .fab{position:fixed;bottom:calc(72px + var(--safe-bot) + 12px);right:18px;width:52px;height:52px;background:var(--blue2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 14px rgba(25,118,210,.4);z-index:100;cursor:pointer;border:none;font-size:26px}
 .fab:active{transform:scale(.94)}
 
-/* ─── MISC ─── */
 .divider{height:1px;background:var(--border);margin:10px 0}
 .section-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
 .info-bar{background:var(--blue-l);border:1px solid var(--blue-m);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--blue);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-weight:600}
@@ -232,7 +221,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .back-icon{font-size:22px;cursor:pointer;color:#fff;padding:4px;border:none;background:none}
 .menu-icon{font-size:22px;cursor:pointer;color:#fff;padding:4px;border:none;background:none;line-height:1}
 
-/* ─── DROPDOWN DETAIL MENU ─── */
 .dd-menu{position:fixed;top:56px;right:12px;background:var(--surface);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);z-index:800;min-width:180px;overflow:hidden;display:none}
 .dd-menu.open{display:block}
 .dd-item{padding:13px 16px;font-size:14px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bg)}
@@ -242,15 +230,8 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .dd-ov{position:fixed;inset:0;z-index:799;display:none}
 .dd-ov.open{display:block}
 
-/* ─── SCAN ROW ─── */
-.scan-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.btn-add-tuj{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue-m);padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none}
-.btn-add-tuj:disabled{opacity:.4;cursor:not-allowed}
-
-/* ─── TORCH BTN ─── */
 .torch-btn{color:#fff;background:none;border:none;font-size:22px;cursor:pointer;padding:4px}
 
-/* ─── SESSION TYPE SELECTOR ─── */
 .type-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px}
 .type-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px 8px;text-align:center;cursor:pointer;transition:.15s}
 .type-card:active{transform:scale(.96)}
@@ -260,7 +241,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .type-card-icon{font-size:24px;margin-bottom:6px;display:block}
 .type-card-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
 
-/* SAFE AREA BOTTOM PAD */
+/* Context bar di scanner page — tujuan yang sedang discan */
+.scan-ctx-bar{background:var(--blue-l);border-bottom:1px solid var(--blue-m);padding:8px 14px;font-size:12px;color:var(--blue);font-weight:700;flex-shrink:0;display:none;align-items:center;gap:6px}
+
 .safe-pad{height:calc(var(--safe-bot) + 70px)}
 </style>
 </head>
@@ -269,9 +252,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 <div id="gloading"><div class="spinner"></div><div id="gloading-txt">Memuat...</div></div>
 <div id="gtoast"></div>
 
-<!-- ═══════════════════════════════
-     HOME PAGE
-════════════════════════════════ -->
+<!-- ═══ HOME PAGE ═══ -->
 <div class="page" id="pgHome">
   <div class="appbar">
     <div class="appbar-title">GTW BDO</div>
@@ -293,7 +274,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
       <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="statSelesai">0</div></div>
       <div class="stat-card orange"><div class="stat-label">Proses</div><div class="stat-value" id="statProses">0</div></div>
     </div>
-    <div id="homeList"></div>
+    <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
     <div class="safe-pad"></div>
   </div>
   <button class="fab" onclick="openCreatePage()">＋</button>
@@ -307,9 +288,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     SEARCH PAGE
-════════════════════════════════ -->
+<!-- ═══ SEARCH PAGE ═══ -->
 <div class="page hidden" id="pgSearch">
   <div class="appbar">
     <div class="appbar-title">Cari AWB</div>
@@ -339,9 +318,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     CREATE PAGE (SLIDE IN)
-════════════════════════════════ -->
+<!-- ═══ CREATE PAGE ═══ -->
 <div class="page hidden" id="pgCreate">
   <div class="appbar">
     <button class="back-icon" onclick="closeCreate()">←</button>
@@ -388,8 +365,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
       <div class="multi-info">💡 Setiap tujuan = 1 NO TRACK. Bisa tambah tujuan baru.</div>
       <div class="scan-total" id="obTotalLabel">0 AWB total</div>
       <div class="scan-tabs" id="obTabs"></div>
+      <!-- Scan input dengan tombol kamera 📷 inline -->
       <div class="scan-row">
-        <input class="scan-inp" id="obScanInp" placeholder="Scan AWB..." disabled onkeydown="handleScan(event,'ob')">
+        <div class="scan-row-inner">
+          <input class="scan-inp" id="obScanInp" placeholder="Scan AWB atau ketik + Enter..." disabled onkeydown="handleScan(event,'ob')">
+          <button class="btn-cam-inline" id="btnObCam" disabled onclick="openScannerCreate('ob')" title="Buka Kamera Scanner">📷</button>
+        </div>
         <button class="btn-add-tuj" id="btnAddTuj" disabled onclick="openAddTujModal()">+ Tujuan</button>
       </div>
       <div class="scan-list" id="obScanList"><div class="scan-empty">Pilih service & tujuan dulu</div></div>
@@ -422,8 +403,12 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
         </div>
       </div>
       <div class="scan-total" id="ibTotalLabel">0 AWB total</div>
+      <!-- Scan input IB dengan tombol kamera 📷 inline -->
       <div class="scan-row">
-        <input class="scan-inp" id="ibScanInp" placeholder="Isi FROM & TUJUAN dulu..." disabled onkeydown="handleScan(event,'ib')">
+        <div class="scan-row-inner">
+          <input class="scan-inp" id="ibScanInp" placeholder="Isi FROM & TUJUAN dulu..." disabled onkeydown="handleScan(event,'ib')">
+          <button class="btn-cam-inline" id="btnIbCam" disabled onclick="openScannerCreate('ib')" title="Buka Kamera Scanner">📷</button>
+        </div>
       </div>
       <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi form dulu</div></div>
     </div>
@@ -436,37 +421,37 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     SCANNER PAGE
-════════════════════════════════ -->
+<!-- ═══ SCANNER PAGE ═══ -->
 <div class="page hidden" id="pgScan">
   <div class="appbar">
     <button class="back-icon" onclick="stopScanner()">←</button>
     <div class="appbar-title" id="scanTitle">Scanner</div>
     <button class="torch-btn" id="torchBtn" onclick="toggleFlash()">🔦</button>
   </div>
+  <!-- Info bar: konteks tujuan aktif saat dari create page -->
+  <div class="scan-ctx-bar" id="scanCtxBar">
+    📍 Scan ke tujuan: <span id="scanCtxLabel" style="font-weight:800"></span>
+  </div>
   <div class="cam-wrap"><div id="reader"></div></div>
-  <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual.</div>
+  <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
   <div class="scroll-content">
     <div class="form-group" style="margin-bottom:8px">
       <label class="form-label">Input Manual AWB</label>
       <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter" onkeydown="handleManualScan(event)" autocomplete="off">
     </div>
-    <div class="d-flex" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <span class="scan-total">LIST SCAN (<span id="scanCount">0</span>)</span>
       <button class="btn-ghost" onclick="clearScans()">Clear All</button>
     </div>
     <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada AWB di-scan</div></div>
     <div style="margin-top:12px">
-      <button class="btn btn-primary btn-full" id="btnSaveScan" disabled onclick="saveScanAndGoPhoto()">💾 Simpan & Foto</button>
+      <button class="btn btn-primary btn-full" id="btnSaveScan" disabled onclick="saveScanAndNext()">💾 Simpan & Lanjut</button>
     </div>
     <div class="safe-pad"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     PHOTO PAGE
-════════════════════════════════ -->
+<!-- ═══ PHOTO PAGE ═══ -->
 <div class="page hidden" id="pgPhoto">
   <div class="appbar">
     <button class="back-icon" onclick="closePhoto()">←</button>
@@ -488,9 +473,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     DETAIL PAGE
-════════════════════════════════ -->
+<!-- ═══ DETAIL PAGE ═══ -->
 <div class="page hidden" id="pgDetail">
   <div class="appbar">
     <button class="back-icon" onclick="closeDetail()">←</button>
@@ -520,9 +503,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   <input type="file" accept="image/*" style="display:none" id="fotoFileInput" onchange="onFotoFileChange(event)">
 </div>
 
-<!-- ═══════════════════════════════
-     INCHARGE MODAL
-════════════════════════════════ -->
+<!-- ═══ INCHARGE MODAL ═══ -->
 <div class="modal-ov" id="icModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
@@ -536,9 +517,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     ADD TUJUAN MODAL
-════════════════════════════════ -->
+<!-- ═══ ADD TUJUAN MODAL ═══ -->
 <div class="modal-ov" id="tujModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
@@ -562,9 +541,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     AWB MODAL
-════════════════════════════════ -->
+<!-- ═══ AWB MODAL ═══ -->
 <div class="modal-ov" id="awbModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
@@ -577,9 +554,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
   </div>
 </div>
 
-<!-- ═══════════════════════════════
-     CONFIRM MODAL
-════════════════════════════════ -->
+<!-- ═══ CONFIRM MODAL ═══ -->
 <div class="modal-ov" id="confirmModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
@@ -597,53 +572,55 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 </div>
 
 <script>
-// ═══════════════════════════════════════════
-// CONFIG — GANTI URL BACKEND DI SINI
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// CONFIG — ganti URL backend di sini
+// ════════════════════════════════════════════
 var GAS_URL = "https://script.google.com/macros/s/AKfycbxjWm3e1jvvmrKWCGB-dDVDA9C0G4vannhKSo2OSf0QEqsBn4B3auvsEQaGaoESOxS-nQ/exec";
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // STATE
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 var masterData = {};
 var obData = [], hvsData = [], ibData = [];
 var globalIncharge = '';
-var allIncharges = [];
-var allScanAwbs = [];
-var currentType = 'ob'; // home tab
-var createType = ''; // ob/hvs/ib
+var allIncharges   = [];
+var allScanAwbs    = [];
+var currentType    = 'ob';
+var createType     = '';
 var currentDetailItem = null;
 var currentDetailType = '';
 
 // OB/HVS form state
-var obScanMap = {}, obActiveTuj = '';
-var ibScanned = [];
+var obScanMap  = {};
+var obActiveTuj = '';
+var ibScanned   = [];
 
-// Camera
-var html5QrCode = null;
+// Scanner state
+var html5QrCode    = null;
 var isScannerRunning = false;
-var flashOn = false;
-var scanItems = []; // active scan session items
-var scanContext = null; // {type, noTrack (for detail add)}
+var flashOn        = false;
+var scanItems      = [];
+// scanContext: 'detail' | 'create-ob' | 'create-ib'
+var scanContext     = 'detail';
 
-// Photo
-var photoStream = null;
-var capturedDataUrl = null;
-var gpsCoords = null;
-var currentNoTrack = '', currentSvc = '', currentTuj = '';
+// Photo state
+var photoStream    = null;
+var capturedDataUrl= null;
+var gpsCoords      = null;
+var currentNoTrack = '';
+var currentSvc     = '';
+var currentTuj     = '';
 
-// SCB registry
 var scbReg = {};
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // API HELPERS
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function gasGet(action, params) {
   var url = new URL(GAS_URL);
   url.searchParams.set('action', action);
   if (params) Object.keys(params).forEach(function(k){ url.searchParams.set(k, params[k]); });
-  return fetch(url.toString(), { redirect: 'follow', mode: 'cors' })
-    .then(function(r){ return r.json(); });
+  return fetch(url.toString(), { redirect: 'follow', mode: 'cors' }).then(function(r){ return r.json(); });
 }
 function gasPost(action, data) {
   data.action = action;
@@ -654,129 +631,139 @@ function gasPost(action, data) {
   }).then(function(r){ return r.json(); });
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // UI HELPERS
-// ═══════════════════════════════════════════
-function showLoading(t){ document.getElementById('gloading-txt').innerText=t||'Memuat...'; document.getElementById('gloading').style.display='flex'; }
-function hideLoading(){ document.getElementById('gloading').style.display='none'; }
-function toast(msg,type){
-  var el=document.getElementById('gtoast');
-  el.innerText=msg; el.className=type||'';
-  el.style.display='block';
+// ════════════════════════════════════════════
+function showLoading(t){ document.getElementById('gloading-txt').innerText = t||'Memuat...'; document.getElementById('gloading').style.display = 'flex'; }
+function hideLoading(){ document.getElementById('gloading').style.display = 'none'; }
+function toast(msg, type){
+  var el = document.getElementById('gtoast');
+  el.innerText = msg; el.className = type||'';
+  el.style.display = 'block';
   clearTimeout(el._t);
-  el._t=setTimeout(function(){ el.style.display='none'; },3000);
+  el._t = setTimeout(function(){ el.style.display='none'; }, 3000);
 }
 function escH(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escQ(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function escRx(s){ return (s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
-
 function showPage(id){
   document.querySelectorAll('.page').forEach(function(p){
-    if(p.id===id){ p.classList.remove('hidden'); }
-    else { p.classList.add('hidden'); }
+    if (p.id===id) p.classList.remove('hidden');
+    else p.classList.add('hidden');
   });
 }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // SMART COMBOBOX
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function initScb(cbId, inputId, dropId, options, onSelect, readonly){
-  var inp=document.getElementById(inputId);
-  var drop=document.getElementById(dropId);
-  var cb=document.getElementById(cbId);
-  scbReg[cbId]={ opts:options, val:'', onSelect:onSelect, inp:inp, drop:drop, cb:cb };
-  if(readonly){ inp.readOnly=true; }
-  inp.addEventListener('click',function(){ if(!inp.disabled) toggleScb(cbId); });
-  inp.addEventListener('input',function(){ if(!inp.readOnly&&!inp.disabled) filterScb(cbId); });
-  inp.addEventListener('blur',function(){ setTimeout(function(){ closeScb(cbId); },180); });
+  var inp  = document.getElementById(inputId);
+  var drop = document.getElementById(dropId);
+  var cb   = document.getElementById(cbId);
+  scbReg[cbId] = { opts:options, val:'', onSelect:onSelect, inp:inp, drop:drop, cb:cb };
+  if (readonly) inp.readOnly = true;
+  inp.addEventListener('click',  function(){ if (!inp.disabled) toggleScb(cbId); });
+  inp.addEventListener('input',  function(){ if (!inp.readOnly && !inp.disabled) filterScb(cbId); });
+  inp.addEventListener('blur',   function(){ setTimeout(function(){ closeScb(cbId); }, 180); });
   renderScbOpts(cbId,'');
 }
 function toggleScb(cbId){
-  var reg=scbReg[cbId];
-  if(!reg||reg.inp.disabled) return;
-  var isOpen=reg.cb.classList.contains('open');
+  var reg = scbReg[cbId];
+  if (!reg||reg.inp.disabled) return;
+  var isOpen = reg.cb.classList.contains('open');
   Object.keys(scbReg).forEach(function(id){ closeScb(id); });
-  if(!isOpen){ reg.cb.classList.add('open'); renderScbOpts(cbId,''); }
+  if (!isOpen){ reg.cb.classList.add('open'); renderScbOpts(cbId,''); }
 }
-function closeScb(cbId){ var reg=scbReg[cbId]; if(reg) reg.cb.classList.remove('open'); }
-function filterScb(cbId){ var reg=scbReg[cbId]; if(!reg) return; reg.cb.classList.add('open'); renderScbOpts(cbId,reg.inp.value); }
-function renderScbOpts(cbId,q){
-  var reg=scbReg[cbId]; if(!reg) return;
-  var filtered=q ? reg.opts.filter(function(v){ return v.toLowerCase().indexOf(q.toLowerCase())!==-1; }) : reg.opts.slice();
-  if(!filtered.length){ reg.drop.innerHTML='<div class="scb-empty">Tidak ada pilihan</div>'; reg._filtered=[]; return; }
-  reg._filtered=filtered;
-  reg.drop.innerHTML=filtered.map(function(v){
-    var isSel=(v===reg.val);
+function closeScb(cbId){ var reg=scbReg[cbId]; if (reg) reg.cb.classList.remove('open'); }
+function filterScb(cbId){ var reg=scbReg[cbId]; if (!reg) return; reg.cb.classList.add('open'); renderScbOpts(cbId,reg.inp.value); }
+function renderScbOpts(cbId, q){
+  var reg = scbReg[cbId]; if (!reg) return;
+  var filtered = q ? reg.opts.filter(function(v){ return v.toLowerCase().indexOf(q.toLowerCase())!==-1; }) : reg.opts.slice();
+  if (!filtered.length){ reg.drop.innerHTML='<div class="scb-empty">Tidak ada pilihan</div>'; return; }
+  reg.drop.innerHTML = filtered.map(function(v){
+    var isSel = (v===reg.val);
     return '<div class="scb-opt'+(isSel?' sel':'')+'" onmousedown="pickScb(\''+cbId+'\',\''+escQ(v)+'\')">'+(isSel?'✓ ':'')+escH(v)+'</div>';
   }).join('');
 }
-function pickScb(cbId,val){
-  var reg=scbReg[cbId]; if(!reg) return;
-  reg.val=val; reg.inp.value=val; closeScb(cbId);
-  if(reg.onSelect) reg.onSelect(val);
+function pickScb(cbId, val){
+  var reg = scbReg[cbId]; if (!reg) return;
+  reg.val = val; reg.inp.value = val; closeScb(cbId);
+  if (reg.onSelect) reg.onSelect(val);
 }
-function setScbOpts(cbId,opts){
-  var reg=scbReg[cbId]; if(!reg) return;
-  reg.opts=opts; renderScbOpts(cbId,'');
+function setScbOpts(cbId, opts){ var reg=scbReg[cbId]; if (!reg) return; reg.opts=opts; renderScbOpts(cbId,''); }
+function setScbDisabled(cbId, dis){
+  var reg = scbReg[cbId]; if (!reg) return;
+  reg.inp.disabled = dis;
+  if (dis){ reg.inp.value=''; reg.val=''; closeScb(cbId); }
 }
-function setScbDisabled(cbId,dis){
-  var reg=scbReg[cbId]; if(!reg) return;
-  reg.inp.disabled=dis;
-  if(dis){ reg.inp.value=''; reg.val=''; closeScb(cbId); }
-}
-function resetScb(cbId){ var reg=scbReg[cbId]; if(!reg) return; reg.val=''; reg.inp.value=''; }
+function resetScb(cbId){ var reg=scbReg[cbId]; if (!reg) return; reg.val=''; reg.inp.value=''; }
 
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
+// INIT — Fast: hanya load master data dulu,
+//        list data load di background (tanpa bloking loading spinner)
+// ════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', function(){
   prewarmCamera();
   initAllScbs();
-  showLoading('Memuat data...');
+
+  showLoading('Memuat master data...');
   gasGet('getMasterData').then(function(r){
-    masterData=r||{};
+    masterData = r || {};
     buildIncharges();
     buildCbOptions();
-    return Promise.all([gasGet('getObList'),gasGet('getHvsList'),gasGet('getIbList')]);
-  }).then(function(res){
-    obData=res[0].list||[];
-    hvsData=res[1].list||[];
-    ibData=res[2].list||[];
-    renderHomeList();
-    updateStats();
-    buildAllScanAwbs();
-    hideLoading();
+    hideLoading(); // langsung selesai — user bisa mulai pakai app
+
+    // Load list data di background tanpa spinner
+    loadAllListsBackground();
   }).catch(function(e){
     hideLoading();
-    toast('Gagal memuat data: '+e.message,'error');
+    toast('Gagal koneksi: '+e.message, 'error');
+    loadAllListsBackground();
   });
 });
 
+function loadAllListsBackground(){
+  Promise.all([
+    gasGet('getObList'),
+    gasGet('getHvsList'),
+    gasGet('getIbList')
+  ]).then(function(res){
+    obData  = res[0].list || [];
+    hvsData = res[1].list || [];
+    ibData  = res[2].list || [];
+    renderHomeList();
+    updateStats();
+    buildAllScanAwbs();
+  }).catch(function(e){
+    toast('Gagal memuat list: '+e.message, 'error');
+  });
+}
+
 function initAllScbs(){
-  initScb('scbSvc','inpSvc','dropSvc',[],function(v){ onSvcSelect(v); },true);
-  initScb('scbTuj','inpTuj','dropTuj',[],function(v){ if(v&&!obScanMap[v]) initObTuj(v); checkObForm(); },true);
-  initScb('scbIbSvc','inpIbSvc','dropIbSvc',[],function(v){ onIbSvcSelect(v); },true);
-  initScb('scbIbFrom','inpIbFrom','dropIbFrom',[],function(){ checkIbScanReady(); checkCreateForm(); },true);
-  initScb('scbIbTuj','inpIbTuj','dropIbTuj',[],function(){ checkIbScanReady(); checkCreateForm(); },true);
-  initScb('scbNewTuj','inpNewTuj','dropNewTuj',[],function(){},false);
+  initScb('scbSvc',    'inpSvc',    'dropSvc',    [], function(v){ onSvcSelect(v); }, true);
+  initScb('scbTuj',    'inpTuj',    'dropTuj',    [], function(v){ if(v&&!obScanMap[v]) initObTuj(v); checkObForm(); }, true);
+  initScb('scbIbSvc',  'inpIbSvc',  'dropIbSvc',  [], function(v){ onIbSvcSelect(v); }, true);
+  initScb('scbIbFrom', 'inpIbFrom', 'dropIbFrom', [], function(){ checkIbScanReady(); checkCreateForm(); }, true);
+  initScb('scbIbTuj',  'inpIbTuj',  'dropIbTuj',  [], function(){ checkIbScanReady(); checkCreateForm(); }, true);
+  initScb('scbNewTuj', 'inpNewTuj', 'dropNewTuj', [], function(){}, false);
 }
 
 function buildIncharges(){
-  var all=[].concat(masterData.obIncharges||[]);
+  var all = [].concat(masterData.obIncharges||[]);
   (masterData.ibIncharges||[]).forEach(function(v){ if(all.indexOf(v)===-1) all.push(v); });
-  allIncharges=all.sort();
+  allIncharges = all.sort();
 }
 
 function buildCbOptions(){
-  var d=(masterData.obData||{})[globalIncharge]||{};
-  setScbOpts('scbSvc', d.services||[]);
-  setScbOpts('scbTuj', d.tujuans||[]);
-  var ib=(masterData.ibData||{})[globalIncharge]||{};
-  setScbOpts('scbIbSvc', ib.services||[]);
-  setScbOpts('scbIbFrom', ib.froms||[]);
-  setScbOpts('scbIbTuj', ib.tujuans||[]);
+  var d  = (masterData.obData||{})[globalIncharge]||{};
+  setScbOpts('scbSvc',    d.services||[]);
+  setScbOpts('scbTuj',    d.tujuans ||[]);
+  var ib = (masterData.ibData||{})[globalIncharge]||{};
+  setScbOpts('scbIbSvc',  ib.services||[]);
+  setScbOpts('scbIbFrom', ib.froms   ||[]);
+  setScbOpts('scbIbTuj',  ib.tujuans ||[]);
 }
 
 function buildAllScanAwbs(){
@@ -785,111 +772,88 @@ function buildAllScanAwbs(){
 
 function reloadAll(){
   showLoading('Memuat ulang...');
-  Promise.all([gasGet('getObList'),gasGet('getHvsList'),gasGet('getIbList')]).then(function(res){
-    obData=res[0].list||[];
-    hvsData=res[1].list||[];
-    ibData=res[2].list||[];
-    renderHomeList();
-    updateStats();
-    buildAllScanAwbs();
-    hideLoading();
-    toast('Data diperbarui','success');
+  Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')]).then(function(res){
+    obData  = res[0].list||[];
+    hvsData = res[1].list||[];
+    ibData  = res[2].list||[];
+    renderHomeList(); updateStats(); buildAllScanAwbs();
+    hideLoading(); toast('Data diperbarui','success');
   }).catch(function(e){ hideLoading(); toast('Gagal: '+e.message,'error'); });
 }
 
 function prewarmCamera(){
-  navigator.mediaDevices&&navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+  navigator.mediaDevices && navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
     .then(function(s){ s.getTracks().forEach(function(t){ t.stop(); }); })
     .catch(function(){});
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // INCHARGE
-// ═══════════════════════════════════════════
-function openIcModal(){
-  document.getElementById('icSearch').value='';
-  renderIcList();
-  openModal('icModal');
-}
+// ════════════════════════════════════════════
+function openIcModal(){ document.getElementById('icSearch').value=''; renderIcList(); openModal('icModal'); }
 function closeIcModal(){ closeModal('icModal'); }
 function renderIcList(){
-  var q=document.getElementById('icSearch').value.toLowerCase();
-  var filtered=allIncharges.filter(function(v){ return v.toLowerCase().indexOf(q)!==-1; });
-  document.getElementById('icList').innerHTML=filtered.map(function(v){
-    var sel=(v===globalIncharge);
+  var q = document.getElementById('icSearch').value.toLowerCase();
+  var filtered = allIncharges.filter(function(v){ return v.toLowerCase().indexOf(q)!==-1; });
+  document.getElementById('icList').innerHTML = filtered.map(function(v){
+    var sel = (v===globalIncharge);
     return '<div style="padding:13px 10px;border-bottom:1px solid var(--bg);cursor:pointer;font-size:15px;color:'+(sel?'var(--blue2)':'var(--text)')+';" onclick="selectIncharge(\''+escQ(v)+'\')">'+(sel?'✓ ':'')+escH(v)+'</div>';
-  }).join('')||'<div style="padding:14px;color:var(--text3);font-size:13px">Tidak ada</div>';
+  }).join('') || '<div style="padding:14px;color:var(--text3);font-size:13px">Tidak ada</div>';
 }
 function selectIncharge(v){
-  globalIncharge=v;
-  document.getElementById('icName').innerText=v||'Pilih Incharge';
-  document.getElementById('icDot').className='ic-dot'+(v?' on':'');
+  globalIncharge = v;
+  document.getElementById('icName').innerText = v||'Pilih Incharge';
+  document.getElementById('icDot').className  = 'ic-dot'+(v?' on':'');
   closeIcModal();
   buildCbOptions();
-  renderHomeList();
-  updateStats();
+  renderHomeList(); updateStats();
   updateCreateWarn();
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // BOTTOM NAV + HOME TABS
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function switchBnav(tab){
   ['home','search'].forEach(function(t){
-    document.getElementById('bn-'+t).classList.toggle('active',t===tab);
-    var el2=document.getElementById('bn-'+t+'2');
-    if(el2) el2.classList.toggle('active',t===tab);
+    document.getElementById('bn-'+t).classList.toggle('active', t===tab);
+    var el2=document.getElementById('bn-'+t+'2'); if(el2) el2.classList.toggle('active',t===tab);
   });
-  if(tab==='home') showPage('pgHome');
+  if (tab==='home') showPage('pgHome');
   else { showPage('pgSearch'); setTimeout(function(){ document.getElementById('searchMainInp').focus(); },200); }
 }
-
 function homeTab(t){
-  currentType=t;
+  currentType = t;
   ['ob','hvs','ib'].forEach(function(x){
-    document.getElementById('homeTab'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===t);
+    document.getElementById('homeTab'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active', x===t);
   });
-  renderHomeList();
-  updateStats();
+  renderHomeList(); updateStats();
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // HOME LIST
-// ═══════════════════════════════════════════
-function filteredData(arr){
-  if(!globalIncharge) return arr;
-  return arr.filter(function(d){ return d.incharge===globalIncharge; });
-}
+// ════════════════════════════════════════════
+function filteredData(arr){ return globalIncharge ? arr.filter(function(d){ return d.incharge===globalIncharge; }) : arr; }
 function updateStats(){
-  var arr=currentType==='ob'?obData:currentType==='hvs'?hvsData:ibData;
-  var d=filteredData(arr);
-  var t=d.reduce(function(s,x){ return s+(+x.total_awb||0); },0);
-  var sel=d.filter(function(x){ return x.status==='SELESAI'; }).length;
-  document.getElementById('statAwb').innerText=t;
-  document.getElementById('statSelesai').innerText=sel;
-  document.getElementById('statProses').innerText=d.length-sel;
+  var arr = currentType==='ob'?obData:currentType==='hvs'?hvsData:ibData;
+  var d   = filteredData(arr);
+  var t   = d.reduce(function(s,x){ return s+(+x.total_awb||0); },0);
+  var sel = d.filter(function(x){ return x.status==='SELESAI'; }).length;
+  document.getElementById('statAwb').innerText     = t;
+  document.getElementById('statSelesai').innerText = sel;
+  document.getElementById('statProses').innerText  = d.length-sel;
 }
 function renderHomeList(){
-  var arr=currentType==='ob'?obData:currentType==='hvs'?hvsData:ibData;
-  var data=filteredData(arr);
-  var container=document.getElementById('homeList');
-  if(!data.length){
-    container.innerHTML='<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>';
-    return;
-  }
-  container.innerHTML=data.map(function(d){
-    var typeKey=currentType;
-    var isProses=(d.status!=='SELESAI');
-    var badge=isProses
-      ? '<span class="badge badge-proses">● On Proses</span>'
-      : '<span class="badge badge-selesai">✓ Selesai</span>';
-    var tujLabel=(d.from?'Dari: '+d.from+' → ':'')+d.tujuan;
-    var svcBadge=typeKey==='hvs'
-      ? '<span class="badge badge-purple">'+escH(d.service)+'</span>'
-      : '<span class="badge badge-blue">'+escH(d.service)+'</span>';
-    var bottomHtml=isProses
-      ? '<button class="btn-selesai" onclick="event.stopPropagation();quickSelesai(\''+typeKey+'\',\''+escQ(d.no_track)+'\')">✓ Selesai</button>'
-      : '';
+  var arr  = currentType==='ob'?obData:currentType==='hvs'?hvsData:ibData;
+  var data = filteredData(arr);
+  var el   = document.getElementById('homeList');
+  if (!data.length){ el.innerHTML='<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>'; return; }
+  el.innerHTML = data.map(function(d){
+    var typeKey  = currentType;
+    var isProses = (d.status!=='SELESAI');
+    var badge    = isProses ? '<span class="badge badge-proses">● On Proses</span>' : '<span class="badge badge-selesai">✓ Selesai</span>';
+    var tujLabel = (d.from?'Dari: '+d.from+' → ':'')+d.tujuan;
+    var svcBadge = typeKey==='hvs' ? '<span class="badge badge-purple">'+escH(d.service)+'</span>' : '<span class="badge badge-blue">'+escH(d.service)+'</span>';
+    var bottom   = isProses ? '<button class="btn-selesai" onclick="event.stopPropagation();quickSelesai(\''+typeKey+'\',\''+escQ(d.no_track)+'\')">✓ Selesai</button>' : '';
     return '<div class="card" onclick="openDetail(\''+typeKey+'\',\''+escQ(d.no_track)+'\')">'
       +'<div class="card-inner">'
       +'<div class="card-top"><div class="card-no">'+escH(d.no_track)+'</div>'+badge+'</div>'
@@ -898,100 +862,96 @@ function renderHomeList(){
       +'<span class="badge badge-awb">'+d.total_awb+' AWB</span>'
       +'<span style="font-size:11px;color:var(--text3)">'+escH(d.created_date)+'</span>'
       +'</div>'
-      +(bottomHtml?'<div style="margin-top:10px">'+bottomHtml+'</div>':'')
+      +(bottom?'<div style="margin-top:10px">'+bottom+'</div>':'')
       +'</div></div>';
   }).join('');
 }
-
-function quickSelesai(type,noTrack){
-  if(!confirm('Tandai '+noTrack+' sebagai SELESAI?')) return;
+function quickSelesai(type, noTrack){
+  if (!confirm('Tandai '+noTrack+' sebagai SELESAI?')) return;
   showLoading('Mengubah status...');
-  var action=type==='ob'?'updateObStatus':type==='hvs'?'updateHvsStatus':'updateIbStatus';
+  var action = type==='ob'?'updateObStatus':type==='hvs'?'updateHvsStatus':'updateIbStatus';
   gasPost(action,{noTrack:noTrack,newStatus:'SELESAI'}).then(function(res){
     hideLoading();
-    if(res.success){
-      var arr=type==='ob'?obData:type==='hvs'?hvsData:ibData;
-      var item=arr.find(function(d){ return d.no_track===noTrack; });
-      if(item) item.status='SELESAI';
-      renderHomeList(); updateStats();
-      toast('Status diubah ke SELESAI','success');
+    if (res.success){
+      var arr  = type==='ob'?obData:type==='hvs'?hvsData:ibData;
+      var item = arr.find(function(d){ return d.no_track===noTrack; });
+      if (item) item.status='SELESAI';
+      renderHomeList(); updateStats(); toast('Status → SELESAI','success');
     } else toast('Gagal: '+(res.error||''),'error');
   }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // CREATE PAGE
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function openCreatePage(){
-  createType='';
-  resetObForm();
-  resetIbForm();
-  document.getElementById('formObHvs').style.display='none';
-  document.getElementById('formIb').style.display='none';
-  document.getElementById('createActions').style.display='none';
-  ['tcOb','tcHvs','tcIb'].forEach(function(id){
-    document.getElementById(id).className='type-card';
-  });
+  createType = '';
+  resetObForm(); resetIbForm();
+  document.getElementById('formObHvs').style.display = 'none';
+  document.getElementById('formIb').style.display    = 'none';
+  document.getElementById('createActions').style.display = 'none';
+  ['tcOb','tcHvs','tcIb'].forEach(function(id){ document.getElementById(id).className='type-card'; });
   updateCreateWarn();
   showPage('pgCreate');
 }
-function closeCreate(){
-  stopScannerSafe();
-  showPage('pgHome');
-}
+function closeCreate(){ stopScannerSafe(); showPage('pgHome'); }
 function updateCreateWarn(){
-  var has=!!globalIncharge;
-  document.getElementById('createWarnBar').style.display=has?'none':'';
-  document.getElementById('createInfoBar').style.display=has?'':'none';
-  if(has) document.getElementById('createIcDisplay').innerText=globalIncharge;
+  var has = !!globalIncharge;
+  document.getElementById('createWarnBar').style.display  = has?'none':'';
+  document.getElementById('createInfoBar').style.display  = has?'':'none';
+  if (has) document.getElementById('createIcDisplay').innerText = globalIncharge;
 }
 function selectType(t){
-  if(!globalIncharge){ toast('Pilih Incharge dulu','error'); return; }
-  createType=t;
+  if (!globalIncharge){ toast('Pilih Incharge dulu','error'); return; }
+  createType = t;
   ['ob','hvs','ib'].forEach(function(x){
-    var el=document.getElementById('tc'+x.charAt(0).toUpperCase()+x.slice(1));
-    el.className='type-card'+(x===t?' sel-'+x:'');
+    document.getElementById('tc'+x.charAt(0).toUpperCase()+x.slice(1)).className = 'type-card'+(x===t?' sel-'+x:'');
   });
-  document.getElementById('formObHvs').style.display=(t==='ob'||t==='hvs')?'':'none';
-  document.getElementById('formIb').style.display=(t==='ib')?'':'none';
-  document.getElementById('createActions').style.display='flex';
+  document.getElementById('formObHvs').style.display     = (t==='ob'||t==='hvs') ? '' : 'none';
+  document.getElementById('formIb').style.display        = (t==='ib') ? '' : 'none';
+  document.getElementById('createActions').style.display = 'flex';
 
-  // Reset forms
-  if(t==='ob'||t==='hvs'){
+  if (t==='ob'||t==='hvs'){
     resetScb('scbSvc'); resetScb('scbTuj');
-    setScbDisabled('scbTuj',true);
-    document.getElementById('obScanInp').disabled=true;
-    document.getElementById('btnAddTuj').disabled=true;
-    obScanMap={}; obActiveTuj='';
+    setScbDisabled('scbTuj', true);
+    document.getElementById('obScanInp').disabled = true;
+    document.getElementById('btnObCam').disabled  = true;
+    document.getElementById('btnAddTuj').disabled = true;
+    obScanMap = {}; obActiveTuj = '';
     renderObTabs(); renderObScanList();
   } else {
     resetScb('scbIbSvc'); resetScb('scbIbFrom'); resetScb('scbIbTuj');
-    setScbDisabled('scbIbFrom',true); setScbDisabled('scbIbTuj',true);
-    ibScanned=[]; renderIbScanList();
+    setScbDisabled('scbIbFrom', true); setScbDisabled('scbIbTuj', true);
+    document.getElementById('ibScanInp').disabled = true;
+    document.getElementById('btnIbCam').disabled  = true;
+    ibScanned = []; renderIbScanList();
   }
   checkCreateForm();
 }
 
-// OB/HVS FORM
+// ─── OB/HVS form logic ───
 function onSvcSelect(v){
-  var has=!!v;
-  setScbDisabled('scbTuj',!has);
-  document.getElementById('obScanInp').disabled=!has||!obActiveTuj;
-  document.getElementById('btnAddTuj').disabled=!has;
+  var has = !!v;
+  setScbDisabled('scbTuj', !has);
+  document.getElementById('obScanInp').disabled = !has || !obActiveTuj;
+  document.getElementById('btnObCam').disabled  = !has || !obActiveTuj;
+  document.getElementById('btnAddTuj').disabled = !has;
   resetScb('scbTuj');
-  obScanMap={}; obActiveTuj='';
+  obScanMap = {}; obActiveTuj = '';
   renderObTabs(); renderObScanList(); updateObTotal();
   checkCreateForm();
 }
 function initObTuj(tuj){
-  if(!obScanMap[tuj]) obScanMap[tuj]=[];
-  obActiveTuj=tuj;
-  document.getElementById('obScanInp').disabled=false;
+  if (!obScanMap[tuj]) obScanMap[tuj] = [];
+  obActiveTuj = tuj;
+  var hasSvc = !!document.getElementById('inpSvc').value;
+  document.getElementById('obScanInp').disabled = !hasSvc;
+  document.getElementById('btnObCam').disabled  = !hasSvc;
   renderObTabs(); renderObScanList();
 }
 function renderObTabs(){
-  var keys=Object.keys(obScanMap);
-  document.getElementById('obTabs').innerHTML=keys.map(function(t){
+  var keys = Object.keys(obScanMap);
+  document.getElementById('obTabs').innerHTML = keys.map(function(t){
     return '<div class="scan-tab'+(t===obActiveTuj?' active':'')+'" onclick="switchObTuj(\''+escQ(t)+'\')">'
       +escH(t)+' <span class="cnt">'+obScanMap[t].length+'</span>'
       +'<span class="rm" onclick="event.stopPropagation();removeObTuj(\''+escQ(t)+'\')">✕</span></div>';
@@ -1001,349 +961,376 @@ function renderObTabs(){
 function switchObTuj(t){ obActiveTuj=t; renderObTabs(); renderObScanList(); }
 function removeObTuj(t){
   delete obScanMap[t];
-  var k=Object.keys(obScanMap);
-  obActiveTuj=k.length?k[0]:'';
-  if(!obActiveTuj) document.getElementById('obScanInp').disabled=true;
+  var k = Object.keys(obScanMap);
+  obActiveTuj = k.length ? k[0] : '';
+  if (!obActiveTuj){
+    document.getElementById('obScanInp').disabled = true;
+    document.getElementById('btnObCam').disabled  = true;
+  }
   renderObTabs(); renderObScanList(); checkCreateForm();
 }
 function renderObScanList(){
-  var el=document.getElementById('obScanList');
-  if(!obActiveTuj||!obScanMap[obActiveTuj]){
-    el.innerHTML='<div class="scan-empty">Pilih tujuan</div>'; return;
-  }
-  var arr=obScanMap[obActiveTuj];
-  el.innerHTML=arr.length?arr.map(function(awb,i){
+  var el = document.getElementById('obScanList');
+  if (!obActiveTuj||!obScanMap[obActiveTuj]){ el.innerHTML='<div class="scan-empty">Pilih tujuan dulu</div>'; return; }
+  var arr = obScanMap[obActiveTuj];
+  el.innerHTML = arr.length ? arr.map(function(awb,i){
     return '<div class="scan-item"><span>'+escH(awb)+'</span><span class="scan-item-del" onclick="removeObAwb('+i+')">🗑</span></div>';
-  }).join(''):'<div class="scan-empty">Belum ada AWB untuk <b>'+escH(obActiveTuj)+'</b></div>';
+  }).join('') : '<div class="scan-empty">Belum ada AWB untuk <b>'+escH(obActiveTuj)+'</b></div>';
 }
 function removeObAwb(i){ obScanMap[obActiveTuj].splice(i,1); renderObTabs(); renderObScanList(); }
 function updateObTotal(){
-  var t=Object.values(obScanMap).reduce(function(s,a){ return s+a.length; },0);
-  document.getElementById('obTotalLabel').innerText=t+' AWB total';
+  var t = Object.values(obScanMap).reduce(function(s,a){ return s+a.length; },0);
+  document.getElementById('obTotalLabel').innerText = t+' AWB total';
 }
 function checkObForm(){
-  var hasSvc=!!(document.getElementById('inpSvc')&&document.getElementById('inpSvc').value);
-  var hasTuj=Object.keys(obScanMap).length>0;
-  document.getElementById('btnSave').disabled=!(globalIncharge&&hasSvc&&hasTuj);
+  var hasSvc = !!(document.getElementById('inpSvc')&&document.getElementById('inpSvc').value);
+  var hasTuj = Object.keys(obScanMap).length > 0;
+  document.getElementById('btnSave').disabled = !(globalIncharge&&hasSvc&&hasTuj);
 }
 
-// IB FORM
+// ─── IB form logic ───
 function onIbSvcSelect(v){
-  var has=!!v;
+  var has = !!v;
   setScbDisabled('scbIbFrom',!has); setScbDisabled('scbIbTuj',!has);
   resetScb('scbIbFrom'); resetScb('scbIbTuj');
-  ibScanned=[]; renderIbScanList(); checkIbScanReady(); checkCreateForm();
+  ibScanned = []; renderIbScanList(); checkIbScanReady(); checkCreateForm();
 }
 function checkIbScanReady(){
-  var svc=document.getElementById('inpIbSvc').value;
-  var from=document.getElementById('inpIbFrom').value;
-  var tuj=document.getElementById('inpIbTuj').value;
-  var ready=!!(svc&&from&&tuj);
-  document.getElementById('ibScanInp').disabled=!ready;
+  var svc   = document.getElementById('inpIbSvc').value;
+  var from  = document.getElementById('inpIbFrom').value;
+  var tuj   = document.getElementById('inpIbTuj').value;
+  var ready = !!(svc&&from&&tuj);
+  document.getElementById('ibScanInp').disabled = !ready;
+  document.getElementById('btnIbCam').disabled  = !ready;
 }
 function renderIbScanList(){
-  var el=document.getElementById('ibScanList');
-  var t=ibScanned.length;
-  document.getElementById('ibTotalLabel').innerText=t+' AWB total';
-  el.innerHTML=t?ibScanned.map(function(awb,i){
+  var t  = ibScanned.length;
+  document.getElementById('ibTotalLabel').innerText = t+' AWB total';
+  document.getElementById('ibScanList').innerHTML = t ? ibScanned.map(function(awb,i){
     return '<div class="scan-item"><span>'+escH(awb)+'</span><span class="scan-item-del" onclick="ibScanned.splice('+i+',1);renderIbScanList()">🗑</span></div>';
-  }).join(''):'<div class="scan-empty">Belum ada AWB</div>';
+  }).join('') : '<div class="scan-empty">Belum ada AWB</div>';
 }
 function checkCreateForm(){
-  if(createType==='ob'||createType==='hvs') checkObForm();
-  else if(createType==='ib'){
-    var svc=document.getElementById('inpIbSvc').value;
-    var from=document.getElementById('inpIbFrom').value;
-    var tuj=document.getElementById('inpIbTuj').value;
-    document.getElementById('btnSave').disabled=!(globalIncharge&&svc&&from&&tuj);
+  if (createType==='ob'||createType==='hvs') checkObForm();
+  else if (createType==='ib'){
+    var ok = !!(globalIncharge && document.getElementById('inpIbSvc').value && document.getElementById('inpIbFrom').value && document.getElementById('inpIbTuj').value);
+    document.getElementById('btnSave').disabled = !ok;
   }
 }
 
-// Scan handler in create page
-function handleScan(e,type){
-  if(e.key!=='Enter') return;
-  if(type==='ob'){
-    var inp=document.getElementById('obScanInp');
-    var val=inp.value.trim(); if(!val) return;
-    if(!obActiveTuj){ toast('Pilih tujuan dulu','error'); return; }
-    if(!obScanMap[obActiveTuj]) obScanMap[obActiveTuj]=[];
-    if(obScanMap[obActiveTuj].indexOf(val)!==-1){ toast('AWB sudah ada','error'); inp.value=''; return; }
+// ─── Scan keyboard handler di create page ───
+function handleScan(e, type){
+  if (e.key!=='Enter') return;
+  if (type==='ob'){
+    var inp=document.getElementById('obScanInp'), val=inp.value.trim(); if(!val) return;
+    if (!obActiveTuj){ toast('Pilih tujuan dulu','error'); return; }
+    if (!obScanMap[obActiveTuj]) obScanMap[obActiveTuj]=[];
+    if (obScanMap[obActiveTuj].indexOf(val)!==-1){ toast('AWB sudah ada','error'); inp.value=''; return; }
     obScanMap[obActiveTuj].unshift(val);
-    renderObTabs(); renderObScanList();
-    inp.value='';
+    renderObTabs(); renderObScanList(); inp.value='';
   } else {
-    var inp=document.getElementById('ibScanInp');
-    var val=inp.value.trim(); if(!val) return;
-    if(ibScanned.indexOf(val)!==-1){ toast('AWB sudah ada','error'); inp.value=''; return; }
-    ibScanned.unshift(val);
-    renderIbScanList();
-    inp.value='';
+    var inp=document.getElementById('ibScanInp'), val=inp.value.trim(); if(!val) return;
+    if (ibScanned.indexOf(val)!==-1){ toast('AWB sudah ada','error'); inp.value=''; return; }
+    ibScanned.unshift(val); renderIbScanList(); inp.value='';
   }
 }
 
-// ADD TUJUAN MODAL
+// ─── Buka scanner dari CREATE PAGE (tombol 📷 inline) ───
+// Hasil scan dikembalikan ke form create (tidak langsung ke server)
+function openScannerCreate(type){
+  if (type==='ob'||type==='hvs'){
+    if (!obActiveTuj){ toast('Pilih tujuan dulu','error'); return; }
+    scanContext = 'create-ob';
+    document.getElementById('scanTitle').innerText = 'Scan AWB';
+    document.getElementById('scanCtxBar').style.display = 'flex';
+    document.getElementById('scanCtxLabel').innerText   = obActiveTuj;
+  } else {
+    var tuj = document.getElementById('inpIbTuj').value;
+    scanContext = 'create-ib';
+    document.getElementById('scanTitle').innerText = 'Scan AWB IB';
+    document.getElementById('scanCtxBar').style.display = 'flex';
+    document.getElementById('scanCtxLabel').innerText   = tuj||'IB';
+  }
+  scanItems = [];
+  updateScanUI();
+  showPage('pgScan');
+  startScanner();
+}
+
+// ─── ADD TUJUAN MODAL ───
 function openAddTujModal(){
-  if(!document.getElementById('inpSvc').value){ toast('Pilih SERVICE dulu','error'); return; }
-  document.getElementById('inpNewTuj').value='';
-  var opts=(masterData.obData||{})[globalIncharge]||{};
-  setScbOpts('scbNewTuj',opts.tujuans||[]);
+  if (!document.getElementById('inpSvc').value){ toast('Pilih SERVICE dulu','error'); return; }
+  document.getElementById('inpNewTuj').value = '';
+  var opts = (masterData.obData||{})[globalIncharge]||{};
+  setScbOpts('scbNewTuj', opts.tujuans||[]);
   openModal('tujModal');
   setTimeout(function(){ document.getElementById('inpNewTuj').focus(); },200);
 }
 function closeTujModal(){ closeModal('tujModal'); }
 function confirmAddTuj(){
-  var tuj=document.getElementById('inpNewTuj').value.trim();
-  if(!tuj){ toast('Masukkan tujuan','error'); return; }
+  var tuj = document.getElementById('inpNewTuj').value.trim();
+  if (!tuj){ toast('Masukkan tujuan','error'); return; }
   closeTujModal();
   initObTuj(tuj);
-  scbReg['scbTuj'].val=tuj;
-  document.getElementById('inpTuj').value=tuj;
+  scbReg['scbTuj'].val = tuj;
+  document.getElementById('inpTuj').value = tuj;
   checkObForm();
 }
 
-// SAVE
+// ─── SAVE ───
 function doSave(){
-  if(createType==='ob'||createType==='hvs') saveObHvs();
+  if (createType==='ob'||createType==='hvs') saveObHvs();
   else saveIb();
 }
 function saveObHvs(){
-  var service=document.getElementById('inpSvc').value;
-  if(!globalIncharge||!service) return;
-  var keys=Object.keys(obScanMap);
-  if(!keys.length){ toast('Tambahkan minimal 1 tujuan','error'); return; }
+  var service = document.getElementById('inpSvc').value;
+  if (!globalIncharge||!service) return;
+  var keys = Object.keys(obScanMap);
+  if (!keys.length){ toast('Tambahkan minimal 1 tujuan','error'); return; }
   showLoading('Menyimpan...');
-  var action=createType==='ob'?'saveOb':'saveHvs';
+  var action = createType==='ob'?'saveOb':'saveHvs';
   Promise.all(keys.map(function(tuj){
     return gasPost(action,{incharge:globalIncharge,service:service,tujuan:tuj,awbList:obScanMap[tuj]||[]});
   })).then(function(results){
     hideLoading();
-    var errs=results.filter(function(r){ return r.error; });
-    if(errs.length){ toast('Error: '+errs[0].error,'error'); return; }
+    var errs = results.filter(function(r){ return r.error; });
+    if (errs.length){ toast('Error: '+errs[0].error,'error'); return; }
     toast('✅ '+results.length+' NO TRACK dibuat','success');
-    currentNoTrack=results[0].noTrack||'';
-    currentSvc=service;
-    currentTuj=keys[0];
-    // Reload list
-    var listAct=createType==='ob'?'getObList':'getHvsList';
-    gasGet(listAct).then(function(r){
-      if(createType==='ob') obData=r.list||[];
-      else hvsData=r.list||[];
-      buildAllScanAwbs();
-    }).catch(function(){});
-    // Go to scanner? No — go to photo
+    currentNoTrack    = results[0].noTrack||'';
+    currentSvc        = service; currentTuj = keys[0];
+    currentDetailType = createType; currentDetailItem = null;
+    var listAct = createType==='ob'?'getObList':'getHvsList';
+    gasGet(listAct).then(function(r){ if(createType==='ob') obData=r.list||[]; else hvsData=r.list||[]; buildAllScanAwbs(); }).catch(function(){});
     goToPhoto();
   }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 function saveIb(){
-  var service=document.getElementById('inpIbSvc').value;
-  var from=document.getElementById('inpIbFrom').value;
-  var tujuan=document.getElementById('inpIbTuj').value;
-  if(!globalIncharge||!service||!from||!tujuan){ toast('Lengkapi semua field','error'); return; }
+  var service = document.getElementById('inpIbSvc').value;
+  var from    = document.getElementById('inpIbFrom').value;
+  var tujuan  = document.getElementById('inpIbTuj').value;
+  if (!globalIncharge||!service||!from||!tujuan){ toast('Lengkapi semua field','error'); return; }
   showLoading('Menyimpan...');
   gasPost('saveIb',{incharge:globalIncharge,service:service,from:from,tujuan:tujuan,awbList:ibScanned.slice()})
     .then(function(res){
       hideLoading();
-      if(res.error){ toast('Gagal: '+res.error,'error'); return; }
-      toast('✅ IB disimpan! NO TRACK: '+res.noTrack,'success');
-      currentNoTrack=res.noTrack||'';
-      currentSvc=service; currentTuj=tujuan;
+      if (res.error){ toast('Gagal: '+res.error,'error'); return; }
+      toast('✅ IB disimpan! '+res.noTrack,'success');
+      currentNoTrack    = res.noTrack||'';
+      currentSvc        = service; currentTuj = tujuan;
+      currentDetailType = 'ib'; currentDetailItem = null;
       gasGet('getIbList').then(function(r){ ibData=r.list||[]; buildAllScanAwbs(); }).catch(function(){});
       goToPhoto();
     }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 function resetObForm(){
-  obScanMap={}; obActiveTuj='';
+  obScanMap = {}; obActiveTuj = '';
   resetScb('scbSvc'); resetScb('scbTuj');
-  setScbDisabled('scbTuj',true);
-  document.getElementById('obScanInp').disabled=true;
-  document.getElementById('btnAddTuj').disabled=true;
-  document.getElementById('obTabs').innerHTML='';
+  setScbDisabled('scbTuj', true);
+  document.getElementById('obScanInp').disabled = true;
+  document.getElementById('btnObCam').disabled  = true;
+  document.getElementById('btnAddTuj').disabled = true;
+  document.getElementById('obTabs').innerHTML   = '';
   renderObScanList(); updateObTotal();
 }
 function resetIbForm(){
-  ibScanned=[];
+  ibScanned = [];
   resetScb('scbIbSvc'); resetScb('scbIbFrom'); resetScb('scbIbTuj');
-  setScbDisabled('scbIbFrom',true); setScbDisabled('scbIbTuj',true);
-  document.getElementById('ibScanInp').disabled=true;
+  setScbDisabled('scbIbFrom', true); setScbDisabled('scbIbTuj', true);
+  document.getElementById('ibScanInp').disabled = true;
+  document.getElementById('btnIbCam').disabled  = true;
   renderIbScanList();
 }
 
-// ═══════════════════════════════════════════
-// SCANNER PAGE (standalone scan for detail add)
-// ═══════════════════════════════════════════
-function openScannerForDetail(item,type){
-  currentDetailItem=item; currentDetailType=type;
-  currentNoTrack=item.no_track; currentSvc=item.service; currentTuj=item.tujuan;
-  document.getElementById('scanTitle').innerText=item.no_track;
-  scanItems=[];
+// ════════════════════════════════════════════
+// SCANNER PAGE
+// ════════════════════════════════════════════
+function openScannerForDetail(item, type){
+  currentDetailItem = item; currentDetailType = type;
+  currentNoTrack = item.no_track; currentSvc = item.service; currentTuj = item.tujuan;
+  scanContext = 'detail';
+  document.getElementById('scanTitle').innerText         = item.no_track;
+  document.getElementById('scanCtxBar').style.display    = 'none';
+  scanItems = [];
   updateScanUI();
   showPage('pgScan');
   startScanner();
 }
+
 function stopScanner(){
   stopScannerSafe();
-  if(currentDetailItem) showPage('pgDetail');
-  else showPage('pgHome');
+  // Kembali ke halaman yang sesuai berdasarkan context
+  if (scanContext==='detail') showPage('pgDetail');
+  else showPage('pgCreate');
 }
+
 function stopScannerSafe(){
-  if(html5QrCode&&isScannerRunning){
+  if (html5QrCode && isScannerRunning){
     html5QrCode.stop().catch(function(){});
   }
-  isScannerRunning=false; html5QrCode=null;
-  document.getElementById('reader').innerHTML='';
-  document.getElementById('camErr').style.display='none';
+  isScannerRunning = false; html5QrCode = null;
+  document.getElementById('reader').innerHTML = '';
+  document.getElementById('camErr').style.display = 'none';
 }
+
 function startScanner(){
-  document.getElementById('reader').innerHTML='';
-  document.getElementById('camErr').style.display='none';
-  html5QrCode=new Html5Qrcode("reader");
-  var cfg={fps:15,qrbox:{width:240,height:200},aspectRatio:1.2};
+  document.getElementById('reader').innerHTML = '';
+  document.getElementById('camErr').style.display = 'none';
+  html5QrCode = new Html5Qrcode("reader");
+  var cfg = {fps:15, qrbox:{width:240,height:200}, aspectRatio:1.2};
   Html5Qrcode.getCameras().then(function(cams){
-    if(!cams||!cams.length){ startFacing('environment'); return; }
-    var back=cams.find(function(c){ return /back|rear|environment/i.test(c.label); });
-    var id=back?back.id:cams[cams.length-1].id;
-    html5QrCode.start(id,cfg,onQrSuccess,function(){})
+    if (!cams||!cams.length){ startFacing('environment'); return; }
+    var back = cams.find(function(c){ return /back|rear|environment/i.test(c.label); });
+    var id   = back ? back.id : cams[cams.length-1].id;
+    html5QrCode.start(id, cfg, onQrSuccess, function(){})
       .then(function(){ isScannerRunning=true; })
       .catch(function(){ startFacing('environment'); });
   }).catch(function(){ startFacing('environment'); });
 }
 function startFacing(mode){
-  var cfg={fps:15,qrbox:{width:240,height:200}};
-  html5QrCode.start({facingMode:mode},cfg,onQrSuccess,function(){})
+  var cfg = {fps:15, qrbox:{width:240,height:200}};
+  html5QrCode.start({facingMode:mode}, cfg, onQrSuccess, function(){})
     .then(function(){ isScannerRunning=true; })
     .catch(function(){
-      if(mode==='environment') startFacing('user');
-      else { document.getElementById('camErr').style.display='block'; }
+      if (mode==='environment') startFacing('user');
+      else document.getElementById('camErr').style.display='block';
     });
 }
-function onQrSuccess(text){
-  addScanItem(text);
-  if(navigator.vibrate) navigator.vibrate(80);
-}
+function onQrSuccess(text){ addScanItem(text); if(navigator.vibrate) navigator.vibrate(80); }
 function toggleFlash(){
-  if(!html5QrCode) return;
-  flashOn=!flashOn;
+  if (!html5QrCode) return;
+  flashOn = !flashOn;
   html5QrCode.applyVideoConstraints({advanced:[{torch:flashOn}]}).catch(function(){});
-  document.getElementById('torchBtn').innerText=flashOn?'💡':'🔦';
+  document.getElementById('torchBtn').innerText = flashOn ? '💡' : '🔦';
 }
 function handleManualScan(e){
-  if(e.key!=='Enter') return;
-  var inp=document.getElementById('scanManualInp');
-  if(inp.value.trim()){ addScanItem(inp.value.trim()); inp.value=''; }
+  if (e.key!=='Enter') return;
+  var inp = document.getElementById('scanManualInp');
+  if (inp.value.trim()){ addScanItem(inp.value.trim()); inp.value=''; }
 }
 function addScanItem(awb){
-  if(scanItems.indexOf(awb)!==-1){ toast('AWB sudah ada','error'); return; }
+  if (scanItems.indexOf(awb)!==-1){ toast('AWB sudah ada','error'); return; }
   scanItems.unshift(awb);
   updateScanUI();
+  toast('✓ '+awb,'success');
 }
 function removeScItem(i){ scanItems.splice(i,1); updateScanUI(); }
 function clearScans(){ if(confirm('Hapus semua list scan?')){ scanItems=[]; updateScanUI(); } }
 function updateScanUI(){
-  document.getElementById('scanCount').innerText=scanItems.length;
-  var btn=document.getElementById('btnSaveScan');
-  btn.disabled=!scanItems.length;
-  var el=document.getElementById('scanList');
-  el.innerHTML=scanItems.length?scanItems.map(function(awb,i){
-    return '<div class="scan-item"><span>'+escH(awb)+'</span><span class="scan-item-del" onclick="removeScItem('+i+')">🗑</span></div>';
-  }).join(''):'<div class="scan-empty">Belum ada AWB di-scan</div>';
+  document.getElementById('scanCount').innerText     = scanItems.length;
+  document.getElementById('btnSaveScan').disabled    = !scanItems.length;
+  document.getElementById('scanList').innerHTML = scanItems.length
+    ? scanItems.map(function(awb,i){ return '<div class="scan-item"><span>'+escH(awb)+'</span><span class="scan-item-del" onclick="removeScItem('+i+')">🗑</span></div>'; }).join('')
+    : '<div class="scan-empty">Belum ada AWB di-scan</div>';
 }
-function saveScanAndGoPhoto(){
-  if(!scanItems.length) return;
+
+// Simpan hasil scan — bedakan context
+function saveScanAndNext(){
+  if (!scanItems.length) return;
+
+  if (scanContext==='create-ob'){
+    // Masukkan ke obScanMap (form create), TIDAK ke server dulu
+    if (!obScanMap[obActiveTuj]) obScanMap[obActiveTuj]=[];
+    scanItems.forEach(function(awb){
+      if (obScanMap[obActiveTuj].indexOf(awb)===-1) obScanMap[obActiveTuj].push(awb);
+    });
+    renderObTabs(); renderObScanList();
+    scanItems = [];
+    stopScannerSafe();
+    toast(scanItems.length+' AWB ditambahkan ke '+obActiveTuj,'success');
+    showPage('pgCreate');
+    return;
+  }
+
+  if (scanContext==='create-ib'){
+    // Masukkan ke ibScanned (form create), TIDAK ke server dulu
+    scanItems.forEach(function(awb){
+      if (ibScanned.indexOf(awb)===-1) ibScanned.push(awb);
+    });
+    renderIbScanList();
+    scanItems = [];
+    stopScannerSafe();
+    toast('AWB ditambahkan ke IB','success');
+    showPage('pgCreate');
+    return;
+  }
+
+  // Context: detail — simpan ke server lalu foto
   showLoading('Menyimpan AWB...');
-  var type=currentDetailType;
-  var action=type==='ob'?'saveOb':type==='hvs'?'saveHvs':'saveIb';
-  // For detail-add: post as additional scan items to existing no_track
-  // We'll use a helper action addAwbToTrack, or just re-use save with existing noTrack
-  // Simplify: post new batch to existing noTrack
   gasPost('addAwbToTrack',{
-    noTrack:currentNoTrack, type:type.toUpperCase(), awbList:scanItems.slice()
+    noTrack: currentNoTrack,
+    type: currentDetailType.toUpperCase(),
+    awbList: scanItems.slice()
   }).then(function(res){
     hideLoading();
-    if(res.error){ toast('Gagal: '+res.error,'error'); return; }
-    toast('✅ AWB disimpan','success');
-    scanItems=[];
-    // Reload
+    if (res.error){ toast('Gagal: '+res.error,'error'); return; }
+    toast('✅ '+res.added+' AWB disimpan','success');
+    scanItems = [];
     reloadDetailData();
     stopScannerSafe();
     goToPhoto();
   }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // PHOTO PAGE
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function goToPhoto(){
-  capturedDataUrl=null; gpsCoords=null;
-  document.getElementById('gpsBar').innerText='📍 Mendapatkan lokasi...';
-  document.getElementById('photoPreview').style.display='none';
-  document.getElementById('photoVideo').style.display='block';
+  capturedDataUrl = null; gpsCoords = null;
+  document.getElementById('gpsBar').innerText             = '📍 Mendapatkan lokasi...';
+  document.getElementById('photoPreview').style.display   = 'none';
+  document.getElementById('photoVideo').style.display     = 'block';
   document.getElementById('barAmbil').classList.remove('hidden');
   document.getElementById('barResult').classList.add('hidden');
   showPage('pgPhoto');
-  if(navigator.geolocation){
+  if (navigator.geolocation){
     navigator.geolocation.getCurrentPosition(function(pos){
-      var lat=pos.coords.latitude,lon=pos.coords.longitude;
-      gpsCoords=lat.toFixed(6)+', '+lon.toFixed(6);
-      document.getElementById('gpsBar').innerText='📍 '+gpsCoords;
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      gpsCoords = lat.toFixed(6)+', '+lon.toFixed(6);
+      document.getElementById('gpsBar').innerText = '📍 '+gpsCoords;
       fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json&accept-language=id')
         .then(function(r){ return r.json(); })
         .then(function(geo){
           var a=geo.address||{};
           var parts=[a.road||'',a.suburb||a.village||'',a.city||a.town||''].filter(Boolean);
-          if(parts.length){ gpsCoords=parts.join(', '); document.getElementById('gpsBar').innerText='📍 '+gpsCoords; }
+          if (parts.length){ gpsCoords=parts.join(', '); document.getElementById('gpsBar').innerText='📍 '+gpsCoords; }
         }).catch(function(){});
-    },function(){
+    }, function(){
       gpsCoords='Lokasi tidak tersedia';
       document.getElementById('gpsBar').innerText='📍 Lokasi tidak tersedia';
-    },{enableHighAccuracy:true,timeout:8000});
+    }, {enableHighAccuracy:true,timeout:8000});
   }
   startPhotoCamera();
 }
 function startPhotoCamera(){
-  var tries=[
+  var tries = [
     {video:{facingMode:{exact:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false},
     {video:{facingMode:'environment'},audio:false},
     {video:{facingMode:'user'},audio:false},
     {video:true,audio:false}
   ];
-  function next(i){
-    if(i>=tries.length) return;
-    navigator.mediaDevices.getUserMedia(tries[i])
-      .then(function(s){ photoStream=s; document.getElementById('photoVideo').srcObject=s; })
-      .catch(function(){ next(i+1); });
-  }
+  function next(i){ if(i>=tries.length) return; navigator.mediaDevices.getUserMedia(tries[i]).then(function(s){ photoStream=s; document.getElementById('photoVideo').srcObject=s; }).catch(function(){ next(i+1); }); }
   next(0);
 }
-function stopPhotoStream(){
-  if(photoStream){ photoStream.getTracks().forEach(function(t){ t.stop(); }); photoStream=null; }
-}
+function stopPhotoStream(){ if(photoStream){ photoStream.getTracks().forEach(function(t){ t.stop(); }); photoStream=null; } }
 function ambilFoto(){
-  var video=document.getElementById('photoVideo');
-  var canvas=document.getElementById('photoCanvas');
-  canvas.width=video.videoWidth||1280;
-  canvas.height=video.videoHeight||720;
+  var video=document.getElementById('photoVideo'), canvas=document.getElementById('photoCanvas');
+  canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||720;
   var ctx=canvas.getContext('2d');
   ctx.drawImage(video,0,0,canvas.width,canvas.height);
-  var now=new Date();
-  function pad(n){ return n<10?'0'+n:n; }
+  var now=new Date(), pad=function(n){ return n<10?'0'+n:n; };
   var waktu=pad(now.getDate())+'/'+pad(now.getMonth()+1)+'/'+now.getFullYear()+' '+pad(now.getHours())+':'+pad(now.getMinutes());
   var lines=[waktu,'Svc: '+currentSvc,'Tuj: '+currentTuj,'Lokasi: '+(gpsCoords||'—')];
-  var fs=Math.max(14,Math.floor(canvas.width/40));
-  var lh=fs+8,pad2=12,maxW=0;
+  var fs=Math.max(14,Math.floor(canvas.width/40)), lh=fs+8, p=12, maxW=0;
   ctx.font='bold '+fs+'px Arial';
   lines.forEach(function(l){ var w=ctx.measureText(l).width; if(w>maxW) maxW=w; });
-  maxW+=pad2*2;
-  var bh=lines.length*lh+pad2;
-  var bx=canvas.width-maxW-10,by=canvas.height-bh-10;
-  ctx.fillStyle='rgba(0,0,0,.55)';
-  ctx.fillRect(bx,by,maxW,bh);
+  maxW+=p*2;
+  var bh=lines.length*lh+p, bx=canvas.width-maxW-10, by=canvas.height-bh-10;
+  ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(bx,by,maxW,bh);
   ctx.fillStyle='#fff'; ctx.font='bold '+fs+'px Arial';
-  lines.forEach(function(line,i){ ctx.fillText(line,bx+pad2,by+pad2+(i+1)*lh-4); });
-  // Compress
+  lines.forEach(function(line,i){ ctx.fillText(line,bx+p,by+p+(i+1)*lh-4); });
   var tmp=document.createElement('canvas');
-  var w2=Math.min(canvas.width,1280),h2=Math.round(canvas.height*w2/canvas.width);
-  tmp.width=w2; tmp.height=h2;
-  tmp.getContext('2d').drawImage(canvas,0,0,w2,h2);
+  var w2=Math.min(canvas.width,1280), h2=Math.round(canvas.height*w2/canvas.width);
+  tmp.width=w2; tmp.height=h2; tmp.getContext('2d').drawImage(canvas,0,0,w2,h2);
   capturedDataUrl=tmp.toDataURL('image/jpeg',0.75);
   document.getElementById('photoPreview').src=capturedDataUrl;
   document.getElementById('photoPreview').style.display='block';
@@ -1359,241 +1346,190 @@ function ulangi(){
   document.getElementById('barResult').classList.add('hidden');
 }
 function simpanFoto(){
-  if(!capturedDataUrl) return;
+  if (!capturedDataUrl) return;
   showLoading('Upload foto...');
+  var fotoType=(currentDetailType||createType||'ob').toUpperCase();
   var b64=capturedDataUrl.split(',')[1];
-  gasPost('updateFoto',{noTrack:currentNoTrack,type:currentDetailType?currentDetailType.toUpperCase():createType.toUpperCase(),base64Data:b64})
+  gasPost('updateFoto',{noTrack:currentNoTrack,type:fotoType,base64Data:b64})
     .then(function(res){
       hideLoading();
-      if(res.success&&res.url){
-        if(currentDetailItem){ currentDetailItem.foto_url=res.url; }
-        // Update local data
+      if (res.success&&res.url){
+        if (currentDetailItem) currentDetailItem.foto_url=res.url;
         var arr=currentDetailType==='ob'?obData:currentDetailType==='hvs'?hvsData:ibData;
         var item=arr.find(function(d){ return d.no_track===currentNoTrack; });
-        if(item) item.foto_url=res.url;
+        if (item) item.foto_url=res.url;
         toast('Foto berhasil diupload','success');
       } else toast('Gagal upload: '+(res.error||''),'error');
       afterPhoto();
     }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); afterPhoto(); });
 }
-function skipPhoto(){
-  stopPhotoStream();
-  afterPhoto();
-}
-function closePhoto(){
-  stopPhotoStream();
-  afterPhoto();
-}
+function skipPhoto(){ stopPhotoStream(); afterPhoto(); }
+function closePhoto(){ stopPhotoStream(); afterPhoto(); }
 function afterPhoto(){
   stopPhotoStream();
-  if(currentDetailItem){
+  if (currentDetailItem && scanContext==='detail'){
     renderHomeList(); updateStats();
-    showPage('pgDetail');
-    reloadDetailData();
+    showPage('pgDetail'); reloadDetailData();
   } else {
     renderHomeList(); updateStats();
     showPage('pgHome');
   }
 }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // DETAIL PAGE
-// ═══════════════════════════════════════════
-function openDetail(type,noTrack){
-  var arr=type==='ob'?obData:type==='hvs'?hvsData:ibData;
-  var item=arr.find(function(d){ return d.no_track===noTrack; });
-  if(!item){ toast('Data tidak ditemukan','error'); return; }
-  currentDetailItem=item; currentDetailType=type;
-  currentNoTrack=noTrack; currentSvc=item.service; currentTuj=item.tujuan;
-  renderDetail(item,type);
+// ════════════════════════════════════════════
+function openDetail(type, noTrack){
+  var arr  = type==='ob'?obData:type==='hvs'?hvsData:ibData;
+  var item = arr.find(function(d){ return d.no_track===noTrack; });
+  if (!item){ toast('Data tidak ditemukan','error'); return; }
+  currentDetailItem = item; currentDetailType = type;
+  currentNoTrack = noTrack; currentSvc = item.service; currentTuj = item.tujuan;
+  renderDetail(item, type);
   showPage('pgDetail');
-  loadAwbList(noTrack,type);
+  loadAwbList(noTrack, type);
 }
-function renderDetail(item,type){
-  document.getElementById('detailTitle').innerText=item.no_track;
-  var isSelesai=(item.status==='SELESAI');
-
-  // Photo
-  var pb=document.getElementById('detailPhotoBox');
-  if(item.foto_url){
-    var thumbUrl=toThumb(item.foto_url);
-    pb.innerHTML='<img src="'+thumbUrl+'" onerror="this.parentElement.innerHTML=\'<div class=no-img>📷<br>Foto gagal dimuat</div>\'">'
+function renderDetail(item, type){
+  document.getElementById('detailTitle').innerText = item.no_track;
+  var isSelesai = (item.status==='SELESAI');
+  var pb = document.getElementById('detailPhotoBox');
+  if (item.foto_url){
+    pb.innerHTML = '<img src="'+toThumb(item.foto_url)+'" onerror="this.parentElement.innerHTML=\'<div class=no-img>📷<br>Foto gagal dimuat</div>\'">'
       +(!isSelesai?'<div class="photo-overlay">📷</div>':'');
   } else {
-    pb.innerHTML='<div class="no-img">📷<br>'+(isSelesai?'Tidak ada foto':'Klik untuk tambah foto')+'</div>'
+    pb.innerHTML = '<div class="no-img">📷<br>'+(isSelesai?'Tidak ada foto':'Klik untuk tambah foto')+'</div>'
       +(!isSelesai?'<div class="photo-overlay">📷</div>':'');
   }
-  pb.style.cursor=isSelesai?'default':'pointer';
-
+  pb.style.cursor = isSelesai?'default':'pointer';
   document.getElementById('roBbar').classList.toggle('hidden',!isSelesai);
-
-  var fields=type==='ib'
+  var fields = type==='ib'
     ?[['NO TRACK',item.no_track],['INCHARGE',item.incharge],['SERVICE',item.service],['FROM',item.from||'—'],['TUJUAN',item.tujuan],['CREATED DATE',item.created_date],['STATUS',item.status],['TOTAL AWB',item.total_awb]]
     :[['NO TRACK',item.no_track],['INCHARGE',item.incharge],['SERVICE',item.service],['TUJUAN',item.tujuan],['CREATED DATE',item.created_date],['STATUS',item.status],['TOTAL AWB',item.total_awb]];
-  document.getElementById('detailFields').innerHTML=fields.map(function(f){
-    var val=f[1];
-    var extraCls='';
-    if(f[0]==='STATUS'){
+  document.getElementById('detailFields').innerHTML = fields.map(function(f){
+    var val=f[1], cls='';
+    if (f[0]==='STATUS'){
       val=item.status==='SELESAI'?'<span style="color:var(--green);font-weight:700">✓ SELESAI</span>':'<span style="color:var(--orange);font-weight:700">● ON PROSES</span>';
-      extraCls=' mono';
+      cls=' mono';
     }
-    if(f[0]==='NO TRACK') extraCls=' mono';
-    return '<div class="detail-field"><div class="d-label">'+escH(f[0])+'</div><div class="d-value'+extraCls+'">'+val+'</div></div>';
+    if (f[0]==='NO TRACK') cls=' mono';
+    return '<div class="detail-field"><div class="d-label">'+escH(f[0])+'</div><div class="d-value'+cls+'">'+val+'</div></div>';
   }).join('');
-
-  // Footer
-  var footer='<button class="btn btn-outline" style="flex:1" onclick="closeDetail()">Tutup</button>';
-  if(!isSelesai){
-    footer+='<button class="btn btn-success" style="flex:1" onclick="markSelesaiDetail()"><span>✓</span> Selesai</button>';
-  }
-  document.getElementById('detailFooter').innerHTML=footer;
-
-  // Dropdown menu
-  buildDetailMenu(item,type,isSelesai);
+  var footer = '<button class="btn btn-outline" style="flex:1" onclick="closeDetail()">Tutup</button>';
+  if (!isSelesai) footer += '<button class="btn btn-success" style="flex:1" onclick="markSelesaiDetail()">✓ Selesai</button>';
+  document.getElementById('detailFooter').innerHTML = footer;
+  buildDetailMenu(item, type, isSelesai);
 }
-function buildDetailMenu(item,type,isSelesai){
+function buildDetailMenu(item, type, isSelesai){
   var html='';
-  if(!isSelesai){
+  if (!isSelesai){
     html+='<div class="dd-item" onclick="closeMenu();openScannerForDetail(currentDetailItem,currentDetailType)">📷 Tambah AWB</div>';
     html+='<div class="dd-item" onclick="closeMenu();detailPhotoClick()">🖼 Upload Foto</div>';
     html+='<div class="dd-item" onclick="closeMenu();markSelesaiDetail()">✓ Tandai Selesai</div>';
     html+='<div class="dd-item danger" onclick="closeMenu();deleteDetailItem()">🗑 Hapus</div>';
   }
   html+='<div class="dd-item" onclick="closeMenu();openAwbModal()">📋 View List AWB</div>';
-  document.getElementById('ddMenu').innerHTML=html;
+  document.getElementById('ddMenu').innerHTML = html;
 }
 function toggleMenu(){
-  var dd=document.getElementById('ddMenu');
-  var ov=document.getElementById('ddOv');
+  var dd=document.getElementById('ddMenu'), ov=document.getElementById('ddOv');
   var isOpen=dd.classList.contains('open');
-  dd.classList.toggle('open',!isOpen);
-  ov.classList.toggle('open',!isOpen);
+  dd.classList.toggle('open',!isOpen); ov.classList.toggle('open',!isOpen);
 }
-function closeMenu(){
-  document.getElementById('ddMenu').classList.remove('open');
-  document.getElementById('ddOv').classList.remove('open');
-}
-function closeDetail(){
-  closeMenu();
-  showPage('pgHome');
-  renderHomeList(); updateStats();
-}
-function detailPhotoClick(){
-  if(!currentDetailItem) return;
-  if(currentDetailItem.status==='SELESAI') return;
-  document.getElementById('fotoFileInput').click();
-}
+function closeMenu(){ document.getElementById('ddMenu').classList.remove('open'); document.getElementById('ddOv').classList.remove('open'); }
+function closeDetail(){ closeMenu(); showPage('pgHome'); renderHomeList(); updateStats(); }
+function detailPhotoClick(){ if(!currentDetailItem||currentDetailItem.status==='SELESAI') return; document.getElementById('fotoFileInput').click(); }
 function onFotoFileChange(e){
-  var file=e.target.files[0];
-  if(!file||!currentDetailItem) return;
+  var file=e.target.files[0]; if(!file||!currentDetailItem) return;
   var reader=new FileReader();
   reader.onload=function(ev){
-    var b64=ev.target.result.split(',')[1];
     showLoading('Mengupload foto...');
-    gasPost('updateFoto',{noTrack:currentDetailItem.no_track,type:currentDetailType.toUpperCase(),base64Data:b64})
+    gasPost('updateFoto',{noTrack:currentDetailItem.no_track,type:currentDetailType.toUpperCase(),base64Data:ev.target.result.split(',')[1]})
       .then(function(res){
         hideLoading();
-        if(res.success&&res.url){
-          currentDetailItem.foto_url=res.url;
-          renderDetail(currentDetailItem,currentDetailType);
-          toast('Foto diperbarui','success');
-        } else toast('Gagal: '+(res.error||''),'error');
+        if (res.success&&res.url){ currentDetailItem.foto_url=res.url; renderDetail(currentDetailItem,currentDetailType); toast('Foto diperbarui','success'); }
+        else toast('Gagal: '+(res.error||''),'error');
       }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
   };
-  reader.readAsDataURL(file);
-  e.target.value='';
+  reader.readAsDataURL(file); e.target.value='';
 }
-function loadAwbList(noTrack,type){
+function loadAwbList(noTrack, type){
   document.getElementById('awbListBox').innerHTML='<div class="scan-empty">Memuat...</div>';
   document.getElementById('awbCount').innerText='...';
-  gasGet('getAwbList',{noTrack:noTrack,type:type.toUpperCase()})
-    .then(function(res){
-      var list=res.list||[];
-      document.getElementById('awbCount').innerText=list.length;
-      document.getElementById('awbListBox').innerHTML=list.length
-        ?list.map(function(r){ return '<div class="awb-row">'+(r.awb||r)+(r.tujuan?'<span style="font-size:11px;color:var(--text3);margin-left:auto">'+escH(r.tujuan)+'</span>':'')+'</div>'; }).join('')
-        :'<div class="scan-empty">Belum ada AWB</div>';
-    }).catch(function(){});
+  gasGet('getAwbList',{noTrack:noTrack,type:type.toUpperCase()}).then(function(res){
+    var list=res.list||[];
+    document.getElementById('awbCount').innerText=list.length;
+    document.getElementById('awbListBox').innerHTML=list.length
+      ?list.map(function(r){ return '<div class="awb-row">'+(r.awb||r)+(r.tujuan?'<span style="font-size:11px;color:var(--text3);margin-left:auto">'+escH(r.tujuan)+'</span>':'')+'</div>'; }).join('')
+      :'<div class="scan-empty">Belum ada AWB</div>';
+  }).catch(function(){});
 }
 function reloadDetailData(){
-  if(!currentDetailItem) return;
+  if (!currentDetailItem) return;
   loadAwbList(currentNoTrack,currentDetailType);
-  var listAct=currentDetailType==='ob'?'getObList':currentDetailType==='hvs'?'getHvsList':'getIbList';
-  gasGet(listAct).then(function(r){
+  var act=currentDetailType==='ob'?'getObList':currentDetailType==='hvs'?'getHvsList':'getIbList';
+  gasGet(act).then(function(r){
     var list=r.list||[];
-    if(currentDetailType==='ob') obData=list;
-    else if(currentDetailType==='hvs') hvsData=list;
-    else ibData=list;
+    if(currentDetailType==='ob') obData=list; else if(currentDetailType==='hvs') hvsData=list; else ibData=list;
     var item=list.find(function(d){ return d.no_track===currentNoTrack; });
     if(item){ currentDetailItem=item; renderDetail(item,currentDetailType); }
   }).catch(function(){});
 }
 function markSelesaiDetail(){
-  if(!currentDetailItem) return;
+  if (!currentDetailItem) return;
   var noTrack=currentDetailItem.no_track;
-  if(!confirm('Tandai '+noTrack+' sebagai SELESAI?')) return;
+  if (!confirm('Tandai '+noTrack+' sebagai SELESAI?')) return;
   showLoading('Mengubah status...');
   var action=currentDetailType==='ob'?'updateObStatus':currentDetailType==='hvs'?'updateHvsStatus':'updateIbStatus';
   gasPost(action,{noTrack:noTrack,newStatus:'SELESAI'}).then(function(res){
     hideLoading();
-    if(res.success){
+    if (res.success){
       currentDetailItem.status='SELESAI';
       var arr=currentDetailType==='ob'?obData:currentDetailType==='hvs'?hvsData:ibData;
-      var item=arr.find(function(d){ return d.no_track===noTrack; });
-      if(item) item.status='SELESAI';
-      renderDetail(currentDetailItem,currentDetailType);
-      renderHomeList(); updateStats();
-      toast('Status diubah ke SELESAI','success');
+      var item=arr.find(function(d){ return d.no_track===noTrack; }); if(item) item.status='SELESAI';
+      renderDetail(currentDetailItem,currentDetailType); renderHomeList(); updateStats();
+      toast('Status → SELESAI','success');
     } else toast('Gagal: '+(res.error||''),'error');
   }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 function deleteDetailItem(){
-  if(!currentDetailItem) return;
-  if(currentDetailItem.status==='SELESAI'){ toast('Data SELESAI tidak dapat dihapus','error'); return; }
+  if (!currentDetailItem||currentDetailItem.status==='SELESAI'){ toast('Data SELESAI tidak dapat dihapus','error'); return; }
   var noTrack=currentDetailItem.no_track;
-  if(!confirm('Hapus '+noTrack+'? Semua AWB terkait juga akan dihapus.')) return;
+  if (!confirm('Hapus '+noTrack+'? Semua AWB terkait juga akan dihapus.')) return;
   showLoading('Menghapus...');
   var action=currentDetailType==='ob'?'deleteOb':currentDetailType==='hvs'?'deleteHvs':'deleteIb';
   gasPost(action,{noTrack:noTrack}).then(function(res){
     hideLoading();
-    if(res.success){
+    if (res.success){
       if(currentDetailType==='ob') obData=obData.filter(function(d){ return d.no_track!==noTrack; });
       else if(currentDetailType==='hvs') hvsData=hvsData.filter(function(d){ return d.no_track!==noTrack; });
       else ibData=ibData.filter(function(d){ return d.no_track!==noTrack; });
-      renderHomeList(); updateStats();
-      buildAllScanAwbs();
-      toast('Data dihapus','success');
-      closeDetail();
+      renderHomeList(); updateStats(); buildAllScanAwbs(); toast('Data dihapus','success'); closeDetail();
     } else toast('Gagal: '+(res.error||''),'error');
   }).catch(function(e){ hideLoading(); toast('Error: '+e.message,'error'); });
 }
 function toThumb(url){
-  if(!url) return '';
-  if(url.includes('thumbnail')) return url;
+  if (!url) return '';
+  if (url.includes('thumbnail')) return url;
   var m=url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if(m) return 'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000';
-  return url;
+  return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w1000':url;
 }
-
-// AWB MODAL
 function openAwbModal(){
   showLoading('Memuat list AWB...');
-  gasGet('getAwbList',{noTrack:currentDetailItem.no_track,type:currentDetailType.toUpperCase()})
-    .then(function(res){
-      hideLoading();
-      var list=res.list||[];
-      document.getElementById('awbModalCount').innerText=list.length;
-      document.getElementById('awbModalList').innerHTML=list.length
-        ?list.map(function(r){ return '<div class="awb-row">'+(r.awb||r)+(r.tujuan?'<span style="font-size:11px;color:var(--text3);margin-left:auto">'+escH(r.tujuan)+'</span>':'')+'</div>'; }).join('')
-        :'<div class="scan-empty">Belum ada AWB</div>';
-      openModal('awbModal');
-    }).catch(function(){ hideLoading(); toast('Gagal memuat AWB','error'); });
+  gasGet('getAwbList',{noTrack:currentDetailItem.no_track,type:currentDetailType.toUpperCase()}).then(function(res){
+    hideLoading();
+    var list=res.list||[];
+    document.getElementById('awbModalCount').innerText=list.length;
+    document.getElementById('awbModalList').innerHTML=list.length
+      ?list.map(function(r){ return '<div class="awb-row">'+(r.awb||r)+(r.tujuan?'<span style="font-size:11px;color:var(--text3);margin-left:auto">'+escH(r.tujuan)+'</span>':'')+'</div>'; }).join('')
+      :'<div class="scan-empty">Belum ada AWB</div>';
+    openModal('awbModal');
+  }).catch(function(){ hideLoading(); toast('Gagal memuat AWB','error'); });
 }
 function closeAwbModal(){ closeModal('awbModal'); }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // SEARCH AWB
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 var searchTimer=null;
 function doSearch(q){
   q=(q||'').trim();
@@ -1601,10 +1537,7 @@ function doSearch(q){
   if(!q){ result.innerHTML='<div class="search-empty">Ketik nomor AWB untuk mencari</div>'; return; }
   var ql=q.toLowerCase();
   var local=allScanAwbs.filter(function(item){ return (item.awb||'').toLowerCase().indexOf(ql)!==-1; });
-  if(local.length){
-    renderSearchResults(local,q);
-    return;
-  }
+  if(local.length){ renderSearchResults(local,q); return; }
   result.innerHTML='<div class="search-empty" style="padding:24px">Mencari di server...</div>';
   clearTimeout(searchTimer);
   searchTimer=setTimeout(function(){
@@ -1612,12 +1545,10 @@ function doSearch(q){
       var list=res.list||[];
       if(list.length) renderSearchResults(list,q);
       else result.innerHTML='<div class="search-result-hdr">Tidak ada hasil untuk "'+escH(q)+'"</div>';
-    }).catch(function(){
-      result.innerHTML='<div class="search-empty">Error saat mencari</div>';
-    });
+    }).catch(function(){ result.innerHTML='<div class="search-empty">Error saat mencari</div>'; });
   },500);
 }
-function renderSearchResults(results,q){
+function renderSearchResults(results, q){
   var esc=escRx(escH(q));
   var html='<div class="search-result-hdr">'+results.length+' hasil ditemukan</div>';
   html+=results.map(function(r){
@@ -1634,14 +1565,11 @@ function renderSearchResults(results,q){
   }).join('');
   document.getElementById('searchResult').innerHTML=html;
 }
-function clearSearch(){
-  document.getElementById('searchMainInp').value='';
-  doSearch('');
-}
+function clearSearch(){ document.getElementById('searchMainInp').value=''; doSearch(''); }
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // CONFIRM MODAL
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 function showConfirm(title,msg,onOk){
   document.getElementById('confirmTitle').innerText=title;
   document.getElementById('confirmMsg').innerText=msg;
@@ -1650,28 +1578,17 @@ function showConfirm(title,msg,onOk){
 }
 function closeConfirm(){ closeModal('confirmModal'); }
 
-// ═══════════════════════════════════════════
-// CLOSE MODALS ON OVERLAY CLICK
-// ═══════════════════════════════════════════
 document.querySelectorAll('.modal-ov').forEach(function(el){
-  el.addEventListener('click',function(e){
-    if(e.target===el) el.classList.remove('open');
-  });
+  el.addEventListener('click', function(e){ if(e.target===el) el.classList.remove('open'); });
 });
 
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 // PWA SERVICE WORKER
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 if('serviceWorker' in navigator){
-  var SW_CONTENT = `
-const CACHE='gtw-bdo-v1';
-const OFFLINE=['/'];
-self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(OFFLINE))); });
-self.addEventListener('fetch',e=>{ e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))); });
-`;
-  var blob=new Blob([SW_CONTENT],{type:'application/javascript'});
-  var swUrl=URL.createObjectURL(blob);
-  navigator.serviceWorker.register(swUrl).catch(function(){});
+  var SW=`const CACHE='gtw-bdo-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/'))));});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));});`;
+  var blob=new Blob([SW],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
 }
 </script>
 </body>
