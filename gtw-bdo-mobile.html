@@ -10,6 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>GTW BDO Mobile</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -18,298 +19,146 @@
 <div id="gloading"><div class="spinner"></div><div id="gloading-txt">Memuat...</div></div>
 <div id="gtoast"></div>
 
-<!-- ═══ SIDEBAR OVERLAY ═══ -->
 <div class="sidebar-ov" id="sidebarOv" onclick="UI.Sidebar.close()"></div>
 
-<!-- ═══ SIDEBAR ═══ -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-hdr">
-    <div class="sidebar-logo">GTW BDO</div>
-    <div class="sidebar-ic-row">
-      <div class="sidebar-ic-dot" id="sidebarIcDot"></div>
-      <div class="sidebar-ic-name" id="sidebarIcName">Pilih Incharge</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="material-icons-round" style="color:var(--blue3);font-size:24px">hub</span>
+      <div style="font-weight:700;font-size:16px;letter-spacing:.3px">GTW BDO <span style="font-size:10px;font-weight:400;color:var(--text3)">v3.0</span></div>
     </div>
+    <button class="sidebar-close" onclick="UI.Sidebar.close()">✕</button>
   </div>
-  <div class="sidebar-body">
-    <div class="sidebar-section">Navigasi</div>
-    <button class="sidebar-item active" id="sbnHome" onclick="switchNav('home')">
-      <span class="si-icon">📦</span> Data Pengiriman
-    </button>
-    <button class="sidebar-item" id="sbnSearch" onclick="switchNav('search')">
-      <span class="si-icon">🔍</span> Cari AWB
-    </button>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Aksi</div>
-    <button class="sidebar-item" onclick="CreatePage.open()">
-      <span class="si-icon">➕</span> Tambah Data
-    </button>
-    <button class="sidebar-item" onclick="IcModal.open();UI.Sidebar.close()">
-      <span class="si-icon">👤</span> Pilih Incharge
-    </button>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Filter Tipe</div>
-    <button class="sidebar-item" id="sbnOb" onclick="HomePage.switchTab('ob');UI.Sidebar.close()">
-      <span class="si-icon">🚛</span> OB BDO
-    </button>
-    <button class="sidebar-item" id="sbnHvs" onclick="HomePage.switchTab('hvs');UI.Sidebar.close()">
-      <span class="si-icon">📦</span> OB HVS
-    </button>
-    <button class="sidebar-item" id="sbnIb" onclick="HomePage.switchTab('ib');UI.Sidebar.close()">
-      <span class="si-icon">📥</span> IB HVS
-    </button>
+  <div class="sidebar-user" onclick="IcModal.open()">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+      <div class="user-avatar"><span class="material-icons-round" style="font-size:18px">person</span></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:600;letter-spacing:.5px">Incharge</div>
+        <div class="user-name" id="icName">Pilih Incharge</div>
+      </div>
+    </div>
+    <span class="ic-dot" id="icDot"></span>
   </div>
-  <div class="sidebar-footer">GTW BDO v3.0</div>
+  <div class="sidebar-menu">
+    <div class="menu-item active" id="sbnHome" onclick="switchNav('home')"><span class="material-icons-round">local_shipping</span>Dashboard Hub</div>
+    <div class="menu-item" id="sbnSearch" onclick="switchNav('search')"><span class="material-icons-round">manage_search</span>Cari Nomor AWB</div>
+  </div>
+  <div class="sidebar-ftr">GTW BDO Mobile v3.0</div>
 </div>
 
-<!-- ═══ HOME PAGE ═══ -->
-<div class="page" id="pgHome">
-  <div class="appbar">
-    <button class="hamburger" onclick="UI.Sidebar.toggle()">☰</button>
-    <div class="appbar-title">GTW BDO</div>
-    <div class="ic-widget" onclick="IcModal.open()">
-      <div class="ic-dot" id="icDot"></div>
-      <div class="ic-name" id="icName">Pilih Incharge</div>
-      <span style="color:#fff;font-size:14px">▾</span>
-    </div>
-    <button class="appbar-icon" onclick="reloadAll()">↻</button>
-  </div>
-  <div class="tab-bar">
-    <div class="tab-item active" id="homeTabOb"  onclick="HomePage.switchTab('ob')">OB</div>
-    <div class="tab-item"        id="homeTabHvs" onclick="HomePage.switchTab('hvs')">HVS</div>
-    <div class="tab-item"        id="homeTabIb"  onclick="HomePage.switchTab('ib')">IB</div>
-  </div>
-  <div class="scroll-content" id="homeScroll">
-    <div class="stats-row">
-      <div class="stat-card blue"><div class="stat-label">AWB</div><div class="stat-value" id="statAwb">0</div></div>
-      <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="statSelesai">0</div></div>
-      <div class="stat-card orange"><div class="stat-label">Proses</div><div class="stat-value" id="statProses">0</div></div>
-    </div>
-    <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
-    <div class="safe-pad"></div>
-  </div>
-  <!-- FAB Tambah Data -->
-  <button style="position:fixed;bottom:calc(20px + var(--safe-bot));right:18px;width:52px;height:52px;background:var(--blue2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 14px rgba(25,118,210,.4);z-index:100;cursor:pointer;border:none;font-size:26px" onclick="CreatePage.open()">＋</button>
+<div class="topbar">
+  <button class="topbar-btn" onclick="UI.Sidebar.open()"><span class="material-icons-round">menu</span></button>
+  <div class="topbar-title" id="pageTitle">Dashboard</div>
+  <button class="topbar-btn" onclick="reloadAll()"><span class="material-icons-round">refresh</span></button>
 </div>
 
-<!-- ═══ SEARCH PAGE ═══ -->
-<div class="page hidden" id="pgSearch">
-  <div class="appbar">
-    <button class="hamburger" onclick="UI.Sidebar.toggle()">☰</button>
-    <div class="appbar-title">Cari AWB</div>
-    <button class="appbar-icon" onclick="reloadAll()">↻</button>
+<div class="container">
+
+  <div class="page" id="pgHome">
+    <div class="tab-box">
+      <div class="tab-item active" id="tab-ob" onclick="switchTab('ob')">OB BDO</div>
+      <div class="tab-item" id="tab-hvs" onclick="switchTab('hvs')">OB HVS</div>
+      <div class="tab-item" id="tab-ib" onclick="switchTab('ib')">IB HVS</div>
+    </div>
+    <div class="card-stats">
+      <div class="stat-el"><div class="stat-lbl">Total AWB</div><div class="stat-val" id="statAwb">0</div></div>
+      <div class="stat-el"><div class="stat-lbl">Selesai</div><div class="stat-val" style="color:var(--green)" id="statSelesai">0</div></div>
+      <div class="stat-el"><div class="stat-lbl">Proses</div><div class="stat-val" style="color:var(--orange)" id="statProses">0</div></div>
+    </div>
+    <button class="fab-btn" onclick="CreatePage.open()"><span class="material-icons-round" style="font-size:22px">add</span>Data Baru</button>
+    <div id="homeList"></div>
   </div>
-  <div class="scroll-content">
-    <div class="search-hero">
-      <div style="font-size:13px;color:var(--text2);margin-bottom:10px">Cari nomor AWB di semua data OB, HVS, IB</div>
-      <div class="search-inp-row">
-        <input class="search-main-inp" id="searchMainInp" placeholder="Scan atau ketik AWB..." autocomplete="off"
-          oninput="SearchPage.search(this.value)" onkeydown="if(event.key==='Enter')SearchPage.search(this.value)">
-        <button class="btn btn-outline btn-sm" onclick="SearchPage.clear()">✕</button>
+
+  <div class="page hidden" id="pgSearch">
+    <div style="padding:14px 0 10px">
+      <div class="search-row">
+        <span class="material-icons-round search-icon">search</span>
+        <input class="search-input" id="searchMainInp" placeholder="Scan atau ketik nomor AWB..." autocomplete="off" oninput="SearchPage.search(this.value)">
+        <button class="search-clear" onclick="SearchPage.clear()">✕</button>
       </div>
     </div>
-    <div class="search-result" id="searchResult">
-      <div class="search-empty">Ketik nomor AWB untuk mencari</div>
-    </div>
-    <div class="safe-pad"></div>
+    <div id="searchResult"></div>
   </div>
-</div>
 
-<!-- ═══ CREATE PAGE ═══ -->
-<div class="page hidden" id="pgCreate">
-  <div class="appbar">
-    <button class="back-icon" onclick="CreatePage.close()">←</button>
-    <div class="appbar-title">Tambah Data</div>
-  </div>
-  <div class="scroll-content" id="createScroll">
-    <div class="section-title">Tipe Pengiriman</div>
-    <div class="type-grid">
-      <div class="type-card" id="tcOb"  onclick="CreatePage.selectType('ob')">
-        <span class="type-card-icon">🚛</span>
-        <div class="type-card-label">OB BDO</div>
-      </div>
-      <div class="type-card" id="tcHvs" onclick="CreatePage.selectType('hvs')">
-        <span class="type-card-icon">📦</span>
-        <div class="type-card-label">OB HVS</div>
-      </div>
-      <div class="type-card" id="tcIb"  onclick="CreatePage.selectType('ib')">
-        <span class="type-card-icon">📥</span>
-        <div class="type-card-label">IB HVS</div>
-      </div>
+  <div class="page hidden" id="pgCreate">
+    <div class="hdr-action">
+      <button class="btn-back" onclick="CreatePage.close()"><span class="material-icons-round">arrow_back</span></button>
+      <div class="hdr-action-title">Tambah Data</div>
     </div>
-
-    <div id="createWarnBar" class="warn-bar">Pilih <b>Incharge</b> di topbar kanan atas dahulu.</div>
-    <div id="createInfoBar" class="info-bar" style="display:none">Incharge: <b id="createIcDisplay"></b></div>
-
-    <!-- OB/HVS FORM -->
-    <div id="formObHvs" style="display:none">
+    <div class="card" style="padding:16px;margin-bottom:80px">
       <div class="form-group">
-        <label class="form-label">SERVICE *</label>
-        <div class="scb" id="scbSvc">
-          <input class="scb-input" id="inpSvc" placeholder="Pilih service..." readonly>
-          <span class="scb-arrow">▾</span>
-          <div class="scb-drop" id="dropSvc"></div>
+        <label class="form-label">KATEGORI DATA</label>
+        <div class="type-grid">
+          <div class="type-card" id="tc-ob" onclick="CreatePage.setType('ob')"><span class="material-icons-round" style="color:var(--blue2)">local_shipping</span><div>OB BDO</div></div>
+          <div class="type-card" id="tc-hvs" onclick="CreatePage.setType('hvs')"><span class="material-icons-round" style="color:var(--purple)">inventory_2</span><div>OB HVS</div></div>
+          <div class="type-card" id="tc-ib" onclick="CreatePage.setType('ib')"><span class="material-icons-round" style="color:var(--green)">move_to_inbox</span><div>IB HVS</div></div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">TUJUAN (utama)</label>
-        <div class="scb" id="scbTuj">
-          <input class="scb-input" id="inpTuj" placeholder="Pilih service dulu..." readonly disabled>
-          <span class="scb-arrow">▾</span>
-          <div class="scb-drop" id="dropTuj"></div>
-        </div>
-      </div>
-      <div class="multi-info">💡 Setiap tujuan = 1 NO TRACK. Scanner terbuka otomatis setelah pilih tujuan.</div>
-      <div class="scan-total" id="obTotalLabel">0 AWB total</div>
-      <div class="scan-tabs" id="obTabs"></div>
-      <!-- Tombol tambah tujuan + scan manual -->
-      <div class="scan-add-row">
-        <button class="btn-add-tuj" id="btnAddTuj" disabled onclick="CreatePage.openAddTujModal()">+ Tujuan Lain</button>
-        <button class="btn btn-outline btn-sm" id="btnObRescan" disabled onclick="CreatePage.rescanOb()">📷 Scan Lagi</button>
-      </div>
-      <div class="scan-list" id="obScanList"><div class="scan-empty">Pilih service & tujuan dulu</div></div>
+      <div id="createFormBody"></div>
     </div>
+  </div>
 
-    <!-- IB FORM -->
-    <div id="formIb" style="display:none">
-      <div class="form-group">
-        <label class="form-label">SERVICE *</label>
-        <div class="scb" id="scbIbSvc">
-          <input class="scb-input" id="inpIbSvc" placeholder="Pilih service..." readonly>
-          <span class="scb-arrow">▾</span>
-          <div class="scb-drop" id="dropIbSvc"></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">FROM *</label>
-        <div class="scb" id="scbIbFrom">
-          <input class="scb-input" id="inpIbFrom" placeholder="Pilih service dulu..." readonly disabled>
-          <span class="scb-arrow">▾</span>
-          <div class="scb-drop" id="dropIbFrom"></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">TUJUAN *</label>
-        <div class="scb" id="scbIbTuj">
-          <input class="scb-input" id="inpIbTuj" placeholder="Pilih service dulu..." readonly disabled>
-          <span class="scb-arrow">▾</span>
-          <div class="scb-drop" id="dropIbTuj"></div>
-        </div>
-      </div>
-      <div class="multi-info">💡 Scanner terbuka otomatis setelah FROM & TUJUAN dipilih.</div>
-      <div class="scan-total" id="ibTotalLabel">0 AWB total</div>
-      <div style="margin-bottom:8px">
-        <button class="btn btn-outline btn-sm" id="btnIbRescan" disabled onclick="CreatePage.rescanIb()">📷 Scan Lagi</button>
-      </div>
-      <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi form dulu</div></div>
+  <div class="page hidden" id="pgDetail">
+    <div class="hdr-action">
+      <button class="btn-back" onclick="DetailPage.close()"><span class="material-icons-round">arrow_back</span></button>
+      <div class="hdr-action-title" id="detTitle">Detail Track</div>
     </div>
+    <div id="detailBody" style="margin-bottom:80px"></div>
+  </div>
 
-    <div style="margin-top:14px;display:flex;gap:8px;display:none" id="createActions">
-      <button class="btn btn-outline" onclick="CreatePage.close()">Batal</button>
-      <button class="btn btn-primary" style="flex:1" id="btnSave" disabled onclick="CreatePage.doSave()">💾 Simpan</button>
-    </div>
-    <div class="safe-pad"></div>
-  </div>
-</div>
-
-<!-- ═══ SCANNER PAGE ═══ -->
-<div class="page hidden" id="pgScan">
-  <div class="appbar">
-    <button class="back-icon" onclick="Scanner.close()">←</button>
-    <div class="appbar-title" id="scanTitle">Scanner</div>
-    <button class="torch-btn" id="torchBtn" onclick="Scanner.toggleFlash()">🔦</button>
-  </div>
-  <div class="scan-ctx-bar" id="scanCtxBar">
-    📍 Scan ke: <span id="scanCtxLabel" style="font-weight:800"></span>
-  </div>
-  <div class="cam-wrap"><div id="reader"></div></div>
-  <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
-  <div class="scroll-content">
-    <div class="form-group" style="margin-bottom:8px">
-      <label class="form-label">Input Manual AWB</label>
-      <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter"
-        onkeydown="Scanner.handleManual(event)" autocomplete="off">
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span class="scan-total">LIST SCAN (<span id="scanCount">0</span>)</span>
-      <button class="btn-ghost" onclick="Scanner.clearAll()">Clear All</button>
-    </div>
-    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada AWB di-scan</div></div>
-    <div style="margin-top:12px">
-      <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()">💾 SIMPAN & LANJUT</button>
-    </div>
-    <div class="safe-pad"></div>
-  </div>
-</div>
-
-<!-- ═══ PHOTO PAGE ═══ -->
-<div class="page hidden" id="pgPhoto">
-  <div class="appbar">
-    <button class="back-icon" onclick="Photo.close()">←</button>
-    <div class="appbar-title">Ambil Foto</div>
-    <button class="appbar-icon" onclick="Photo.skip()" style="font-size:13px;font-weight:700">SKIP</button>
-  </div>
-  <div class="photo-container" id="photoContainer">
-    <video id="photoVideo" autoplay playsinline muted></video>
-    <canvas id="photoCanvas"></canvas>
-    <img id="photoPreview" alt="Preview">
-  </div>
-  <div class="gps-bar" id="gpsBar">📍 Mendapatkan lokasi...</div>
-  <div class="photo-bar" id="barAmbil">
-    <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
-  </div>
-  <div class="photo-bar hidden" id="barResult">
-    <button class="btn-cam btn-ulangi" onclick="Photo.ulangi()">↺ Ulangi</button>
-    <button class="btn-cam btn-simpan-foto" onclick="Photo.simpan()">✅ Simpan</button>
-  </div>
-</div>
-
-<!-- ═══ DETAIL PAGE ═══ -->
-<div class="page hidden" id="pgDetail">
-  <div class="appbar">
-    <button class="back-icon" onclick="DetailPage.close()">←</button>
-    <div class="appbar-title" id="detailTitle">Detail</div>
-    <button class="menu-icon" onclick="UI.Menu.toggle()">⋮</button>
-  </div>
-  <div class="dd-ov" id="ddOv" onclick="UI.Menu.close()"></div>
-  <div class="dd-menu" id="ddMenu"></div>
-  <div class="scroll-content" id="detailScroll">
-    <div class="photo-box" id="detailPhotoBox" onclick="DetailPage.photoClick()">
-      <div class="no-img">📷<br>Klik untuk tambah foto</div>
-      <div class="photo-overlay">📷</div>
-    </div>
-    <div class="ro-bar hidden" id="roBbar">🔒 Data SELESAI — tidak dapat diubah</div>
-    <div class="detail-section" id="detailFields"></div>
-    <div class="detail-section" style="margin-top:10px">
-      <div class="detail-field">
-        <div class="d-label">LIST AWB (<span id="awbCount">0</span>)</div>
+  <div class="page hidden" id="pgScan" style="background:#000;color:#fff;padding:0">
+    <div class="scan-topbar">
+      <button class="scan-close-btn" onclick="Scanner.close()"><span class="material-icons-round">arrow_back</span></button>
+      <div class="scan-topbar-center">
+        <div id="scanTitle" style="font-weight:600;font-size:15px">Scan Barcode</div>
+        <div id="scanCtxBar" style="font-size:12px;color:rgba(255,255,255,0.7);display:none">Tujuan: <span id="scanCtxLabel" style="font-weight:600;color:#fff"></span></div>
       </div>
-      <div id="awbListBox" style="max-height:220px;overflow-y:auto">
-        <div class="scan-empty">Memuat...</div>
-      </div>
+      <button class="scan-close-btn" onclick="Scanner.toggleFlash()"><span class="material-icons-round" id="flashIcon">flash_off</span></button>
     </div>
-    <div class="safe-pad"></div>
+    <div id="scannerReader" style="width:100%;height:calc(100vh - 120px);background:#000"></div>
+    <div class="scan-bottombar">
+      <div style="font-size:13px;opacity:0.8" id="scanCountLabel">0 AWB Ter-scan di sesi ini</div>
+      <button class="btn btn-primary" style="padding:10px 24px;border-radius:20px;font-size:13px" onclick="Scanner.done()"><span class="material-icons-round" style="font-size:16px">check</span> Selesai Scan</button>
+    </div>
   </div>
-  <div style="padding:12px 14px;background:var(--surface);border-top:1px solid var(--border);padding-bottom:calc(12px + var(--safe-bot));display:flex;gap:8px" id="detailFooter"></div>
-  <input type="file" accept="image/*" style="display:none" id="fotoFileInput" onchange="DetailPage.onFileChange(event)">
-</div>
 
-<!-- ═══ INCHARGE MODAL ═══ -->
-<div class="modal-ov" id="icModal">
+  <div class="page hidden" id="pgPhoto" style="background:#000;padding:0">
+    <div class="scan-topbar">
+      <button class="scan-close-btn" onclick="Photo.close()"><span class="material-icons-round">close</span></button>
+      <div style="font-weight:600;font-size:15px;color:#fff">Ambil Foto Bukti</div>
+      <div style="width:40px"></div>
+    </div>
+    <div class="camera-container">
+      <video id="photoVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+      <canvas id="photoPreview" style="display:none;width:100%;height:100%;object-fit:cover"></canvas>
+      <div class="gps-overlay" id="gpsBar">📍 Mendapatkan lokasi...</div>
+    </div>
+    <div class="camera-actions" id="barAmbil">
+      <button class="btn-skip" onclick="Photo.skip()">LEWATI</button>
+      <button class="btn-capture" onclick="Photo.capture()"></button>
+      <div style="width:70px"></div>
+    </div>
+    <div class="camera-actions hidden" id="barResult">
+      <button class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.4)" onclick="Photo.ulang()">Ulangi</button>
+      <button class="btn btn-primary" style="background:var(--blue3)" onclick="Photo.simpan()">✔ Simpan Foto</button>
+    </div>
+  </div>
+
+</div><div class="modal-ov" id="icModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
-      <div class="modal-title">Pilih Incharge</div>
-      <button class="modal-close" onclick="UI.Modal.close('icModal')">✕</button>
+      <div class="modal-title">Pilih Person Incharge</div>
+      <button class="modal-close" onclick="IcModal.close()">✕</button>
     </div>
-    <div class="modal-body" style="padding:10px 14px">
-      <input class="form-input" id="icSearch" placeholder="Cari incharge..." oninput="IcModal.render()" style="margin-bottom:10px">
-      <div id="icList"></div>
+    <div style="padding:10px 14px">
+      <input class="search-input" id="icSearch" placeholder="Cari nama incharge..." autocomplete="off" oninput="IcModal.render()">
     </div>
+    <div class="modal-body" id="icList" style="max-height:280px;padding:0 4px 14px"></div>
   </div>
 </div>
 
-<!-- ═══ ADD TUJUAN MODAL ═══ -->
 <div class="modal-ov" id="tujModal">
-  <div class="modal-sheet">
+  <div class="modal-sheet" style="max-height:85vh">
     <div class="modal-hdr">
       <div class="modal-title">Tambah Tujuan</div>
       <button class="modal-close" onclick="CreatePage.closeTujModal()">✕</button>
@@ -331,11 +180,10 @@
   </div>
 </div>
 
-<!-- ═══ AWB MODAL ═══ -->
 <div class="modal-ov" id="awbModal">
   <div class="modal-sheet">
     <div class="modal-hdr">
-      <div class="modal-title">List AWB (<span id="awbModalCount">0</span>)</div>
+      <div class="modal-title">List AWB (<span id=\"awbModalCount\">0</span>)</div>
       <button class="modal-close" onclick="UI.Modal.close('awbModal')">✕</button>
     </div>
     <div class="modal-body" style="padding:0">
@@ -344,13 +192,24 @@
   </div>
 </div>
 
-<!-- Scripts — load in order -->
+<div class="modal-ov" id="confirmModal">
+  <div class="modal-sheet" style="padding:20px;text-align:center">
+    <div id="confirmTitle" style="font-weight:700;font-size:16px;margin-bottom:8px;color:var(--text)">Konfirmasi</div>
+    <div id="confirmMsg" style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5">Apakah Anda yakin?</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" style="flex:1" onclick="UI.Modal.close('confirmModal')">Batal</button>
+      <button class="btn btn-danger" style="flex:1" id="confirmOkBtn">Ya, Hapus</button>
+    </div>
+  </div>
+</div>
+
 <script src="js/config.js"></script>
-<script src="js/api.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/api.js"></script>
 <script src="js/scanner.js"></script>
 <script src="js/photo.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/app.js"></script>
+
 </body>
 </html>
