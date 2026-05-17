@@ -4,7 +4,7 @@
    ============================================================ */
 
 // ─── CONFIG ───
-var GAS_URL = "https://script.google.com/macros/s/AKfycbyzUKMOUMxUJDDluaS-rnoFWz06_17L7Cqc2869d7I6ppEGBAo6_5Aa3VNYzti0GShFWA/exec";
+var GAS_URL = "https://script.google.com/macros/s/AKfycby-0FIWDgDRpmkZGrKz1Sj9OAv7pXKcFUlJZmp5kTJeQxchzMLHcJTCGjV_Xm2PcO-6vQ/exec";
 
 // ─── STATE ───
 var masterData = {};
