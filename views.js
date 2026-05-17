@@ -1,7 +1,7 @@
 /* ============================================================
    GTW BDO — views.js v4.2
-   OB&IB combined view, Manifest, Search AWB, Sidebar search,
-   Export CSV, Reload, buildAllScanAwbs
+   OB&IB combined view, Manifest (load on demand - today only),
+   Search AWB, Sidebar search, Export CSV, Reload, buildAllScanAwbs
    ============================================================ */
 
 // ─── INIT & RELOAD ───
@@ -81,9 +81,6 @@ function buildAllScanAwbs() {
 
 // ═══════════════════════════════════════════════════
 // OB & IB COMBINED VIEW
-// Header 4 baris: Incharge → Kota → Service → Tipe
-// Kolom per tujuan: OUTBOUND | DATE | OUTBOUND HVS | DATE | INBOUND HVS | DATE
-// DATE = mirror tanggal dari data terkait
 // ═══════════════════════════════════════════════════
 
 function renderObibPage() {
@@ -97,7 +94,7 @@ function renderObibPage() {
 
   showLoading('Memuat OB & IB...');
   Promise.all([
-    gasGet('getObibFull'),       // {list: [{no_track, incharge, service, tujuan, kota, created_date, awbs:[]}]}
+    gasGet('getObibFull'),
     gasGet('getHvsFull'),
     gasGet('getIbFull')
   ]).then(function (res) {
@@ -137,8 +134,7 @@ function _obibMatch(d, q) {
 function _buildObibTable(data) {
   var wrap = document.getElementById('obibTableWrap');
 
-  // Kelompokkan semua data berdasarkan incharge
-  var inchargeMap = {};  // { incharge: { kota, ob:[], hvs:[], ib:[] } }
+  var inchargeMap = {};
 
   function groupBy(arr, type) {
     arr.forEach(function (item) {
@@ -158,28 +154,18 @@ function _buildObibTable(data) {
     return;
   }
 
-  // Kumpulkan semua tujuan unik per incharge untuk kolom
-  // Struktur kolom per incharge:
-  //   untuk setiap tujuan OB → kolom OB + DATE
-  //   untuk setiap tujuan HVS → kolom HVS + DATE
-  //   kolom IB (gabungan semua IB incharge tsb)
-
-  // Hitung max rows per incharge = max(max awb ob per tujuan, max awb hvs per tujuan, max ib awb)
-  // Kita render row per AWB index
-
   var html = '<table class="obib-table"><thead>';
 
-  // ── BARIS 1: INCHARGE (colspan = total kolom per incharge + 1 rn) ──
+  // Baris 1: Incharge
   html += '<tr><th class="obib-rn" rowspan="4">#</th>';
   incharges.forEach(function (inc) {
     var g = inchargeMap[inc];
-    // hitung total kolom untuk incharge ini
     var totalCols = _obibColCount(g);
     html += '<th class="obib-hdr-incharge" colspan="' + totalCols + '">' + escH(inc) + '</th>';
   });
   html += '</tr>';
 
-  // ── BARIS 2: KOTA ──
+  // Baris 2: Kota
   html += '<tr>';
   incharges.forEach(function (inc) {
     var g = inchargeMap[inc];
@@ -188,26 +174,23 @@ function _buildObibTable(data) {
   });
   html += '</tr>';
 
-  // ── BARIS 3: SERVICE (per kelompok tujuan / IB) ──
+  // Baris 3: Service
   html += '<tr>';
   incharges.forEach(function (inc) {
     var g = inchargeMap[inc];
-    // OB tujuan groups
     g.ob.forEach(function (item) {
       html += '<th class="obib-hdr-service" colspan="2">' + escH(item.service) + '</th>';
     });
-    // HVS tujuan groups
     g.hvs.forEach(function (item) {
       html += '<th class="obib-hdr-service" colspan="2">' + escH(item.service) + '</th>';
     });
-    // IB — gabungan, gunakan service dari IB pertama
     if (g.ib.length) {
       html += '<th class="obib-hdr-service" colspan="' + (g.ib.length * 2) + '">' + escH(g.ib[0].service) + '</th>';
     }
   });
   html += '</tr>';
 
-  // ── BARIS 4: TIPE KOLOM (Outbound / Date / Outbound HVS / Date / Inbound HVS / Date) ──
+  // Baris 4: Tipe kolom
   html += '<tr>';
   incharges.forEach(function (inc) {
     var g = inchargeMap[inc];
@@ -227,8 +210,7 @@ function _buildObibTable(data) {
   html += '</tr>';
   html += '</thead><tbody>';
 
-  // ── ROWS ──
-  // Hitung max rows across all incharges
+  // Rows
   var maxRows = 0;
   incharges.forEach(function (inc) {
     var g = inchargeMap[inc];
@@ -241,21 +223,18 @@ function _buildObibTable(data) {
     html += '<td class="obib-rn">' + (row + 1) + '</td>';
     incharges.forEach(function (inc) {
       var g = inchargeMap[inc];
-      // OB cols
       g.ob.forEach(function (item) {
         var awb = (item.awbs || [])[row] || '';
         var isSelesai = item.status === 'SELESAI';
         html += '<td class="obib-cell-awb' + (isSelesai ? ' selesai' : '') + '">' + escH(awb) + '</td>';
         html += '<td class="obib-cell-date">' + (awb ? escH(item.created_date || '') : '') + '</td>';
       });
-      // HVS cols
       g.hvs.forEach(function (item) {
         var awb = (item.awbs || [])[row] || '';
         var isSelesai = item.status === 'SELESAI';
         html += '<td class="obib-cell-awb obib-hvs' + (isSelesai ? ' selesai' : '') + '">' + escH(awb) + '</td>';
         html += '<td class="obib-cell-date">' + (awb ? escH(item.created_date || '') : '') + '</td>';
       });
-      // IB cols
       g.ib.forEach(function (item) {
         var awb = (item.awbs || [])[row] || '';
         var isSelesai = item.status === 'SELESAI';
@@ -271,7 +250,6 @@ function _buildObibTable(data) {
 }
 
 function _obibColCount(g) {
-  // 2 kolom per item OB, 2 per HVS, 2 per IB
   return (g.ob.length * 2) + (g.hvs.length * 2) + (g.ib.length * 2);
 }
 
@@ -283,7 +261,6 @@ function _obibMaxRows(g) {
   return m;
 }
 
-// Export OB&IB CSV
 function exportObibCSV() {
   if (!_obibData) { toast('Muat data dulu', 'error'); return; }
   var rows = [['INCHARGE','KOTA','TYPE','SERVICE','TUJUAN','AWB','DATE','STATUS']];
@@ -301,21 +278,24 @@ function exportObibCSV() {
 }
 
 // ═══════════════════════════════════════════════════
-// MANIFEST PAGE
+// MANIFEST PAGE — load on demand, today only
 // ═══════════════════════════════════════════════════
 
 function loadManifestPage() {
+  // Jika sudah loaded, tidak perlu load ulang
   if (_mfLoaded) return;
-  _mfLoaded = false;
-  reloadManifest();
-}
 
-function reloadManifest() {
-  showLoading('Memuat Manifest...');
   var outer = document.getElementById('mfSheetOuter');
-  outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)"><span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">hourglass_empty</span>Memuat...</div>';
 
-  gasGet('getManifest').then(function (res) {
+  // Ganti placeholder dengan loading indicator
+  outer.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:40px;text-align:center">' +
+    '<div class="spinner"></div>' +
+    '<div style="font-size:13px;color:var(--gray5)">Memuat manifest hari ini...</div>' +
+    '</div>';
+
+  showLoading('Memuat Manifest hari ini...');
+
+  gasGet('getManifest', { dateFilter: 'today' }).then(function (res) {
     hideLoading();
     _mfData = res || {};
     _mfLoaded = true;
@@ -326,7 +306,48 @@ function reloadManifest() {
     renderManifest();
   }).catch(function (e) {
     hideLoading();
-    document.getElementById('mfSheetOuter').innerHTML = '<div style="padding:40px;text-align:center;color:var(--red)">Gagal memuat manifest: ' + escH(e.message) + '</div>';
+    outer.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">' +
+      '<span class="material-icons-round" style="font-size:48px;color:var(--red)">error_outline</span>' +
+      '<div style="font-size:14px;color:var(--red);font-weight:600">Gagal memuat manifest</div>' +
+      '<div style="font-size:12px;color:var(--gray5)">' + escH(e.message) + '</div>' +
+      '<button class="btn btn-primary" style="padding:11px 28px;font-size:13px;border-radius:10px;gap:8px;margin-top:4px" onclick="loadManifestPage()">' +
+      '<span class="material-icons-round">refresh</span> Coba Lagi</button>' +
+      '</div>';
+  });
+}
+
+function reloadManifest() {
+  // Reset state lalu load ulang
+  _mfLoaded = false;
+  _mfData = null;
+  _mfSelRow = -1; _mfSelCol = -1;
+
+  var outer = document.getElementById('mfSheetOuter');
+  outer.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:40px;text-align:center">' +
+    '<div class="spinner"></div>' +
+    '<div style="font-size:13px;color:var(--gray5)">Memuat ulang manifest hari ini...</div>' +
+    '</div>';
+
+  showLoading('Memuat ulang Manifest hari ini...');
+
+  gasGet('getManifest', { dateFilter: 'today' }).then(function (res) {
+    hideLoading();
+    _mfData = res || {};
+    _mfLoaded = true;
+    _mfFilter = '';
+    _mfFilteredRows = [];
+    document.getElementById('manifestSearch').value = '';
+    renderManifest();
+    toast('Manifest diperbarui', 'success');
+  }).catch(function (e) {
+    hideLoading();
+    outer.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">' +
+      '<span class="material-icons-round" style="font-size:48px;color:var(--red)">error_outline</span>' +
+      '<div style="font-size:14px;color:var(--red);font-weight:600">Gagal memuat manifest</div>' +
+      '<div style="font-size:12px;color:var(--gray5)">' + escH(e.message) + '</div>' +
+      '<button class="btn btn-primary" style="padding:11px 28px;font-size:13px;border-radius:10px;gap:8px;margin-top:4px" onclick="reloadManifest()">' +
+      '<span class="material-icons-round">refresh</span> Coba Lagi</button>' +
+      '</div>';
   });
 }
 
@@ -339,15 +360,14 @@ function filterManifest() {
 function renderManifest() {
   var outer = document.getElementById('mfSheetOuter');
   if (!_mfData || !_mfData.columns) {
-    outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)">Tidak ada data manifest</div>';
+    outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)">Tidak ada data manifest untuk hari ini</div>';
     _updateMfStats(0, 0, 0);
     return;
   }
 
-  var cols = _mfData.columns; // [{incharge, service, tujuan, dates:[], rows:[[awb,...],[awb,...]]}]
+  var cols = _mfData.columns;
   var q = (_mfFilter || '').toLowerCase();
 
-  // Filter rows per col
   var filteredCols = cols.map(function (col) {
     if (!q) return col;
     var frows = col.rows.filter(function (row) {
@@ -381,7 +401,7 @@ function renderManifest() {
     if (!incGroups.length || incGroups[incGroups.length - 1].name !== col.incharge) {
       incGroups.push({ name: col.incharge, count: 0 });
     }
-    incGroups[incGroups.length - 1].count += col.dates.length + 1; // +1 for AWB col
+    incGroups[incGroups.length - 1].count += col.dates.length + 1;
   });
 
   var html = '<table class="mf-table"><thead>';
@@ -424,7 +444,6 @@ function renderManifest() {
       var rowData = col.rows[row] || [];
       var awb = rowData[0] || '';
       var selClass = (_mfSelRow === row && _mfSelCol === ci * (col.dates.length + 1)) ? ' mf-cell-selected' : '';
-      var colIdx = ci * 100; // approximation for cell id
       html += '<td class="mf-cell-awb' + selClass + '" onclick="mfSelect(' + row + ',' + (ci * 100) + ',\'' + escQ(awb) + '\')">' + escH(awb) + '</td>';
       col.dates.forEach(function (d, di) {
         var val = rowData[di + 1] || (awb ? d : '');
@@ -451,7 +470,6 @@ function mfSelect(row, col, val) {
   _mfSelRow = row; _mfSelCol = col;
   document.getElementById('mfActiveCell').innerText = val || '—';
   document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
-  // re-render is expensive; just update class in DOM
   event.target.classList.add('mf-cell-selected');
   document.getElementById('mfSheetOuter').focus();
 }
@@ -489,14 +507,10 @@ function doSearchAwb(q) {
   }
 
   var ql = q.toLowerCase();
-
-  // Cari di allScanAwbs (data sudah ada di memory dari _awbs jika tersedia)
-  // Kalau tidak ada _awbs, cari dari header data (no_track match)
   var results = [];
 
   function searchArr(arr, type) {
     arr.forEach(function (item) {
-      // Cek apakah AWB ada di _awbs
       if (item._awbs) {
         item._awbs.forEach(function (awb) {
           if ((awb || '').toLowerCase().indexOf(ql) !== -1) {
@@ -504,7 +518,6 @@ function doSearchAwb(q) {
           }
         });
       } else {
-        // fallback: cari di no_track / header
         if ((item.no_track || '').toLowerCase().indexOf(ql) !== -1) {
           results.push({ awb: q, noTrack: item.no_track, type: type, tujuan: item.tujuan, incharge: item.incharge, service: item.service, status: item.status, from: item.from || '', date: item.created_date });
         }
@@ -516,10 +529,8 @@ function doSearchAwb(q) {
   searchArr(hvsData, 'hvs');
   searchArr(ibData,  'ib');
 
-  // Juga cari dari allScanAwbs
   allScanAwbs.forEach(function (r) {
     if ((r.awb || '').toLowerCase().indexOf(ql) !== -1) {
-      // De-duplicate
       var dup = results.some(function (x) { return x.awb === r.awb && x.noTrack === r.noTrack; });
       if (!dup) results.push(r);
     }
@@ -528,7 +539,6 @@ function doSearchAwb(q) {
   hdr.innerHTML = '<span class="material-icons-round">search</span> ' + results.length + ' hasil untuk <strong>"' + escH(q) + '"</strong>';
 
   if (!results.length) {
-    // Fetch dari server jika tidak ada di lokal
     body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">manage_search</span>Mencari di server...</div>';
     gasGet('searchAwb', { q: q }).then(function (res) {
       var list = res.list || [];
@@ -593,20 +603,19 @@ function handleSidebarSearch(e) {
 }
 
 // ═══════════════════════════════════════════════════
-// EXPORT CSV (main tables)
+// EXPORT CSV
 // ═══════════════════════════════════════════════════
 
 function exportCSV() {
-  // Export semua halaman yang aktif
   var active = '';
   ['ob','hvs','ib','manifest','obib'].forEach(function(p){
     if (document.getElementById('page-'+p).style.display !== 'none') active = p;
   });
-  if (active === 'ob')       exportObCSV();
-  else if (active === 'hvs') exportHvsCSV();
-  else if (active === 'ib')  exportIbCSV();
+  if (active === 'ob')            exportObCSV();
+  else if (active === 'hvs')      exportHvsCSV();
+  else if (active === 'ib')       exportIbCSV();
   else if (active === 'manifest') exportManifestCSV();
-  else if (active === 'obib')    exportObibCSV();
+  else if (active === 'obib')     exportObibCSV();
   else toast('Tidak ada data untuk diexport', 'error');
 }
 
@@ -631,7 +640,7 @@ function exportIbCSV() {
   _downloadCSV(rows, 'inbound_hvs_' + _dateStr() + '.csv');
 }
 
-// ─── CSV HELPER ───
+// ─── CSV & COPY HELPERS ───
 function _downloadCSV(rows, filename) {
   var csv = rows.map(function (r) {
     return r.map(function (c) {
@@ -656,7 +665,6 @@ function _dateStr() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-// ─── COPY HELPER ───
 function _copyText(text) {
   if (!text || !text.trim()) return;
   navigator.clipboard.writeText(text.trim()).then(function () {
@@ -681,6 +689,8 @@ function _copyText(text) {
     '.obib-table thead { position: sticky; top: 0; z-index: 10; }',
     '.obib-table .obib-rn { position: sticky; left: 0; z-index: 5; background: var(--gray1); }',
     '.obib-table thead .obib-rn { z-index: 15; }',
+    /* Manifest spinner */
+    '.mf-sheet-outer .spinner { border: 3px solid var(--gray3); border-top: 3px solid var(--blue2); }',
   ].join('\n');
   document.head.appendChild(style);
 })();
