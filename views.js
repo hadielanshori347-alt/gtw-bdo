@@ -1,6 +1,6 @@
 /* ============================================================
    GTW BDO — views.js v4.2
-   OB&IB combined view, Manifest (load on demand - today only),
+   OB&IB combined view, Manifest (dari 5-in-one, getManifestData),
    Search AWB, Sidebar search, Export CSV, Reload, buildAllScanAwbs
    ============================================================ */
 
@@ -277,335 +277,252 @@ function exportObibCSV() {
 }
 
 // ═══════════════════════════════════════════════════
-// MANIFEST PAGE — load on demand, TODAY ONLY
-// Menggunakan getManifest dengan dateFilter=today
+// MANIFEST PAGE — Persis dari 5-in-one
+// Menggunakan getManifestData (backend harus return:
+//   { headerRows: [[...],[...],[...]], colDefs: [...], awbRows: [[...]], totalCols: N }
 // Header 3 baris: Incharge → Service → Tujuan/DATE
 // ═══════════════════════════════════════════════════
 
 function loadManifestPage() {
-  // Jika sudah loaded, tidak perlu load ulang
-  if (_mfLoaded) return;
-
-  var outer = document.getElementById('mfSheetOuter');
-
-  // Tampilkan spinner loading
-  outer.innerHTML = [
-    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:40px;text-align:center">',
-      '<div class="spinner"></div>',
-      '<div style="font-size:13px;color:var(--gray5);font-weight:500">Memuat manifest hari ini...</div>',
-    '</div>'
-  ].join('');
-
-  showLoading('Memuat Manifest hari ini...');
-
-  // ─── Panggil getManifest dengan dateFilter=today ───
-  gasGet('getManifest', { dateFilter: 'today' }).then(function (res) {
+  if (_mfLoaded) { renderManifestSheet(); return; }
+  showLoading('Memuat manifest...');
+  gasGet('getManifestData').then(function (res) {
     hideLoading();
-    _mfData = res || {};
+    if (res.error) { toast('Error manifest: ' + res.error, 'error'); return; }
+    _mfData   = res;
     _mfLoaded = true;
-    _mfFilter = '';
     _mfSelRow = -1;
     _mfSelCol = -1;
-    _mfFilteredRows = [];
-    document.getElementById('manifestSearch').value = '';
-    renderManifest();
+    renderManifestSheet();
+    setupMfKeyboard();
   }).catch(function (e) {
     hideLoading();
-    _showManifestError(e.message, 'loadManifestPage()');
+    toast('Error: ' + e.message, 'error');
   });
 }
 
 function reloadManifest() {
-  // Reset state lalu load ulang data hari ini
   _mfLoaded = false;
   _mfData   = null;
   _mfSelRow = -1;
   _mfSelCol = -1;
-
-  var outer = document.getElementById('mfSheetOuter');
-  outer.innerHTML = [
-    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;padding:40px;text-align:center">',
-      '<div class="spinner"></div>',
-      '<div style="font-size:13px;color:var(--gray5);font-weight:500">Memuat ulang manifest hari ini...</div>',
-    '</div>'
-  ].join('');
-
-  showLoading('Memuat ulang Manifest hari ini...');
-
-  gasGet('getManifest', { dateFilter: 'today' }).then(function (res) {
+  showLoading('Refresh manifest...');
+  gasGet('getManifestData').then(function (res) {
     hideLoading();
-    _mfData   = res || {};
+    if (res.error) { toast('Error: ' + res.error, 'error'); return; }
+    _mfData   = res;
     _mfLoaded = true;
-    _mfFilter = '';
-    _mfFilteredRows = [];
-    document.getElementById('manifestSearch').value = '';
-    renderManifest();
-    toast('Manifest hari ini diperbarui', 'success');
+    renderManifestSheet();
+    setupMfKeyboard();
+    toast('Manifest diperbarui', 'success');
   }).catch(function (e) {
     hideLoading();
-    _showManifestError(e.message, 'reloadManifest()');
+    toast('Error: ' + e.message, 'error');
   });
-}
-
-function _showManifestError(msg, retryFn) {
-  var outer = document.getElementById('mfSheetOuter');
-  outer.innerHTML = [
-    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">',
-      '<span class="material-icons-round" style="font-size:48px;color:var(--red)">error_outline</span>',
-      '<div style="font-size:14px;color:var(--red);font-weight:600">Gagal memuat manifest</div>',
-      '<div style="font-size:12px;color:var(--gray5)">' + escH(msg) + '</div>',
-      '<button class="btn btn-primary" style="padding:11px 28px;font-size:13px;border-radius:10px;gap:8px;margin-top:4px" onclick="' + retryFn + '">',
-        '<span class="material-icons-round">refresh</span> Coba Lagi',
-      '</button>',
-    '</div>'
-  ].join('');
 }
 
 function filterManifest() {
-  _mfFilter = document.getElementById('manifestSearch').value;
-  _mfSelRow = -1;
-  _mfSelCol = -1;
-  renderManifest();
+  _mfFilter = document.getElementById('manifestSearch').value || '';
+  if (_mfLoaded) renderManifestSheet();
 }
 
-// ─── RENDER MANIFEST ───
-// Struktur data dari getManifest:
-//   res.columns → array of { incharge, service, tujuan, dates[], rows[][] }
-//   rows[i] = [ awb, date1?, date2?, ... ]   (sesuai col.dates.length)
-// Header yang dirender:
-//   Row 1 — Incharge  (merged per grup incharge)
-//   Row 2 — Service   (merged per kolom tujuan)
-//   Row 3 — Tujuan    (1 kolom AWB + N kolom DATE per tujuan)
-//   Row 4 — "AWB" | "DATE"
-// Ini sesuai tampilan di screenshot.
-function renderManifest() {
-  var outer = document.getElementById('mfSheetOuter');
-
-  if (!_mfData || !_mfData.columns || !_mfData.columns.length) {
-    outer.innerHTML = _manifestEmptyPlaceholder();
-    _updateMfStats(0, 0, 0);
+function renderManifestSheet() {
+  if (!_mfData) {
+    document.getElementById('mfSheetOuter').innerHTML =
+      '<div style="padding:40px;text-align:center;color:var(--gray5)">' +
+        '<span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>' +
+        'Klik Manifest di sidebar' +
+      '</div>';
     return;
   }
 
-  var cols = _mfData.columns;
-  var q    = (_mfFilter || '').toLowerCase();
+  var hRows    = _mfData.headerRows || [];
+  var colDefs  = _mfData.colDefs   || [];
+  var awbRows  = _mfData.awbRows   || [];
+  var totalCols = _mfData.totalCols || 0;
 
-  // Filter kolom berdasarkan query
-  var filteredCols = cols.map(function (col) {
-    if (!q) return col;
-    var matchedRows = col.rows.filter(function (row) {
-      return row.some(function (cell) {
-        return (cell || '').toLowerCase().indexOf(q) !== -1;
+  var fq = (_mfFilter || '').toLowerCase().trim();
+
+  // Filter rows berdasar query
+  var filteredAwbRows = awbRows;
+  if (fq) {
+    var tujuanMatch = false;
+    if (hRows[2]) hRows[2].forEach(function (v) {
+      if ((v || '').toLowerCase().indexOf(fq) !== -1) tujuanMatch = true;
+    });
+    if (!tujuanMatch) {
+      filteredAwbRows = awbRows.filter(function (row) {
+        return row.some(function (cell) { return (cell || '').toLowerCase().indexOf(fq) !== -1; });
       });
-    });
-    // Cek apakah header cocok
-    var headerMatch = (col.incharge + col.service + col.tujuan).toLowerCase().indexOf(q) !== -1;
-    return Object.assign({}, col, { rows: headerMatch ? col.rows : matchedRows });
-  }).filter(function (col) {
-    if (!q) return true;
-    return col.rows.length > 0 ||
-      (col.incharge + col.service + col.tujuan).toLowerCase().indexOf(q) !== -1;
-  });
-
-  if (!filteredCols.length) {
-    outer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5);font-size:13px">Tidak ada data yang cocok dengan pencarian "<strong>' + escH(q) + '</strong>"</div>';
-    _updateMfStats(0, 0, 0);
-    return;
+    }
   }
+  _mfFilteredRows = filteredAwbRows;
 
-  // Hitung maxRows
-  var maxRows = filteredCols.reduce(function (m, col) {
-    return Math.max(m, col.rows.length);
+  // Update stats
+  var incSet  = {};
+  colDefs.forEach(function (c) { if (c.incharge) incSet[c.incharge] = true; });
+  var tujCols = colDefs.filter(function (c) { return !c.isDate && c.tujuan; });
+  var totalAwb = tujCols.reduce(function (s, c) {
+    var cnt = awbRows.filter(function (r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length;
+    return s + cnt;
   }, 0);
-  _mfFilteredRows = [];
-  for (var i = 0; i < maxRows; i++) _mfFilteredRows.push(i);
+  document.getElementById('mfTotalCols').innerText = tujCols.length;
+  document.getElementById('mfTotalAwb').innerText  = totalAwb;
+  document.getElementById('mfTotalInc').innerText  = Object.keys(incSet).length;
 
-  // Stats
-  var totalAwb = 0;
-  filteredCols.forEach(function (col) {
-    col.rows.forEach(function (row) {
-      if (row[0]) totalAwb++;
-    });
-  });
-  var inchargeList = [];
-  filteredCols.forEach(function (col) {
-    if (inchargeList.indexOf(col.incharge) === -1) inchargeList.push(col.incharge);
-  });
+  var nCols = totalCols;
 
-  // Total kolom display (1 AWB + N DATE per tujuan)
-  var totalDisplayCols = filteredCols.reduce(function (s, col) {
-    return s + 1 + (col.dates ? col.dates.length : 1);
-  }, 0);
-  _updateMfStats(filteredCols.length, totalAwb, inchargeList.length);
-
-  // ── Build header colspan groups ──
-
-  // Grup Incharge: berapa colspan per incharge
-  var incGroups = [];
-  filteredCols.forEach(function (col) {
-    var span = 1 + (col.dates ? col.dates.length : 1); // AWB cols + DATE cols
-    if (!incGroups.length || incGroups[incGroups.length - 1].name !== col.incharge) {
-      incGroups.push({ name: col.incharge, count: 0 });
+  // Helper: buat baris header dengan merged cells
+  function buildSpannedRow(hArr, cellClass) {
+    var cells = [];
+    var i = 0;
+    while (i < nCols) {
+      var val = hArr[i] || '';
+      if (!val) { cells.push({ val: '', span: 1 }); i++; continue; }
+      var span = 1;
+      while (i + span < nCols && (!hArr[i + span] || hArr[i + span] === '')) span++;
+      cells.push({ val: val, span: span });
+      i += span;
     }
-    incGroups[incGroups.length - 1].count += span;
-  });
-
-  // ── Build HTML ──
-  var html = '<table class="mf-table"><thead>';
-
-  // ── Row 1: Incharge ──
-  html += '<tr><th class="mf-rn" rowspan="4">#</th>';
-  incGroups.forEach(function (g) {
-    html += '<th class="mf-hdr-incharge" colspan="' + g.count + '">' + escH(g.name) + '</th>';
-  });
-  html += '</tr>';
-
-  // ── Row 2: Service (merged per tujuan-kolom) ──
-  // Group consecutive cols dengan service+incharge sama
-  html += '<tr>';
-  var svcGroups = [];
-  filteredCols.forEach(function (col) {
-    var span = 1 + (col.dates ? col.dates.length : 1);
-    var key  = col.incharge + '|' + col.service;
-    if (!svcGroups.length || svcGroups[svcGroups.length - 1].key !== key) {
-      svcGroups.push({ key: key, name: col.service, count: 0 });
-    }
-    svcGroups[svcGroups.length - 1].count += span;
-  });
-  svcGroups.forEach(function (g) {
-    html += '<th class="mf-hdr-service" colspan="' + g.count + '">' + escH(g.name) + '</th>';
-  });
-  html += '</tr>';
-
-  // ── Row 3: Tujuan (1 kolom tujuan = 1 AWB + N DATE cells) ──
-  html += '<tr>';
-  filteredCols.forEach(function (col) {
-    var span = 1 + (col.dates ? col.dates.length : 1);
-    html += '<th class="mf-hdr-tujuan" colspan="' + span + '">' + escH(col.tujuan) + '</th>';
-  });
-  html += '</tr>';
-
-  // ── Row 4: AWB | DATE sub-headers ──
-  html += '<tr>';
-  filteredCols.forEach(function (col, ci) {
-    // Kolom AWB
-    html += '<th class="mf-hdr-sub-awb" data-ci="' + ci + '" data-si="0">AWB</th>';
-    // Kolom DATE (satu atau lebih)
-    var dates = col.dates || [];
-    if (dates.length) {
-      dates.forEach(function (d, di) {
-        html += '<th class="mf-hdr-date" data-ci="' + ci + '" data-di="' + di + '">' + escH(d) + '</th>';
-      });
-    } else {
-      // Minimal 1 kolom DATE
-      html += '<th class="mf-hdr-date" data-ci="' + ci + '" data-di="0">DATE</th>';
-    }
-  });
-  html += '</tr></thead><tbody>';
-
-  // ── Data rows ──
-  for (var row = 0; row < maxRows; row++) {
-    html += '<tr class="mf-data-row">';
-    html += '<td class="mf-rn">' + (row + 1) + '</td>';
-
-    filteredCols.forEach(function (col, ci) {
-      var rowData = col.rows[row] || [];
-      var awb     = rowData[0] || '';
-      var colBase = ci * 1000; // Unique col ID
-
-      // Cell AWB
-      var selClass = (_mfSelRow === row && _mfSelCol === colBase) ? ' mf-cell-selected' : '';
-      html += '<td class="mf-cell-awb' + selClass + '" onclick="mfSelect(' + row + ',' + colBase + ',\'' + escQ(awb) + '\')">' + escH(awb) + '</td>';
-
-      // Cell DATE(s)
-      var dates = col.dates || [];
-      if (dates.length) {
-        dates.forEach(function (d, di) {
-          // Isi date hanya jika ada AWB di baris ini; jika tidak, kosong
-          var dateVal = awb ? (rowData[di + 1] || d) : '';
-          var selClassD = (_mfSelRow === row && _mfSelCol === colBase + di + 1) ? ' mf-cell-selected' : '';
-          html += '<td class="mf-cell-date' + selClassD + '" onclick="mfSelect(' + row + ',' + (colBase + di + 1) + ',\'' + escQ(dateVal) + '\')">' + escH(dateVal) + '</td>';
-        });
-      } else {
-        // Satu kolom DATE — tampilkan date jika ada AWB
-        var dateVal = awb ? (rowData[1] || '') : '';
-        var selClassD = (_mfSelRow === row && _mfSelCol === colBase + 1) ? ' mf-cell-selected' : '';
-        html += '<td class="mf-cell-date' + selClassD + '" onclick="mfSelect(' + row + ',' + (colBase + 1) + ',\'' + escQ(dateVal) + '\')">' + escH(dateVal) + '</td>';
-      }
-    });
-
-    html += '</tr>';
+    return '<tr><th class="mf-rn" style="z-index:5">#</th>' +
+      cells.map(function (c) {
+        return '<th colspan="' + c.span + '" class="' + cellClass + '">' + escH(c.val) + '</th>';
+      }).join('') + '</tr>';
   }
 
-  if (maxRows === 0) {
-    var totalSubCols = filteredCols.reduce(function (s, col) {
-      return s + 1 + (col.dates ? col.dates.length : 1);
-    }, 0);
-    html += '<tr><td class="mf-rn">—</td><td colspan="' + totalSubCols + '" style="padding:20px;text-align:center;color:var(--gray5);font-size:12px">Tidak ada AWB untuk hari ini</td></tr>';
-  }
+  var row0Html = buildSpannedRow(hRows[0] || [], 'mf-hdr-incharge');
+  var row1Html = buildSpannedRow(hRows[1] || [], 'mf-hdr-service');
+  var row2Html = '<tr><th class="mf-rn">—</th>' +
+    colDefs.map(function (c) {
+      if (c.isDate) return '<th class="mf-hdr-date">DATE</th>';
+      return '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>';
+    }).join('') + '</tr>';
 
-  html += '</tbody></table>';
-  outer.innerHTML = html;
+  var dataHtml = filteredAwbRows.length
+    ? filteredAwbRows.map(function (row, ri) {
+        return '<tr class="mf-data-row" data-ri="' + ri + '">' +
+          '<td class="mf-rn">' + (ri + 1) + '</td>' +
+          colDefs.map(function (c, ci) {
+            var val    = row[c.colIdx] || '';
+            var isSel  = (_mfSelRow === ri && _mfSelCol === ci);
+            if (c.isDate) return '<td class="mf-cell-date' + (isSel ? ' mf-cell-selected' : '') +
+              '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')">' + escH(val) + '</td>';
+            if (!val) return '<td class="mf-cell-empty' + (isSel ? ' mf-cell-selected' : '') +
+              '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')"></td>';
+            return '<td class="mf-cell-awb' + (isSel ? ' mf-cell-selected' : '') +
+              '" data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')" title="' + escH(val) + '">' + escH(val) + '</td>';
+          }).join('') +
+        '</tr>';
+      }).join('')
+    : '<tr><td class="mf-rn" style="color:var(--gray5)">—</td>' +
+      '<td colspan="' + (nCols || 1) + '" style="text-align:center;padding:20px;color:var(--gray5);font-size:12px">Tidak ada data AWB</td></tr>';
 
-  // Keyboard Ctrl+C support
-  outer.onkeydown = function (e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-      var sel = outer.querySelector('.mf-cell-selected');
-      if (sel) _copyText(sel.innerText);
-    }
-  };
+  var tableHtml = '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
+  document.getElementById('mfSheetOuter').innerHTML = tableHtml;
+  updateMfActiveCellLabel();
 }
 
-// ─── Placeholder saat belum load ───
-function _manifestEmptyPlaceholder() {
-  return [
-    '<div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">',
-      '<span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>',
-      '<div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest Hari Ini</div>',
-      '<div style="font-size:13px;color:var(--gray5);max-width:320px;line-height:1.7">',
-        'Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.',
-      '</div>',
-      '<button class="btn btn-primary" style="padding:13px 32px;font-size:14px;border-radius:10px;gap:10px;margin-top:8px" onclick="loadManifestPage()">',
-        '<span class="material-icons-round" style="font-size:20px">grid_on</span>',
-        'Muat Manifest Hari Ini',
-      '</button>',
-    '</div>'
-  ].join('');
-}
-
-function mfSelect(row, col, val) {
-  _mfSelRow = row;
-  _mfSelCol = col;
-  document.getElementById('mfActiveCell').innerText = val || '—';
-  document.querySelectorAll('.mf-cell-selected').forEach(function (el) {
-    el.classList.remove('mf-cell-selected');
-  });
-  event.target.classList.add('mf-cell-selected');
+function mfSelectCell(ri, ci) {
+  _mfSelRow = ri;
+  _mfSelCol = ci;
+  document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
+  var target = document.querySelector('[data-ri="' + ri + '"][data-ci="' + ci + '"]');
+  if (target) {
+    target.classList.add('mf-cell-selected');
+    target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  updateMfActiveCellLabel();
   document.getElementById('mfSheetOuter').focus();
 }
 
-function _updateMfStats(cols, awb, inc) {
-  document.getElementById('mfTotalCols').innerText = cols;
-  document.getElementById('mfTotalAwb').innerText  = awb;
-  document.getElementById('mfTotalInc').innerText  = inc;
+function updateMfActiveCellLabel() {
+  var el = document.getElementById('mfActiveCell');
+  if (!el) return;
+  if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) { el.innerText = '—'; return; }
+  var row     = _mfFilteredRows[_mfSelRow];
+  var colDefs = _mfData.colDefs || [];
+  var c       = colDefs[_mfSelCol];
+  if (!row || !c) { el.innerText = '—'; return; }
+  el.innerText = (row[c.colIdx] || '(kosong)');
+}
+
+function setupMfKeyboard() {
+  var outer = document.getElementById('mfSheetOuter');
+  if (!outer || outer._kbSetup) return;
+  outer._kbSetup = true;
+  outer.addEventListener('keydown', function (e) {
+    if (!_mfData) return;
+    var colDefs = _mfData.colDefs || [];
+    var nRows   = _mfFilteredRows.length;
+    var nCols   = colDefs.length;
+    if (!nRows || !nCols) return;
+    if (_mfSelRow < 0) { _mfSelRow = 0; _mfSelCol = 0; }
+    var moved = false;
+    if      (e.key === 'ArrowDown')  { e.preventDefault(); _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
+    else if (e.key === 'ArrowUp')    { e.preventDefault(); _mfSelRow = Math.max(_mfSelRow - 1, 0);         moved = true; }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); _mfSelCol = Math.min(_mfSelCol + 1, nCols - 1); moved = true; }
+    else if (e.key === 'ArrowLeft')  { e.preventDefault(); _mfSelCol = Math.max(_mfSelCol - 1, 0);         moved = true; }
+    else if (e.key === 'Tab') {
+      e.preventDefault();
+      _mfSelCol = (_mfSelCol + 1) % nCols;
+      if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1);
+      moved = true;
+    }
+    else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); copyMfCell(); return; }
+    if (moved) {
+      document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
+      var target = document.querySelector('[data-ri="' + _mfSelRow + '"][data-ci="' + _mfSelCol + '"]');
+      if (target) { target.classList.add('mf-cell-selected'); target.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
+      updateMfActiveCellLabel();
+    }
+  });
+}
+
+function copyMfCell() {
+  if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) return;
+  var row     = _mfFilteredRows[_mfSelRow];
+  var colDefs = _mfData.colDefs || [];
+  var c       = colDefs[_mfSelCol];
+  if (!row || !c) return;
+  var val = row[c.colIdx] || '';
+  if (!val) { toast('Sel kosong', 'error'); return; }
+  navigator.clipboard.writeText(val).then(function () {
+    showCopyFlash(val);
+  }).catch(function () {
+    var ta = document.createElement('textarea');
+    ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); showCopyFlash(val); }
+    catch (ex) { toast('Gagal copy', 'error'); }
+    document.body.removeChild(ta);
+  });
+}
+
+function showCopyFlash(val) {
+  var el = document.getElementById('copyFlash');
+  el.innerText = '✓ Copied: ' + val;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function () { el.classList.remove('show'); }, 1200);
 }
 
 function exportManifestCSV() {
-  if (!_mfData || !_mfData.columns || !_mfData.columns.length) {
-    toast('Muat manifest dulu', 'error');
-    return;
-  }
-  var today = _dateStr();
-  var rows  = [['INCHARGE', 'SERVICE', 'TUJUAN', 'AWB', 'DATE', 'TANGGAL_EXPORT']];
-  _mfData.columns.forEach(function (col) {
-    col.rows.forEach(function (row) {
-      var awb   = row[0] || '';
-      var dates = col.dates || [];
-      var dateVal = dates.length ? (row[1] || dates[0] || '') : (row[1] || '');
-      rows.push([col.incharge, col.service, col.tujuan, awb, dateVal, today]);
-    });
+  if (!_mfData) { toast('Manifest belum dimuat', 'error'); return; }
+  var colDefs  = _mfData.colDefs   || [];
+  var awbRows  = _mfData.awbRows   || [];
+  var hRows    = _mfData.headerRows || [];
+  if (!colDefs.length) { toast('Tidak ada data manifest', 'error'); return; }
+  var h0 = hRows[0] || [];
+  var h1 = hRows[1] || [];
+  var h2 = hRows[2] || [];
+  var csvRows = [];
+  csvRows.push(['#'].concat(h0).map(function (v) { return '"' + v + '"'; }).join(','));
+  csvRows.push([''].concat(h1).map(function (v) { return '"' + v + '"'; }).join(','));
+  csvRows.push([''].concat(h2).map(function (v) { return '"' + v + '"'; }).join(','));
+  awbRows.forEach(function (row, i) {
+    csvRows.push(['"' + (i + 1) + '"'].concat(row.map(function (c) { return '"' + (c || '') + '"'; })).join(','));
   });
-  _downloadCSV(rows, 'manifest_' + today + '.csv');
+  _downloadCSV(csvRows.join('\n'), 'manifest_export_' + _dateStr() + '.csv');
 }
 
 // ═══════════════════════════════════════════════════
@@ -757,17 +674,23 @@ function exportIbCSV() {
   _downloadCSV(rows, 'inbound_hvs_' + _dateStr() + '.csv');
 }
 
-// ─── CSV & COPY HELPERS ───
+// ─── CSV HELPER ───
 function _downloadCSV(rows, filename) {
-  var csv = rows.map(function (r) {
-    return r.map(function (c) {
-      var s = (c === null || c === undefined) ? '' : String(c);
-      if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
-        s = '"' + s.replace(/"/g, '""') + '"';
-      }
-      return s;
-    }).join(',');
-  }).join('\r\n');
+  var csv;
+  // rows bisa array of arrays atau string langsung
+  if (typeof rows === 'string') {
+    csv = rows;
+  } else {
+    csv = rows.map(function (r) {
+      return r.map(function (c) {
+        var s = (c === null || c === undefined) ? '' : String(c);
+        if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1) {
+          s = '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      }).join(',');
+    }).join('\r\n');
+  }
   var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   var url  = URL.createObjectURL(blob);
   var a    = document.createElement('a');
@@ -781,49 +704,3 @@ function _dateStr() {
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-
-function _copyText(text) {
-  if (!text || !text.trim()) return;
-  navigator.clipboard.writeText(text.trim()).then(function () {
-    var el = document.getElementById('copyFlash');
-    el.classList.add('show');
-    setTimeout(function () { el.classList.remove('show'); }, 1200);
-  }).catch(function () {
-    toast('Gagal copy', 'error');
-  });
-}
-
-// ─── CSS tambahan untuk Manifest (mf-hdr-sub-awb) ───
-(function () {
-  var style = document.createElement('style');
-  style.textContent = [
-    /* Sub-header "AWB" di baris ke-4 manifest */
-    '.mf-hdr-sub-awb{',
-      'background:var(--gray1);',
-      'color:var(--gray5);',
-      'font-weight:700;',
-      'font-size:10px;',
-      'text-align:center;',
-      'padding:5px 8px;',
-      'white-space:nowrap;',
-      'border:1px solid var(--gray3);',
-      'text-transform:uppercase;',
-      'letter-spacing:.5px;',
-    '}',
-    /* Hover highlight manifest rows */
-    '.mf-data-row:hover .mf-cell-awb { background: var(--blue-light); }',
-    '.mf-data-row:hover .mf-cell-date { background: #FFF9C4; }',
-    '.mf-data-row:hover .mf-cell-selected { background: #BBDEFB !important; }',
-    /* Obib extra styles */
-    '.obib-cell-awb.selesai { color: var(--green2); font-style: italic; }',
-    '.obib-cell-awb.obib-hvs { background: var(--purple-light); }',
-    '.obib-cell-awb.obib-hvs.selesai { color: var(--purple); font-style: italic; }',
-    '.obib-cell-awb.obib-ib { background: var(--green-light); }',
-    '.obib-cell-awb.obib-ib.selesai { color: var(--green); font-style: italic; }',
-    '.obib-table-wrap { overflow-x: auto; max-height: calc(100vh - 140px); overflow-y: auto; }',
-    '.obib-table thead { position: sticky; top: 0; z-index: 10; }',
-    '.obib-table .obib-rn { position: sticky; left: 0; z-index: 5; background: var(--gray1); }',
-    '.obib-table thead .obib-rn { z-index: 15; }',
-  ].join('\n');
-  document.head.appendChild(style);
-})();
