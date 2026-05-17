@@ -491,3 +491,112 @@ tr:hover td{background:var(--gray0)}
   .table-panel { position: relative; }
 }
 @media(max-width:860px){.sidebar{width:52px}.sidebar .nav-label{opacity:0;width:0}.sidebar-toggle{display:none}}
+
+/* ============================================================
+   GTW BDO — obib-extra.css  v4.4
+   Tambahkan ke bagian OB&IB TABLE di main.css
+   ============================================================ */
+
+/* ─── OB&IB TABLE WRAP ─── */
+.obib-table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 190px);
+}
+.obib-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.obib-rn {
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: var(--gray1);
+  border-right: 2px solid var(--gray3) !important;
+}
+.obib-table thead .obib-rn { z-index: 15; background: var(--gray2); }
+
+/* ─── AWB CELLS ─── */
+.obib-cell-awb {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--gray8);
+  background: #fff;
+  min-width: 140px;
+  border: 1px solid var(--gray3);
+  white-space: nowrap;
+}
+.obib-cell-awb.hvs {
+  color: var(--purple);
+  background: #FAF5FF;
+}
+
+/* ─── DATE CELLS ─── */
+.obib-cell-date {
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--gray6);
+  background: #FFFDE7;
+  min-width: 155px;
+  border: 1px solid var(--gray3);
+  white-space: nowrap;
+  text-align: left;
+}
+.obib-cell-date-empty {
+  background: #FFFDE7;
+  min-width: 155px;
+  border: 1px solid var(--gray3);
+}
+
+/* ─── INBOUND_HVS LABEL (TUJUAN_(FROM)) ─── */
+.obib-cell-ib-label {
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue2);
+  background: #DBEAFE;
+  min-width: 160px;
+  border: 1px solid var(--gray3);
+  border-left: 3px solid var(--blue2);
+  white-space: nowrap;
+}
+
+/* ─── INBOUND_HVS AWB ─── */
+.obib-cell-ib-awb {
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+  background: #F0FDF4;
+  min-width: 160px;
+  border: 1px solid var(--gray3);
+  white-space: nowrap;
+}
+
+/* ─── EMPTY CELL ─── */
+.obib-cell-empty {
+  background: #FAFAFA;
+  border: 1px solid var(--gray3);
+}
+
+/* ─── ROW HOVER ─── */
+.obib-table tbody tr:hover .obib-cell-awb      { background: #EEF5FF; }
+.obib-table tbody tr:hover .obib-cell-awb.hvs  { background: #F3E8FF; }
+.obib-table tbody tr:hover .obib-cell-date     { background: #FFF9C4; }
+.obib-table tbody tr:hover .obib-cell-date-empty { background: #FFF9C4; }
+.obib-table tbody tr:hover .obib-cell-ib-label { background: #BFDBFE; }
+.obib-table tbody tr:hover .obib-cell-ib-awb   { background: #DCFCE7; }
+.obib-table tbody tr:hover .obib-cell-empty    { background: #F0F0F0; }
+
+/* ─── HEADER TYPE ROW ─── */
+.obib-hdr-type.outbound     { background: #FFF3E0; color: #E65100; font-size: 10px; padding: 5px 8px; text-align: center; font-family: var(--font); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.obib-hdr-type.outbound-hvs { background: #F3E5F5; color: #6A1B9A; font-size: 10px; padding: 5px 8px; text-align: center; font-family: var(--font); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.obib-hdr-type.inbound-hvs  { background: #E8F5E9; color: #2E7D32; font-size: 10px; padding: 5px 8px; text-align: center; font-family: var(--font); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.obib-hdr-type.date         { background: #F5F5F5; color: var(--gray6); font-size: 10px; padding: 5px 8px; text-align: center; font-family: var(--font); font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+
+/* ─── SEPARATOR ANTAR INCHARGE GROUP ─── */
+.obib-table th.obib-hdr-incharge { border-left: 2px solid rgba(255,255,255,0.3); }
+.obib-table th.obib-hdr-kota     { border-left: 2px solid rgba(255,255,255,0.2); }
