@@ -11,7 +11,7 @@
 <title>GTW BDO Mobile</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style-mobile.css">
 </head>
 <body>
 
@@ -212,32 +212,34 @@
 </div>
 
 <!-- ═══ SCANNER PAGE ═══ -->
-<div class="page hidden" id="pgScan">
+<div class="page hidden" id="pgScan" style="display:flex;flex-direction:column">
   <div class="appbar">
     <button class="back-icon" onclick="Scanner.close()">←</button>
-    <div class="appbar-title" id="scanTitle">Scanner</div>
+    <div class="appbar-title" id="scanTitle">Scan AWB</div>
     <button class="torch-btn" id="torchBtn" onclick="Scanner.toggleFlash()">🔦</button>
   </div>
-  <div class="scan-ctx-bar" id="scanCtxBar">
-    📍 Scan ke: <span id="scanCtxLabel" style="font-weight:800"></span>
+  <div class="scan-ctx-bar" id="scanCtxBar" style="display:flex">
+    📍 Scan ke: &nbsp;<span id="scanCtxLabel" style="font-weight:800;color:var(--blue2)"></span>
   </div>
   <div class="cam-wrap"><div id="reader"></div></div>
   <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
-  <div class="scroll-content">
-    <div class="form-group" style="margin-bottom:8px">
-      <label class="form-label">Input Manual AWB</label>
+  <div class="scroll-content" style="flex:1;overflow-y:auto;padding-bottom:80px">
+    <div class="form-group" style="margin-bottom:12px">
+      <label class="form-label" style="font-size:11px;font-weight:700;letter-spacing:.5px">INPUT MANUAL AWB</label>
       <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter"
         onkeydown="Scanner.handleManual(event)" autocomplete="off">
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span class="scan-total">LIST SCAN (<span id="scanCount">0</span>)</span>
-      <button class="btn-ghost" onclick="Scanner.clearAll()">Clear All</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:14px;font-weight:700;color:var(--text)">LIST SCANNED (<span id="scanCount">0</span>)</span>
+      <button class="btn-ghost" style="border:1.5px solid var(--blue2);border-radius:6px;padding:5px 12px;color:var(--blue2);font-weight:600;font-size:13px" onclick="Scanner.clearAll()">Clear All</button>
     </div>
-    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada AWB di-scan</div></div>
-    <div style="margin-top:12px">
-      <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()">💾 SIMPAN & LANJUT</button>
-    </div>
-    <div class="safe-pad"></div>
+    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada data di scan</div></div>
+  </div>
+  <div style="padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));background:var(--surface);border-top:1px solid var(--border);flex-shrink:0">
+    <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()"
+      style="width:100%;padding:17px;font-size:15px;font-weight:700;letter-spacing:.5px;border:none;border-radius:30px;cursor:pointer;background:var(--border);color:var(--text3);font-family:var(--font);transition:.2s">
+      SIMPAN &amp; FOTO
+    </button>
   </div>
 </div>
 
