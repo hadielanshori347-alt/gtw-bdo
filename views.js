@@ -1,11 +1,10 @@
 /* ============================================================
    GTW BDO — views.js v4.6
-   FIX: INBOUND_HVS = Opsi B (label tujuan sebagai separator,
-        lalu AWB di bawahnya) — persis seperti GSheet OB&IB
-   FIX: DATE kolom INBOUND_HVS ikut tiap baris (label & AWB)
+   FIX: INBOUND_HVS selalu dirender (meski kosong)
+   FIX: Opsi B — IB_LABEL (tujuan) lalu AWB di bawahnya
+   FIX: DATE kolom selalu paired dengan kolom di kirinya
    ============================================================ */
 
-// ─── INIT & RELOAD ───
 window.addEventListener('DOMContentLoaded', function () {
   showLoading('Memuat data...');
   gasGet('getMasterData').then(function (r) {
@@ -13,91 +12,57 @@ window.addEventListener('DOMContentLoaded', function () {
     populateGlobalIncharge();
     buildCbOptions();
     initAllCbs();
-    return Promise.all([
-      gasGet('getObList'),
-      gasGet('getHvsList'),
-      gasGet('getIbList')
-    ]);
+    return Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')]);
   }).then(function (results) {
     obData  = results[0].list || [];
     hvsData = results[1].list || [];
     ibData  = results[2].list || [];
-    renderObTable();
-    renderHvsTable();
-    renderIbTable();
-    updateObStats();
-    updateHvsStats();
-    updateIbStats();
+    renderObTable(); renderHvsTable(); renderIbTable();
+    updateObStats(); updateHvsStats(); updateIbStats();
     buildAllScanAwbs();
     hideLoading();
-  }).catch(function (e) {
-    hideLoading();
-    toast('Gagal memuat data: ' + e.message, 'error');
-  });
+  }).catch(function (e) { hideLoading(); toast('Gagal memuat data: ' + e.message, 'error'); });
 });
 
 function reloadAll() {
   showLoading('Memuat ulang...');
-  _mfLoaded = false;
-  _obibData = null;
-  Promise.all([
-    gasGet('getObList'),
-    gasGet('getHvsList'),
-    gasGet('getIbList')
-  ]).then(function (results) {
-    obData  = results[0].list || [];
-    hvsData = results[1].list || [];
-    ibData  = results[2].list || [];
-    renderObTable();
-    renderHvsTable();
-    renderIbTable();
-    updateObStats();
-    updateHvsStats();
-    updateIbStats();
-    buildAllScanAwbs();
-    hideLoading();
-    toast('Data diperbarui', 'success');
-  }).catch(function (e) {
-    hideLoading();
-    toast('Gagal reload: ' + e.message, 'error');
-  });
+  _mfLoaded = false; _obibData = null;
+  Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')])
+    .then(function (results) {
+      obData  = results[0].list || [];
+      hvsData = results[1].list || [];
+      ibData  = results[2].list || [];
+      renderObTable(); renderHvsTable(); renderIbTable();
+      updateObStats(); updateHvsStats(); updateIbStats();
+      buildAllScanAwbs(); hideLoading();
+      toast('Data diperbarui', 'success');
+    }).catch(function (e) { hideLoading(); toast('Gagal reload: ' + e.message, 'error'); });
 }
 
 function buildAllScanAwbs() {
-  gasGet('getAllScanAwbs').then(function (r) {
-    if (r && r.list) allScanAwbs = r.list;
-  }).catch(function () {});
+  gasGet('getAllScanAwbs').then(function (r) { if (r && r.list) allScanAwbs = r.list; }).catch(function () {});
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// ★★★  OB & IB  COMBINED VIEW  v4.6  ★★★
-//
-// INBOUND_HVS tampil OPSI B — persis seperti GSheet:
-//   Baris 1: BURUJUL_(P0111)      ← label tujuan (background biru muda, bold)
-//   Baris 2: wee                  ← AWB (background hijau muda)
-//   Baris 3: ww
-//   Baris 4: dff
-//   Baris 5: CIMAHI_UTARA_(P0048) ← label tujuan berikutnya
-//   Baris 6: asasd
-//
-// DATE kolom INBOUND_HVS: tiap baris (label & AWB) tampilkan date-nya
-// Key matching: SERVICE(r2) | FROM/kota(r3) dari header OB&IB
-//               vs SERVICE & FROM di SCAN_IB (kolom H)
+// OB & IB COMBINED VIEW v4.6
+// Struktur kolom (persis GSheet):
+//   DATE | OUTBOUND | DATE | OUTBOUND_HVS | DATE | INBOUND_HVS | DATE
+// INBOUND_HVS Opsi B:
+//   Row 1: BURUJUL_(P0111)      ← IB_LABEL (bold biru muda)
+//   Row 2: wee                  ← AWB (hijau muda)
+//   Row 3: ww
+//   Row 4: CIMAHI_UTARA_(P0048) ← IB_LABEL berikutnya
+//   Row 5: asasd
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
   var wrap = document.getElementById('obibTableWrap');
   wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat...</div>';
-
   if (_obibData) { _buildObibTable(_obibData); return; }
-
   showLoading('Memuat OB & IB...');
   gasGet('getOBIB').then(function (res) {
     hideLoading();
-    if (res.error) {
-      wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>';
-      return;
-    }
+    if (res.error) { wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>'; return; }
     _obibData = res;
     _buildObibTable(_obibData);
   }).catch(function (e) {
@@ -107,30 +72,28 @@ function renderObibPage() {
 }
 
 function reloadObib() { _obibData = null; renderObibPage(); }
-function filterObib() { if (_obibData) _buildObibTable(_obibData); }
+function filterObib()  { if (_obibData) _buildObibTable(_obibData); }
 
-// ─── Core builder v4.6 ───
+// ─── Core builder ───
 function _buildObibTable(data) {
   var wrap = document.getElementById('obibTableWrap');
-
   var colDefs    = data.colDefs    || [];
   var ibSections = data.ibSections || [];
   var headerR1   = data.headerR1   || [];
   var headerR2   = data.headerR2   || [];
   var headerR3   = data.headerR3   || [];
-  var headerR4   = data.headerR4   || [];
-
-  var filter = (document.getElementById('obibSearch').value || '').toLowerCase().trim();
+  var filter     = (document.getElementById('obibSearch').value || '').toLowerCase().trim();
 
   if (!colDefs.length) {
-    wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada kolom di sheet OB&IB</div>';
+    wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada kolom</div>';
     return;
   }
 
   var nCols = colDefs.length;
 
-  // ── Lookup IB sections: key = SERVICE(r2) | FROM/kota(r3) ──
-  // ibSections dari backend punya field: service, from, tujuan, date, awbs
+  // ── ibMap: key = SERVICE(r2)|FROM-kota(r3) → array of sections ──
+  // ibSections dari backend = ibRecords dari sheet IB
+  // field: { no_track, incharge, service, from(kota), tujuan(pool), date, awbs:[{awb,tujuan,from,date}] }
   var ibMap = {};
   ibSections.forEach(function (sec) {
     var k = (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
@@ -138,9 +101,10 @@ function _buildObibTable(data) {
     ibMap[k].push(sec);
   });
 
-  // ── Build flat rows per kolom ──
-  // cellType: 'AWB' | 'IB_LABEL' | 'DATE_VAL' | 'DATE_EMPTY'
-  var flatCol = [];
+  // ── Build flatRows per kolom ──
+  // flatCol[ci] = array of { cellType:'AWB'|'IB_LABEL'|'DATE_VAL'|'DATE_EMPTY', text, date }
+  // DATE kolom → null dulu (diisi setelah loop)
+  var flatCol = new Array(nCols).fill(null);
 
   for (var ci = 0; ci < nCols; ci++) {
     var def = colDefs[ci];
@@ -148,97 +112,98 @@ function _buildObibTable(data) {
 
     // ── OUTBOUND / OUTBOUND_HVS ──
     if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
-      var entries = (def.entries && def.entries.length) ? def.entries : (def.flatRows || []);
+      var entries = def.entries && def.entries.length ? def.entries : (def.flatRows || []);
       var rows = [];
       entries.forEach(function (e) {
-        var awb  = e.awb || e.text || '';
-        var date = e.date || '';
+        var awb = e.awb || e.text || '';
         if (!awb) return;
         if (filter && awb.toLowerCase().indexOf(filter) === -1) return;
-        rows.push({ cellType: 'AWB', text: awb, date: date });
+        rows.push({ cellType: 'AWB', text: awb, date: e.date || '' });
       });
-      flatCol.push(rows);
+      flatCol[ci] = rows;
       continue;
     }
 
-    // ── INBOUND_HVS — OPSI B ──
+    // ── INBOUND_HVS ──
+    // SELALU set flatCol[ci] = array (meski kosong) agar kolom tetap dirender
     if (ct === 'INBOUND_HVS') {
-      // key = SERVICE(r2) | kota/r3 dari header OB&IB
       var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
-      var secs = (ibMap[k] || []).slice();
+      var secs = ibMap[k] || [];
 
-      // Kumpulkan semua AWB, group per TUJUAN (nama pool) dalam urutan kemunculan
-      var tujuanOrder  = [];
-      var tujuanGroups = {}; // tujuan → [{awb, date}]
-      var tujuanDate   = {}; // tujuan → date pertama (untuk baris label)
+      // Juga coba dari colDefs.flatRows / colDefs.ibSections sebagai fallback
+      // (untuk kompatibilitas dengan versi backend lama)
+      if (!secs.length && def.ibSections && def.ibSections.length) {
+        secs = def.ibSections;
+      }
+
+      // Group AWB per TUJUAN (nama pool) dalam urutan kemunculan
+      var tujOrder  = [];
+      var tujGroups = {}; // tujuan → [{awb, date}]
+      var tujDate   = {}; // tujuan → date pertama
 
       secs.forEach(function (sec) {
         var awbList = sec.awbs || [];
+
+        // Kalau awbList kosong tapi ada tujuan, tetap tampilkan label
+        if (!awbList.length && sec.tujuan) {
+          var t = sec.tujuan;
+          if (!tujGroups[t]) { tujGroups[t] = []; tujOrder.push(t); tujDate[t] = sec.date || ''; }
+          return;
+        }
+
         awbList.forEach(function (a) {
           var tuj = a.tujuan || sec.tujuan || '';
           var awb = a.awb || '';
           var dt  = a.date || sec.date || '';
           if (!awb) return;
-          // Filter
           if (filter) {
-            var ok = awb.toLowerCase().indexOf(filter) !== -1 ||
-                     tuj.toLowerCase().indexOf(filter) !== -1 ||
-                     dt.toLowerCase().indexOf(filter) !== -1;
-            if (!ok) return;
+            if (awb.toLowerCase().indexOf(filter) === -1 &&
+                tuj.toLowerCase().indexOf(filter) === -1 &&
+                dt.indexOf(filter) === -1) return;
           }
-          if (!tujuanGroups[tuj]) {
-            tujuanGroups[tuj] = [];
-            tujuanOrder.push(tuj);
-            tujuanDate[tuj] = dt;
+          if (!tujGroups[tuj]) {
+            tujGroups[tuj] = [];
+            tujOrder.push(tuj);
+            tujDate[tuj] = dt;
           }
-          tujuanGroups[tuj].push({ awb: awb, date: dt });
+          tujGroups[tuj].push({ awb: awb, date: dt });
         });
-
-        // Kalau sec tidak punya awbs tapi ada tujuan, tetap tampilkan label
-        if (!awbList.length && sec.tujuan && !tujuanGroups[sec.tujuan]) {
-          tujuanGroups[sec.tujuan] = [];
-          tujuanOrder.push(sec.tujuan);
-          tujuanDate[sec.tujuan] = sec.date || '';
-        }
       });
 
-      // Build flat rows: IB_LABEL → AWB → IB_LABEL → AWB → ...
+      // Build flat: IB_LABEL → AWB → AWB → IB_LABEL → AWB → ...
       var ibRows = [];
-      tujuanOrder.forEach(function (tuj) {
-        var awbs      = tujuanGroups[tuj] || [];
-        var labelDate = tujuanDate[tuj] || (awbs.length ? awbs[0].date : '');
-        // Baris label tujuan
-        ibRows.push({ cellType: 'IB_LABEL', text: tuj, date: labelDate });
-        // Baris AWB
+      tujOrder.forEach(function (tuj) {
+        var awbs = tujGroups[tuj] || [];
+        var ld   = tujDate[tuj] || (awbs.length ? awbs[0].date : '');
+        ibRows.push({ cellType: 'IB_LABEL', text: tuj, date: ld });
         awbs.forEach(function (a) {
           ibRows.push({ cellType: 'AWB', text: a.awb, date: a.date });
         });
       });
 
-      flatCol.push(ibRows);
+      flatCol[ci] = ibRows; // selalu array (bisa kosong)
       continue;
     }
 
-    // ── DATE — placeholder, diisi dari kolom pasangannya ──
+    // ── DATE → tetap null, diisi setelah loop ──
     if (ct === 'DATE') {
-      flatCol.push(null);
+      flatCol[ci] = null;
       continue;
     }
 
-    flatCol.push([]);
+    flatCol[ci] = [];
   }
 
-  // ── Isi kolom DATE dari kolom AWB pasangannya ──
+  // ── Isi kolom DATE dari kolom sumber (kiri/kanan dalam grup r1) ──
   for (var ci = 0; ci < nCols; ci++) {
-    if (flatCol[ci] !== null) continue;
+    if (flatCol[ci] !== null) continue; // bukan DATE
 
+    // Cari sumber: preferensi kolom di KIRI dalam grup r1 yang sama
     var srcCi = -1;
-    // Cari ke kiri dalam grup r1 yang sama
     for (var j = ci - 1; j >= 0; j--) {
       if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
       if (flatCol[j] !== null) { srcCi = j; break; }
     }
-    // Kalau tidak ketemu, cari ke kanan
     if (srcCi === -1) {
       for (var j = ci + 1; j < nCols; j++) {
         if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
@@ -248,122 +213,102 @@ function _buildObibTable(data) {
 
     if (srcCi === -1) { flatCol[ci] = []; continue; }
 
-    var srcRows = flatCol[srcCi] || [];
-    // Tiap baris (AWB maupun IB_LABEL) punya date-nya sendiri
-    flatCol[ci] = srcRows.map(function (r) {
+    // Tiap baris sumber punya date-nya sendiri
+    flatCol[ci] = (flatCol[srcCi] || []).map(function (r) {
       return r.date
-        ? { cellType: 'DATE_VAL', text: r.date, date: r.date }
-        : { cellType: 'DATE_EMPTY', text: '', date: '' };
+        ? { cellType: 'DATE_VAL',   text: r.date, date: r.date }
+        : { cellType: 'DATE_EMPTY', text: '',      date: ''     };
     });
   }
 
   // ── Hitung maxRows ──
   var maxRows = 0;
-  flatCol.forEach(function (arr) {
-    if (arr && arr.length > maxRows) maxRows = arr.length;
-  });
+  flatCol.forEach(function (arr) { if (arr && arr.length > maxRows) maxRows = arr.length; });
 
-  // ── Reorder: DATE selalu di KIRI kolom AWB pasangannya ──
+  // ══════════════════════════════════════════════════════════════
+  // REORDER: DATE selalu di KIRI kolom AWB pasangannya
+  // Aturan sederhana: iterasi colDefs kiri→kanan, skip DATE,
+  // sebelum setiap kolom AWB cari DATE yang belum dipakai di kanan
+  // dalam grup r1 yang sama — sisipkan DATE di kiri.
+  // ══════════════════════════════════════════════════════════════
   var dateUsed    = {};
   var renderOrder = [];
 
   for (var ci = 0; ci < nCols; ci++) {
     var ct = (colDefs[ci].colType || '').toUpperCase();
-    if (ct === 'DATE') continue;
+    if (ct === 'DATE') continue; // diproses saat ketemu AWB pasangannya
 
-    var pairedDateIdx = -1;
-    // Cari DATE di kanan
+    // Cari DATE di kanan dalam grup r1 yang sama (belum dipakai)
+    var pairDate = -1;
     for (var di = ci + 1; di < nCols; di++) {
       if ((colDefs[di].r1 || '') !== (colDefs[ci].r1 || '')) break;
-      if ((colDefs[di].colType || '').toUpperCase() === 'DATE' && !dateUsed[di]) { pairedDateIdx = di; break; }
-      if ((colDefs[di].colType || '').toUpperCase() !== 'DATE') break;
+      var dct = (colDefs[di].colType || '').toUpperCase();
+      if (dct === 'DATE' && !dateUsed[di]) { pairDate = di; break; }
+      if (dct !== 'DATE') break; // AWB lain sebelum DATE → stop
     }
-    // Cari DATE di kiri
-    if (pairedDateIdx === -1) {
+    // Kalau tidak ada di kanan, cari di kiri
+    if (pairDate === -1) {
       for (var di = ci - 1; di >= 0; di--) {
         if ((colDefs[di].r1 || '') !== (colDefs[ci].r1 || '')) break;
-        if ((colDefs[di].colType || '').toUpperCase() === 'DATE' && !dateUsed[di]) { pairedDateIdx = di; break; }
-        if ((colDefs[di].colType || '').toUpperCase() !== 'DATE') break;
+        var dct = (colDefs[di].colType || '').toUpperCase();
+        if (dct === 'DATE' && !dateUsed[di]) { pairDate = di; break; }
+        if (dct !== 'DATE') break;
       }
     }
 
-    if (pairedDateIdx !== -1) {
-      renderOrder.push(pairedDateIdx);
-      dateUsed[pairedDateIdx] = true;
-    }
+    if (pairDate !== -1) { renderOrder.push(pairDate); dateUsed[pairDate] = true; }
     renderOrder.push(ci);
   }
-
-  // DATE yang belum masuk (edge case)
+  // Sisa DATE yang belum masuk
   for (var ci = 0; ci < nCols; ci++) {
     if ((colDefs[ci].colType || '').toUpperCase() === 'DATE' && !dateUsed[ci]) renderOrder.push(ci);
   }
 
   var nRender = renderOrder.length;
 
-  // ── Helper: merged header row ──
-  function buildMergedHdrRow(hArr, cellClass) {
-    var cells = [];
-    var i = 0;
+  // ── Helper: merged header ──
+  function buildMergedHdr(hArr, cls) {
+    var cells = [], i = 0;
     while (i < nRender) {
       var ci   = renderOrder[i];
       var val  = (hArr[ci] || '').toString().trim();
       var span = 1;
       while (i + span < nRender) {
-        var nextCi  = renderOrder[i + span];
-        var nextVal = (hArr[nextCi] || '').toString().trim();
-        if (nextVal) break;
-        if ((colDefs[nextCi].r1 || '') !== (colDefs[ci].r1 || '')) break;
+        var nci = renderOrder[i + span];
+        if ((hArr[nci] || '').toString().trim()) break;
+        if ((colDefs[nci].r1 || '') !== (colDefs[ci].r1 || '')) break;
         span++;
       }
       cells.push({ val: val, span: span });
       i += span;
     }
-    return '<tr>' +
-      '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function (c) {
-        return '<th colspan="' + c.span + '" class="' + cellClass + '">' + escH(c.val) + '</th>';
-      }).join('') +
-    '</tr>';
+    return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
+      cells.map(function (c) { return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
   }
 
-  // ── Row 4: tipe kolom ──
   function typeClass(t) {
     t = (t || '').toUpperCase();
-    if (t === 'OUTBOUND')     return 'outbound';
-    if (t === 'OUTBOUND_HVS') return 'outbound-hvs';
-    if (t === 'INBOUND_HVS')  return 'inbound-hvs';
-    if (t === 'DATE')         return 'date';
-    return '';
+    return t === 'OUTBOUND' ? 'outbound' : t === 'OUTBOUND_HVS' ? 'outbound-hvs' : t === 'INBOUND_HVS' ? 'inbound-hvs' : 'date';
   }
 
-  var hdr4 = '<tr>' +
-    '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
+  var hdr4 = '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
     renderOrder.map(function (ci) {
-      var c = colDefs[ci];
-      return '<th class="obib-hdr-type ' + typeClass(c.colType) + '">' + escH(c.colType || '—') + '</th>';
-    }).join('') +
-  '</tr>';
+      return '<th class="obib-hdr-type ' + typeClass(colDefs[ci].colType) + '">' + escH(colDefs[ci].colType || '—') + '</th>';
+    }).join('') + '</tr>';
 
   // ── Build tbody ──
   var tbodyHtml = '';
-
   if (maxRows === 0) {
-    tbodyHtml = '<tr><td class="obib-rn" style="color:var(--gray5)">—</td>' +
-      '<td colspan="' + nRender + '" style="text-align:center;padding:24px;color:var(--gray5);font-size:13px">Belum ada data AWB</td></tr>';
+    tbodyHtml = '<tr><td class="obib-rn">—</td><td colspan="' + nRender + '" style="text-align:center;padding:24px;color:var(--gray5)">Belum ada data AWB</td></tr>';
   } else {
     for (var ri = 0; ri < maxRows; ri++) {
-      tbodyHtml += '<tr>';
-      tbodyHtml += '<td class="obib-rn">' + (ri + 1) + '</td>';
-
+      tbodyHtml += '<tr><td class="obib-rn">' + (ri + 1) + '</td>';
       for (var roi = 0; roi < nRender; roi++) {
         var ci  = renderOrder[roi];
         var arr = flatCol[ci] || [];
-        var def = colDefs[ci];
-        var ct  = (def.colType || '').toUpperCase();
+        var ct  = (colDefs[ci].colType || '').toUpperCase();
         var row = ri < arr.length ? arr[ri] : null;
 
-        // DATE kolom
         if (ct === 'DATE') {
           tbodyHtml += row && row.text
             ? '<td class="obib-cell-date">' + escH(row.text) + '</td>'
@@ -371,21 +316,17 @@ function _buildObibTable(data) {
           continue;
         }
 
-        // INBOUND_HVS kolom — Opsi B
         if (ct === 'INBOUND_HVS') {
           if (!row) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:160px"></td>';
           } else if (row.cellType === 'IB_LABEL') {
-            // Baris label tujuan: bold, background biru muda
             tbodyHtml += '<td class="obib-cell-ib-label" title="' + escH(row.text) + '">' + escH(row.text) + '</td>';
           } else {
-            // Baris AWB: background hijau muda
             tbodyHtml += '<td class="obib-cell-ib-awb" title="' + escH(row.text) + '">' + escH(row.text) + '</td>';
           }
           continue;
         }
 
-        // OUTBOUND / OUTBOUND_HVS
         if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
           if (!row || !row.text) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:140px"></td>';
@@ -395,56 +336,41 @@ function _buildObibTable(data) {
           continue;
         }
 
-        // Kolom lain
-        tbodyHtml += row && row.text
-          ? '<td class="obib-cell-awb">' + escH(row.text) + '</td>'
-          : '<td class="obib-cell-empty"></td>';
+        tbodyHtml += row && row.text ? '<td class="obib-cell-awb">' + escH(row.text) + '</td>' : '<td class="obib-cell-empty"></td>';
       }
-
       tbodyHtml += '</tr>';
     }
   }
 
-  var html =
-    '<table class="obib-table">' +
-    '<thead>' +
-      buildMergedHdrRow(headerR1, 'obib-hdr-incharge') +
-      buildMergedHdrRow(headerR2, 'obib-hdr-service') +
-      buildMergedHdrRow(headerR3, 'obib-hdr-kota') +
+  wrap.innerHTML =
+    '<table class="obib-table"><thead>' +
+      buildMergedHdr(headerR1, 'obib-hdr-incharge') +
+      buildMergedHdr(headerR2, 'obib-hdr-service') +
+      buildMergedHdr(headerR3, 'obib-hdr-kota') +
       hdr4 +
-    '</thead>' +
-    '<tbody>' + tbodyHtml + '</tbody>' +
-    '</table>';
-
-  wrap.innerHTML = html;
+    '</thead><tbody>' + tbodyHtml + '</tbody></table>';
 }
 
 // ─── Export OB&IB CSV ───
 function exportObibCSV() {
   if (!_obibData) { toast('Muat data dulu', 'error'); return; }
-  var colDefs    = _obibData.colDefs    || [];
-  var ibSections = _obibData.ibSections || [];
+  var colDefs = _obibData.colDefs || [], ibSections = _obibData.ibSections || [];
   var ibMap = {};
   ibSections.forEach(function (sec) {
     var k = (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
     if (!ibMap[k]) ibMap[k] = [];
     ibMap[k].push(sec);
   });
-  var rows = [['TYPE', 'INCHARGE', 'SERVICE', 'KOTA', 'TUJUAN_IB', 'FROM', 'DATE', 'AWB']];
+  var rows = [['TYPE','INCHARGE','SERVICE','KOTA','TUJUAN_IB','FROM','DATE','AWB']];
   colDefs.forEach(function (def) {
     var ct = (def.colType || '').toUpperCase();
     if (ct === 'DATE') return;
     if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
-      var entries = (def.entries && def.entries.length) ? def.entries : (def.flatRows || []);
-      entries.forEach(function (e) {
-        var awb = e.awb || e.text || '';
-        if (!awb) return;
-        rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]);
-      });
+      var ent = def.entries && def.entries.length ? def.entries : (def.flatRows || []);
+      ent.forEach(function (e) { var awb = e.awb || e.text || ''; if (awb) rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]); });
     } else if (ct === 'INBOUND_HVS') {
-      var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
-      var secs = ibMap[k] || [];
-      secs.forEach(function (sec) {
+      var k = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
+      (ibMap[k] || []).forEach(function (sec) {
         (sec.awbs || []).forEach(function (a) {
           rows.push([ct, def.r1, def.r2, def.r3, a.tujuan || sec.tujuan || '', sec.from || '', a.date || sec.date || '', a.awb || '']);
         });
@@ -488,33 +414,22 @@ function filterManifest() {
 
 function renderManifestSheet() {
   if (!_mfData) {
-    document.getElementById('mfSheetOuter').innerHTML =
-      '<div style="padding:40px;text-align:center;color:var(--gray5)">' +
-        '<span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>' +
-        'Klik Manifest di sidebar' +
-      '</div>';
+    document.getElementById('mfSheetOuter').innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)"><span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>Klik Manifest di sidebar</div>';
     return;
   }
-  var hRows    = _mfData.headerRows || [];
-  var colDefs  = _mfData.colDefs   || [];
-  var awbRows  = _mfData.awbRows   || [];
+  var hRows = _mfData.headerRows || [], colDefs = _mfData.colDefs || [], awbRows = _mfData.awbRows || [];
   var totalCols = _mfData.totalCols || 0;
   var fq = (_mfFilter || '').toLowerCase().trim();
-  var filteredAwbRows = fq
-    ? awbRows.filter(function (row) { return row.some(function (c) { return (c || '').toLowerCase().indexOf(fq) !== -1; }); })
-    : awbRows;
+  var filteredAwbRows = fq ? awbRows.filter(function (row) { return row.some(function (c) { return (c || '').toLowerCase().indexOf(fq) !== -1; }); }) : awbRows;
   _mfFilteredRows = filteredAwbRows;
-  var incSet = {};
-  colDefs.forEach(function (c) { if (c.incharge) incSet[c.incharge] = true; });
+  var incSet = {}; colDefs.forEach(function (c) { if (c.incharge) incSet[c.incharge] = true; });
   var tujCols = colDefs.filter(function (c) { return !c.isDate && c.tujuan; });
-  var totalAwb = tujCols.reduce(function (s, c) {
-    return s + awbRows.filter(function (r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length;
-  }, 0);
+  var totalAwb = tujCols.reduce(function (s, c) { return s + awbRows.filter(function (r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length; }, 0);
   document.getElementById('mfTotalCols').innerText = tujCols.length;
   document.getElementById('mfTotalAwb').innerText  = totalAwb;
   document.getElementById('mfTotalInc').innerText  = Object.keys(incSet).length;
   var nCols = totalCols;
-  function buildSpannedRow(hArr, cellClass) {
+  function buildSpannedRow(hArr, cls) {
     var cells = [], i = 0;
     while (i < nCols) {
       var val = hArr[i] || '';
@@ -523,32 +438,25 @@ function renderManifestSheet() {
       while (i + span < nCols && (!hArr[i + span] || hArr[i + span] === '')) span++;
       cells.push({ val: val, span: span }); i += span;
     }
-    return '<tr><th class="mf-rn" style="z-index:5">#</th>' +
-      cells.map(function (c) { return '<th colspan="' + c.span + '" class="' + cellClass + '">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
+    return '<tr><th class="mf-rn" style="z-index:5">#</th>' + cells.map(function (c) { return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
   }
   var row0Html = buildSpannedRow(hRows[0] || [], 'mf-hdr-incharge');
   var row1Html = buildSpannedRow(hRows[1] || [], 'mf-hdr-service');
-  var row2Html = '<tr><th class="mf-rn">—</th>' +
-    colDefs.map(function (c) {
-      return c.isDate ? '<th class="mf-hdr-date">DATE</th>' : '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>';
-    }).join('') + '</tr>';
+  var row2Html = '<tr><th class="mf-rn">—</th>' + colDefs.map(function (c) { return c.isDate ? '<th class="mf-hdr-date">DATE</th>' : '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>'; }).join('') + '</tr>';
   var dataHtml = filteredAwbRows.length
     ? filteredAwbRows.map(function (row, ri) {
-        return '<tr class="mf-data-row" data-ri="' + ri + '">' +
-          '<td class="mf-rn">' + (ri + 1) + '</td>' +
+        return '<tr class="mf-data-row" data-ri="' + ri + '"><td class="mf-rn">' + (ri + 1) + '</td>' +
           colDefs.map(function (c, ci) {
-            var val  = row[c.colIdx] || '';
-            var sel  = (_mfSelRow === ri && _mfSelCol === ci) ? ' mf-cell-selected' : '';
+            var val = row[c.colIdx] || '';
+            var sel = (_mfSelRow === ri && _mfSelCol === ci) ? ' mf-cell-selected' : '';
             var attr = ' data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')"';
             if (c.isDate) return '<td class="mf-cell-date' + sel + '"' + attr + '>' + escH(val) + '</td>';
             if (!val)     return '<td class="mf-cell-empty' + sel + '"' + attr + '></td>';
             return '<td class="mf-cell-awb' + sel + '"' + attr + ' title="' + escH(val) + '">' + escH(val) + '</td>';
           }).join('') + '</tr>';
       }).join('')
-    : '<tr><td class="mf-rn" style="color:var(--gray5)">—</td>' +
-      '<td colspan="' + (nCols || 1) + '" style="text-align:center;padding:20px;color:var(--gray5);font-size:12px">Tidak ada data AWB</td></tr>';
-  document.getElementById('mfSheetOuter').innerHTML =
-    '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
+    : '<tr><td class="mf-rn">—</td><td colspan="' + (nCols || 1) + '" style="text-align:center;padding:20px;color:var(--gray5)">Tidak ada data AWB</td></tr>';
+  document.getElementById('mfSheetOuter').innerHTML = '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
   updateMfActiveCellLabel();
 }
 
@@ -562,11 +470,9 @@ function mfSelectCell(ri, ci) {
 }
 
 function updateMfActiveCellLabel() {
-  var el = document.getElementById('mfActiveCell');
-  if (!el) return;
+  var el = document.getElementById('mfActiveCell'); if (!el) return;
   if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) { el.innerText = '—'; return; }
-  var row = _mfFilteredRows[_mfSelRow];
-  var c   = (_mfData.colDefs || [])[_mfSelCol];
+  var row = _mfFilteredRows[_mfSelRow], c = (_mfData.colDefs || [])[_mfSelCol];
   el.innerText = (row && c) ? (row[c.colIdx] || '(kosong)') : '—';
 }
 
@@ -584,12 +490,8 @@ function setupMfKeyboard() {
     else if (e.key === 'ArrowUp')    { e.preventDefault(); _mfSelRow = Math.max(_mfSelRow - 1, 0); moved = true; }
     else if (e.key === 'ArrowRight') { e.preventDefault(); _mfSelCol = Math.min(_mfSelCol + 1, nCols - 1); moved = true; }
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); _mfSelCol = Math.max(_mfSelCol - 1, 0); moved = true; }
-    else if (e.key === 'Tab') {
-      e.preventDefault();
-      _mfSelCol = (_mfSelCol + 1) % nCols;
-      if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1);
-      moved = true;
-    } else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); copyMfCell(); return; }
+    else if (e.key === 'Tab') { e.preventDefault(); _mfSelCol = (_mfSelCol + 1) % nCols; if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
+    else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); copyMfCell(); return; }
     if (moved) {
       document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
       var t = document.querySelector('[data-ri="' + _mfSelRow + '"][data-ci="' + _mfSelCol + '"]');
@@ -601,14 +503,12 @@ function setupMfKeyboard() {
 
 function copyMfCell() {
   if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) return;
-  var row = _mfFilteredRows[_mfSelRow];
-  var c   = (_mfData.colDefs || [])[_mfSelCol];
+  var row = _mfFilteredRows[_mfSelRow], c = (_mfData.colDefs || [])[_mfSelCol];
   if (!row || !c) return;
   var val = row[c.colIdx] || '';
   if (!val) { toast('Sel kosong', 'error'); return; }
   navigator.clipboard.writeText(val).then(function () { showCopyFlash(val); }).catch(function () {
-    var ta = document.createElement('textarea');
-    ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    var ta = document.createElement('textarea'); ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); showCopyFlash(val); } catch (x) { toast('Gagal copy', 'error'); }
     document.body.removeChild(ta);
@@ -617,24 +517,19 @@ function copyMfCell() {
 
 function showCopyFlash(val) {
   var el = document.getElementById('copyFlash');
-  el.innerText = '✓ Copied: ' + val;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(function () { el.classList.remove('show'); }, 1200);
+  el.innerText = '✓ Copied: ' + val; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('show'); }, 1200);
 }
 
 function exportManifestCSV() {
   if (!_mfData) { toast('Manifest belum dimuat', 'error'); return; }
   var colDefs = _mfData.colDefs || [], awbRows = _mfData.awbRows || [], hRows = _mfData.headerRows || [];
   if (!colDefs.length) { toast('Tidak ada data manifest', 'error'); return; }
-  var h0 = hRows[0] || [], h1 = hRows[1] || [], h2 = hRows[2] || [];
   var csvRows = [];
-  csvRows.push(['#'].concat(h0).map(function (v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(h1).map(function (v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(h2).map(function (v) { return '"' + v + '"'; }).join(','));
-  awbRows.forEach(function (row, i) {
-    csvRows.push(['"' + (i + 1) + '"'].concat(row.map(function (c) { return '"' + (c || '') + '"'; })).join(','));
-  });
+  csvRows.push(['#'].concat(hRows[0] || []).map(function (v) { return '"' + v + '"'; }).join(','));
+  csvRows.push([''].concat(hRows[1] || []).map(function (v) { return '"' + v + '"'; }).join(','));
+  csvRows.push([''].concat(hRows[2] || []).map(function (v) { return '"' + v + '"'; }).join(','));
+  awbRows.forEach(function (row, i) { csvRows.push(['"' + (i + 1) + '"'].concat(row.map(function (c) { return '"' + (c || '') + '"'; })).join(',')); });
   _downloadCSV(csvRows.join('\n'), 'manifest_export_' + _dateStr() + '.csv');
 }
 
@@ -648,56 +543,48 @@ function doSearchAwb(q) {
   var body = document.getElementById('searchAwbResultBody');
   if (!q) {
     hdr.innerHTML  = '<span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari';
-    body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas untuk mencari di semua data</div>';
+    body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas</div>';
     return;
   }
-  var ql      = q.toLowerCase();
+  var ql = q.toLowerCase();
   var results = allScanAwbs.filter(function (item) { return (item.awb || '').toLowerCase().indexOf(ql) !== -1; });
   hdr.innerHTML = '<span class="material-icons-round">' + (results.length ? 'check_circle' : 'search_off') + '</span> ' +
-    (results.length ? results.length + ' hasil ditemukan untuk "' + escH(q) + '"' : 'Tidak ada hasil untuk "' + escH(q) + '"');
+    (results.length ? results.length + ' hasil untuk "' + escH(q) + '"' : 'Tidak ada hasil untuk "' + escH(q) + '"');
   if (!results.length) {
     body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">hourglass_empty</span>Mencari di server...</div>';
     gasGet('searchAwb', { q: q }).then(function (res) {
       var list = res.list || [];
       hdr.innerHTML = '<span class="material-icons-round">' + (list.length ? 'check_circle' : 'search_off') + '</span> ' +
         (list.length ? list.length + ' hasil untuk "' + escH(q) + '"' : 'AWB tidak ditemukan');
-      body.innerHTML = list.length
-        ? list.map(function (r) { return _searchItem(r, q); }).join('')
-        : '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan di semua data</div>';
-    }).catch(function () {
-      body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
-    });
+      body.innerHTML = list.length ? list.map(function (r) { return _searchItem(r, q); }).join('') :
+        '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
+    }).catch(function () { body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>'; });
     return;
   }
   body.innerHTML = results.map(function (r) { return _searchItem(r, q); }).join('');
 }
 
 function _searchItem(r, q) {
-  var typeKey   = (r.type || '').toLowerCase();
-  var typeLabel = typeKey === 'ob' ? 'Outbound BDO' : typeKey === 'hvs' ? 'Outbound HVS' : 'Inbound HVS';
-  var icon      = typeKey === 'ob' ? 'local_shipping' : typeKey === 'hvs' ? 'inventory_2' : 'move_to_inbox';
-  var hl        = escH(r.awb || '').replace(new RegExp('(' + escRegex(escH(q)) + ')', 'gi'), '<mark>$1</mark>');
+  var tk = (r.type || '').toLowerCase();
+  var tl = tk === 'ob' ? 'Outbound BDO' : tk === 'hvs' ? 'Outbound HVS' : 'Inbound HVS';
+  var ic = tk === 'ob' ? 'local_shipping' : tk === 'hvs' ? 'inventory_2' : 'move_to_inbox';
+  var hl = escH(r.awb || '').replace(new RegExp('(' + escRegex(escH(q)) + ')', 'gi'), '<mark>$1</mark>');
   return '<div class="search-awb-item">' +
-    '<div class="search-awb-item-icon ' + typeKey + '"><span class="material-icons-round">' + icon + '</span></div>' +
+    '<div class="search-awb-item-icon ' + tk + '"><span class="material-icons-round">' + ic + '</span></div>' +
     '<div class="search-awb-item-main">' +
       '<div class="search-awb-item-awb">' + hl + '</div>' +
       '<div class="search-awb-item-meta">' +
-        '<span class="search-awb-type-tag ' + typeKey + '">' + typeLabel + '</span>' +
-        '<span>' + escH(r.incharge || '—') + '</span>' +
-        '<span>•</span><span>' + escH(r.service || '—') + '</span>' +
+        '<span class="search-awb-type-tag ' + tk + '">' + tl + '</span>' +
+        '<span>' + escH(r.incharge || '—') + '</span><span>•</span><span>' + escH(r.service || '—') + '</span>' +
         '<span>•</span><span>→ ' + escH(r.tujuan || '—') + '</span>' +
         (r.from ? '<span>• FROM: ' + escH(r.from) + '</span>' : '') +
         '<span>•</span><span style="color:var(--gray4)">' + escH(r.date || '') + '</span>' +
       '</div>' +
-      '<div style="margin-top:3px">NO TRACK: <span class="search-awb-item-notrack" onclick="openDetailModal(\'' + typeKey + '\',\'' + escQ(r.noTrack || '') + '\')">' + escH(r.noTrack || '') + '</span></div>' +
-    '</div>' +
-  '</div>';
+      '<div style="margin-top:3px">NO TRACK: <span class="search-awb-item-notrack" onclick="openDetailModal(\'' + tk + '\',\'' + escQ(r.noTrack || '') + '\')">' + escH(r.noTrack || '') + '</span></div>' +
+    '</div></div>';
 }
 
-function clearSearchAwb() {
-  document.getElementById('searchAwbMainInput').value = '';
-  doSearchAwb('');
-}
+function clearSearchAwb() { document.getElementById('searchAwbMainInput').value = ''; doSearchAwb(''); }
 
 function handleSidebarSearch(e) {
   if (e.key !== 'Enter') return;
@@ -714,12 +601,8 @@ function handleSidebarSearch(e) {
 // ═══════════════════════════════════════════════════════════════════
 
 function exportCSV() {
-  var pages = ['ob', 'hvs', 'ib', 'manifest', 'obib'];
-  var active = '';
-  pages.forEach(function (p) {
-    var el = document.getElementById('page-' + p);
-    if (el && el.style.display !== 'none') active = p;
-  });
+  var pages = ['ob', 'hvs', 'ib', 'manifest', 'obib'], active = '';
+  pages.forEach(function (p) { var el = document.getElementById('page-' + p); if (el && el.style.display !== 'none') active = p; });
   if      (active === 'ob')       _exportListCSV(filteredData(obData),  ['no_track','incharge','service','tujuan','created_date','status','total_awb'], 'outbound_bdo_' + _dateStr() + '.csv');
   else if (active === 'hvs')      _exportListCSV(filteredData(hvsData), ['no_track','incharge','service','tujuan','created_date','status','total_awb'], 'outbound_hvs_' + _dateStr() + '.csv');
   else if (active === 'ib')       _exportListCSV(filteredData(ibData),  ['no_track','incharge','service','from','tujuan','created_date','status','total_awb'], 'inbound_hvs_' + _dateStr() + '.csv');
@@ -743,8 +626,7 @@ function _downloadCSV(rows, filename) {
     }).join(',');
   }).join('\r\n');
   var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = url; a.download = filename; a.style.display = 'none';
   document.body.appendChild(a); a.click();
   setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
