@@ -212,36 +212,32 @@
 </div>
 
 <!-- ═══ SCANNER PAGE ═══ -->
-<div class="page hidden" id="pgScan" style="display:flex;flex-direction:column">
+<div class="page hidden" id="pgScan">
   <div class="appbar">
     <button class="back-icon" onclick="Scanner.close()">←</button>
-    <div class="appbar-title" id="scanTitle">Scan AWB</div>
+    <div class="appbar-title" id="scanTitle">Scanner</div>
     <button class="torch-btn" id="torchBtn" onclick="Scanner.toggleFlash()">🔦</button>
   </div>
-  <div class="scan-ctx-bar" id="scanCtxBar" style="display:flex">
-    📍 Scan ke: &nbsp;<span id="scanCtxLabel" style="font-weight:800;color:var(--blue2)"></span>
+  <div class="scan-ctx-bar" id="scanCtxBar">
+    📍 Scan ke: <span id="scanCtxLabel" style="font-weight:800"></span>
   </div>
   <div class="cam-wrap"><div id="reader"></div></div>
   <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
-  <!-- Konten tengah scrollable -->
-  <div class="scroll-content" style="flex:1;overflow-y:auto;padding-bottom:80px">
-    <div class="form-group" style="margin-bottom:12px">
-      <label class="form-label" style="font-size:11px;font-weight:700;letter-spacing:.5px">INPUT MANUAL AWB</label>
+  <div class="scroll-content">
+    <div class="form-group" style="margin-bottom:8px">
+      <label class="form-label">Input Manual AWB</label>
       <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter"
         onkeydown="Scanner.handleManual(event)" autocomplete="off">
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:14px;font-weight:700;color:var(--text)">LIST SCANNED (<span id="scanCount">0</span>)</span>
-      <button class="btn-ghost" style="border:1.5px solid var(--blue2);border-radius:6px;padding:5px 12px;color:var(--blue2);font-weight:600;font-size:13px" onclick="Scanner.clearAll()">Clear All</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <span class="scan-total">LIST SCAN (<span id="scanCount">0</span>)</span>
+      <button class="btn-ghost" onclick="Scanner.clearAll()">Clear All</button>
     </div>
-    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada data di scan</div></div>
-  </div>
-  <!-- Tombol SIMPAN & FOTO fixed di bawah -->
-  <div style="padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));background:var(--surface);border-top:1px solid var(--border);flex-shrink:0">
-    <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()"
-      style="width:100%;padding:17px;font-size:15px;font-weight:700;letter-spacing:.5px;border:none;border-radius:30px;cursor:pointer;background:var(--border);color:var(--text3);font-family:var(--font);transition:.2s">
-      SIMPAN &amp; FOTO
-    </button>
+    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada AWB di-scan</div></div>
+    <div style="margin-top:12px">
+      <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()">💾 SIMPAN & LANJUT</button>
+    </div>
+    <div class="safe-pad"></div>
   </div>
 </div>
 
@@ -258,12 +254,19 @@
     <img id="photoPreview" alt="Preview">
   </div>
   <div class="gps-bar" id="gpsBar">📍 Mendapatkan lokasi...</div>
+  <!-- Bar 1: Ambil Foto -->
   <div class="photo-bar" id="barAmbil">
     <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
   </div>
+  <!-- Bar 2: Ulangi & Simpan -->
   <div class="photo-bar hidden" id="barResult">
     <button class="btn-cam btn-ulangi" onclick="Photo.ulangi()">↺ Ulangi</button>
     <button class="btn-cam btn-simpan-foto" onclick="Photo.simpan()">✅ Simpan</button>
+  </div>
+  <!-- Bar 3: Setelah simpan — Tambah Foto & Selesai -->
+  <div class="photo-bar hidden" id="barAfterSave">
+    <button class="btn-cam btn-ulangi" onclick="Photo.tambahFoto()">📷 Tambah Foto</button>
+    <button class="btn-cam btn-simpan-foto" onclick="Photo.selesai()">✅ Selesai</button>
   </div>
 </div>
 
