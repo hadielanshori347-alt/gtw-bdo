@@ -53,11 +53,7 @@ const Scanner = {
     document.getElementById('camErr').style.display = 'none';
     const h5 = new Html5Qrcode("reader");
     STATE.html5QrCode = h5;
-    const vw = window.innerWidth || 375;
-    const camH = Math.round(vw * 0.72);
-    const boxW = Math.round(vw * 0.72);
-    const boxH = Math.round(boxW * 0.55);
-    const cfg = { fps: 15, qrbox: { width: boxW, height: boxH }, aspectRatio: vw / camH };
+    const cfg = { fps: 3, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
 
     Html5Qrcode.getCameras()
       .then(cams => {
@@ -71,8 +67,7 @@ const Scanner = {
   },
 
   _startFacing(mode) {
-    const vw2 = window.innerWidth || 375;
-    const cfg = { fps: 15, qrbox: { width: Math.round(vw2 * 0.72), height: Math.round(vw2 * 0.4) } };
+    const cfg = { fps: 3, qrbox: { width: 250, height: 190 } };
     STATE.html5QrCode.start({ facingMode: mode }, cfg, Scanner._onSuccess, () => {})
       .then(() => STATE.isScannerRunning = true)
       .catch(() => {
