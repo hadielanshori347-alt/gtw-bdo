@@ -142,11 +142,8 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .torch-btn{color:#fff;background:none;border:none;font-size:22px;cursor:pointer;padding:4px}
 
 /* ── Scanner page — save button bottom ── */
-#btnSaveScan{
-  position:sticky;bottom:0;background:var(--green);color:#fff;border:none;width:100%;padding:15px;font-size:15px;font-weight:700;border-radius:12px;cursor:pointer;transition:.15s;font-family:var(--font)
-}
-#btnSaveScan:disabled{background:var(--border);color:var(--text3);cursor:not-allowed}
-#btnSaveScan:active:not(:disabled){opacity:.8}
+#btnSaveScan:not(:disabled){background:var(--blue2) !important;color:#fff !important}
+#btnSaveScan:active:not(:disabled){opacity:.85}
 
 /* ── Photo ── */
 #photoVideo{width:100%;height:100%;object-fit:cover;display:block}
@@ -254,7 +251,3 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .btn-add-tuj{background:var(--blue-l);color:var(--blue);padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid var(--blue-m)}
 .btn-add-tuj:disabled{opacity:.4;cursor:not-allowed}
 .scan-add-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-
-/* ── Scanner save btn ── */
-#btnSaveScan:not(:disabled){background:var(--blue2) !important;color:#fff !important}
-#btnSaveScan:active:not(:disabled){opacity:.85}
