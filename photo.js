@@ -7,15 +7,17 @@ const Photo = {
     STATE.capturedDataUrl = null;
     STATE.gpsCoords = null;
 
-    const preview  = document.getElementById('photoPreview');
-    const video    = document.getElementById('photoVideo');
-    const barAmbil = document.getElementById('barAmbil');
+    const preview   = document.getElementById('photoPreview');
+    const video     = document.getElementById('photoVideo');
+    const barAmbil  = document.getElementById('barAmbil');
     const barResult = document.getElementById('barResult');
+    const barAfter  = document.getElementById('barAfterSave');
 
     preview.style.display  = 'none';
     video.style.display    = 'block';
     barAmbil.classList.remove('hidden');
     barResult.classList.add('hidden');
+    barAfter.classList.add('hidden');
     document.getElementById('gpsBar').innerText = '📍 Mendapatkan lokasi...';
 
     UI.Page.show('pgPhoto');
@@ -51,42 +53,27 @@ const Photo = {
     }, { enableHighAccuracy: true, timeout: 6000 });
   },
 
+  _startCamera() {
+    const tries = [
+      { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 } }, audio: false },
+      { video: { facingMode: 'environment' }, audio: false },
+      { video: { facingMode: 'user' }, audio: false },
+      { video: true, audio: false }
+    ];
+    const next = i => {
+      if (i >= tries.length) return;
+      navigator.mediaDevices.getUserMedia(tries[i])
+        .then(s => { STATE.photoStream = s; document.getElementById('photoVideo').srcObject = s; })
+        .catch(() => next(i + 1));
+    };
+    next(0);
+  },
+
   _stopStream() {
     if (STATE.photoStream) {
       STATE.photoStream.getTracks().forEach(t => t.stop());
       STATE.photoStream = null;
     }
-    // Pastikan video element juga dimatikan
-    const video = document.getElementById('photoVideo');
-    if (video && video.srcObject) {
-      video.srcObject.getTracks().forEach(t => t.stop());
-      video.srcObject = null;
-    }
-  },
-
-  _startCamera() {
-    // Stop stream lama dulu, tunggu 300ms agar kamera benar-benar release
-    Photo._stopStream();
-    setTimeout(() => {
-      const tries = [
-        { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 } }, audio: false },
-        { video: { facingMode: 'environment' }, audio: false },
-        { video: { facingMode: 'user' }, audio: false },
-        { video: true, audio: false }
-      ];
-      const next = i => {
-        if (i >= tries.length) return;
-        navigator.mediaDevices.getUserMedia(tries[i])
-          .then(s => {
-            STATE.photoStream = s;
-            const video = document.getElementById('photoVideo');
-            video.srcObject = s;
-            video.play().catch(() => {});
-          })
-          .catch(() => next(i + 1));
-      };
-      next(0);
-    }, 300);
   },
 
   ambil() {
@@ -101,7 +88,7 @@ const Photo = {
     const now = new Date();
     const pad = n => n < 10 ? '0' + n : n;
     const waktu = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const lines = [waktu, `Svc: ${STATE.currentSvc}`, `Tuj: ${STATE.currentTuj}`, `Lokasi: ${STATE.gpsCoords || '—'}`];
+    const lines = [waktu, `Service: ${STATE.currentSvc}`, `Tujuan: ${STATE.currentTuj}`, `Lokasi: ${STATE.gpsCoords || '—'}`];
     const fs    = Math.max(14, Math.floor(canvas.width / 40));
     const lh    = fs + 8, p = 12;
     ctx.font = `bold ${fs}px Arial`;
@@ -151,6 +138,9 @@ const Photo = {
         const item = arr.find(d => d.no_track === STATE.currentNoTrack);
         if (item) item.foto_url = res.url;
         UI.Toast.success('Foto berhasil diupload');
+        // Tampilkan tombol Tambah Foto setelah simpan
+        document.getElementById('barResult').classList.add('hidden');
+        document.getElementById('barAfterSave').classList.remove('hidden');
       } else {
         UI.Toast.error('Gagal upload: ' + (res.error || ''));
       }
@@ -158,6 +148,20 @@ const Photo = {
       UI.Loading.hide();
       UI.Toast.error('Error: ' + e.message);
     }
+  },
+
+  tambahFoto() {
+    // Reset state dan buka kamera lagi untuk foto tambahan
+    STATE.capturedDataUrl = null;
+    document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoVideo').style.display   = 'block';
+    document.getElementById('barAmbil').classList.remove('hidden');
+    document.getElementById('barResult').classList.add('hidden');
+    document.getElementById('barAfterSave').classList.add('hidden');
+    Photo._startCamera();
+  },
+
+  selesai() {
     Photo._afterPhoto();
   },
 
