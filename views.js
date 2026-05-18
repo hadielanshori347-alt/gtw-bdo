@@ -1,6 +1,7 @@
 /* ============================================================
    GTW BDO — views.js v4.5
    FIX: OB&IB r1=INCHARGE, r2=SERVICE, r3=KOTA/TUJUAN
+   FIX: DATE selalu di kiri AWB pasangannya
    ============================================================ */
 
 // ─── INIT & RELOAD ───
@@ -82,6 +83,7 @@ function buildAllScanAwbs() {
 //   def.r3 = KOTA/TUJUAN
 //
 // Key lookup ibMap: SERVICE(r2) | KOTA(r3)
+// DATE selalu dirender di KIRI kolom AWB pasangannya
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
@@ -115,7 +117,6 @@ function _buildObibTable(data) {
   var colDefs    = data.colDefs    || [];
   var ibSections = data.ibSections || [];
 
-  // headerR1=INCHARGE, headerR2=SERVICE, headerR3=KOTA, headerR4=TIPE
   var headerR1   = data.headerR1   || [];
   var headerR2   = data.headerR2   || [];
   var headerR3   = data.headerR3   || [];
@@ -133,7 +134,6 @@ function _buildObibTable(data) {
   // ── Lookup IB sections: key = SERVICE(r2) | KOTA(r3) ──
   var ibMap = {};
   ibSections.forEach(function (sec) {
-    // sec.service = SERVICE dari sheet IB, sec.tujuan = TUJUAN/KOTA dari sheet IB
     var k = (sec.service || '').toUpperCase() + '|' + (sec.tujuan || '').toUpperCase();
     if (!ibMap[k]) ibMap[k] = [];
     ibMap[k].push(sec);
@@ -163,7 +163,6 @@ function _buildObibTable(data) {
 
     // ── INBOUND_HVS ──
     if (ct === 'INBOUND_HVS') {
-      // KEY: SERVICE(r2) | KOTA(r3)
       var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       var secs = (ibMap[k] || []).slice();
 
@@ -228,16 +227,94 @@ function _buildObibTable(data) {
   });
   if (!maxRows) maxRows = 0;
 
-  // ── Helper: merged header row ──
+  // ══════════════════════════════════════════════════════
+  // ── Reorder: DATE selalu di KIRI kolom AWB pasangannya ──
+  // Untuk setiap kolom non-DATE, cari DATE yang berasosiasi
+  // dalam grup r1 yang sama, lalu sisipkan DATE sebelum AWB.
+  // ══════════════════════════════════════════════════════
+  var dateUsed = {};
+  var renderOrder = [];
+
+  for (var ci = 0; ci < nCols; ci++) {
+    var ct = (colDefs[ci].colType || '').toUpperCase();
+
+    // DATE diproses saat ketemu pasangan AWB-nya, skip di sini
+    if (ct === 'DATE') continue;
+
+    // Cari kolom DATE yang berasosiasi dengan kolom AWB ini:
+    // DATE yang ada di kiri (sebelum) atau kanan (sesudah) dalam grup r1 yang sama
+    // Prioritas: DATE tepat di sebelah kiri, atau tepat di sebelah kanan
+    var pairedDateIdx = -1;
+
+    // Cari DATE di sebelah KANAN dalam grup r1 yang sama
+    for (var di = ci + 1; di < nCols; di++) {
+      if ((colDefs[di].r1 || '') !== (colDefs[ci].r1 || '')) break;
+      if ((colDefs[di].colType || '').toUpperCase() === 'DATE' && !dateUsed[di]) {
+        pairedDateIdx = di;
+        break;
+      }
+      // Jika ketemu kolom AWB lain sebelum DATE, stop
+      if ((colDefs[di].colType || '').toUpperCase() !== 'DATE') break;
+    }
+
+    // Jika tidak ketemu di kanan, cari di KIRI
+    if (pairedDateIdx === -1) {
+      for (var di = ci - 1; di >= 0; di--) {
+        if ((colDefs[di].r1 || '') !== (colDefs[ci].r1 || '')) break;
+        if ((colDefs[di].colType || '').toUpperCase() === 'DATE' && !dateUsed[di]) {
+          pairedDateIdx = di;
+          break;
+        }
+        if ((colDefs[di].colType || '').toUpperCase() !== 'DATE') break;
+      }
+    }
+
+    // Sisipkan DATE di kiri, lalu AWB
+    if (pairedDateIdx !== -1) {
+      renderOrder.push(pairedDateIdx);
+      dateUsed[pairedDateIdx] = true;
+    }
+    renderOrder.push(ci);
+  }
+
+  // Tambahkan DATE yang belum masuk sama sekali (edge case)
+  for (var ci = 0; ci < nCols; ci++) {
+    if ((colDefs[ci].colType || '').toUpperCase() === 'DATE' && !dateUsed[ci]) {
+      renderOrder.push(ci);
+    }
+  }
+
+  var nRender = renderOrder.length;
+
+  // ── Helper: merged header row (pakai renderOrder) ──
   function buildMergedHdrRow(hArr, cellClass) {
-    var cells = [], i = 0;
-    while (i < nCols) {
-      var val  = (hArr[i] || '').toString().trim();
+    var cells = [];
+    var i = 0;
+    while (i < nRender) {
+      var ci  = renderOrder[i];
+      var val = (hArr[ci] || '').toString().trim();
+
+      // Hitung span: gabungkan sel berikutnya yang nilainya kosong DALAM renderOrder
+      // Tapi karena urutan bisa berubah, kita tidak bisa naif span ke kanan.
+      // Strategi: tiap sel berdiri sendiri (span=1), lalu merge secara visual
+      // berdasarkan nilai yang sama dan berurutan dalam renderOrder.
       var span = 1;
-      while (i + span < nCols && !(hArr[i + span] || '').toString().trim()) span++;
+
+      // Merge: selama kolom berikutnya dalam renderOrder punya nilai kosong
+      // DAN masih dalam grup r1 yang sama dengan ci → gabung
+      while (i + span < nRender) {
+        var nextCi  = renderOrder[i + span];
+        var nextVal = (hArr[nextCi] || '').toString().trim();
+        if (nextVal) break; // ada nilai baru, stop merge
+        // Pastikan masih dalam grup r1 yang sama
+        if ((colDefs[nextCi].r1 || '') !== (colDefs[ci].r1 || '')) break;
+        span++;
+      }
+
       cells.push({ val: val, span: span });
       i += span;
     }
+
     return '<tr>' +
       '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
       cells.map(function (c) {
@@ -246,7 +323,7 @@ function _buildObibTable(data) {
     '</tr>';
   }
 
-  // ── Row 4: tipe kolom ──
+  // ── Row 4: tipe kolom (pakai renderOrder) ──
   function typeClass(t) {
     t = (t || '').toUpperCase();
     if (t === 'OUTBOUND')     return 'outbound';
@@ -258,25 +335,27 @@ function _buildObibTable(data) {
 
   var hdr4 = '<tr>' +
     '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
-    colDefs.map(function (c) {
+    renderOrder.map(function (ci) {
+      var c = colDefs[ci];
       return '<th class="obib-hdr-type ' + typeClass(c.colType) + '">' + escH(c.colType || '—') + '</th>';
     }).join('') +
   '</tr>';
 
-  // ── Build tbody ──
+  // ── Build tbody (pakai renderOrder) ──
   var tbodyHtml = '';
 
   if (maxRows === 0) {
     tbodyHtml = '<tr>' +
       '<td class="obib-rn" style="color:var(--gray5)">—</td>' +
-      '<td colspan="' + nCols + '" style="text-align:center;padding:24px;color:var(--gray5);font-size:13px">Belum ada data AWB</td>' +
+      '<td colspan="' + nRender + '" style="text-align:center;padding:24px;color:var(--gray5);font-size:13px">Belum ada data AWB</td>' +
     '</tr>';
   } else {
     for (var ri = 0; ri < maxRows; ri++) {
       tbodyHtml += '<tr>';
       tbodyHtml += '<td class="obib-rn">' + (ri + 1) + '</td>';
 
-      for (var ci = 0; ci < nCols; ci++) {
+      for (var roi = 0; roi < nRender; roi++) {
+        var ci  = renderOrder[roi];
         var arr = flatCol[ci] || [];
         var def = colDefs[ci];
         var ct  = (def.colType || '').toUpperCase();
@@ -327,8 +406,8 @@ function _buildObibTable(data) {
 
   // Header rows:
   //   R1 = INCHARGE  → obib-hdr-incharge (biru tua)
-  //   R2 = SERVICE   → obib-hdr-service  (biru sedang) -- pakai class obib-hdr-kota reuse stylenya
-  //   R3 = KOTA      → obib-hdr-kota     (biru muda)   -- pakai class obib-hdr-service reuse stylenya
+  //   R2 = SERVICE   → obib-hdr-service  (biru sedang)
+  //   R3 = KOTA      → obib-hdr-kota     (biru muda)
   //   R4 = TIPE      → obib-hdr-type     (warna per tipe)
   var html =
     '<table class="obib-table">' +
@@ -370,11 +449,9 @@ function exportObibCSV() {
       entries.forEach(function (e) {
         var awb = e.awb || e.text || '';
         if (!awb) return;
-        // r1=INCHARGE, r2=SERVICE, r3=KOTA
         rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]);
       });
     } else if (ct === 'INBOUND_HVS') {
-      // KEY: SERVICE(r2) | KOTA(r3)
       var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       var secs = ibMap[k] || [];
       secs.forEach(function (sec) {
