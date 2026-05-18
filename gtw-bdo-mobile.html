@@ -221,23 +221,25 @@
   <div class="scan-ctx-bar" id="scanCtxBar">
     📍 Scan ke: <span id="scanCtxLabel" style="font-weight:800"></span>
   </div>
+  <!-- Kamera lebih besar -->
   <div class="cam-wrap"><div id="reader"></div></div>
   <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
-  <div class="scroll-content">
-    <div class="form-group" style="margin-bottom:8px">
+  <!-- Area scroll tengah -->
+  <div class="scroll-content" style="padding-bottom:90px">
+    <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Input Manual AWB</label>
       <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter"
         onkeydown="Scanner.handleManual(event)" autocomplete="off">
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <span class="scan-total">LIST SCAN (<span id="scanCount">0</span>)</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span class="scan-total" style="font-size:13px;font-weight:700;color:var(--text)">LIST SCANNED (<span id="scanCount">0</span>)</span>
       <button class="btn-ghost" onclick="Scanner.clearAll()">Clear All</button>
     </div>
-    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada AWB di-scan</div></div>
-    <div style="margin-top:12px">
-      <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()">💾 SIMPAN & LANJUT</button>
-    </div>
-    <div class="safe-pad"></div>
+    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada data di scan</div></div>
+  </div>
+  <!-- Tombol SIMPAN fixed di bawah -->
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px;padding-bottom:calc(12px + var(--safe-bot));background:var(--surface);border-top:1px solid var(--border)">
+    <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()" style="width:100%;padding:16px;font-size:15px;font-weight:700;border:none;border-radius:30px;cursor:pointer;background:var(--border);color:var(--text3);font-family:var(--font);transition:.15s">SIMPAN &amp; FOTO</button>
   </div>
 </div>
 
@@ -326,7 +328,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="CreatePage.closeTujModal()">Batal</button>
-      <button class="btn btn-primary" style="flex:1" onclick="CreatePage.confirmAddTuj()">✔️ Tambah</button>
+      <button class="btn btn-primary" style="flex:1" onclick="CreatePage.confirmAddTuj()">✔ Tambah</button>
     </div>
   </div>
 </div>
