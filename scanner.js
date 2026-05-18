@@ -42,8 +42,8 @@ const Scanner = {
     Scanner._start();
   },
 
-  close() {
-    Scanner._stop();
+  async close() {
+    await Scanner._stop();
     if (STATE.scanContext === 'detail') UI.Page.show('pgDetail');
     else UI.Page.show('pgCreate');
   },
@@ -53,7 +53,7 @@ const Scanner = {
     document.getElementById('camErr').style.display = 'none';
     const h5 = new Html5Qrcode("reader");
     STATE.html5QrCode = h5;
-    const cfg = { fps: 3, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
+    const cfg = { fps: 15, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
 
     Html5Qrcode.getCameras()
       .then(cams => {
@@ -67,7 +67,7 @@ const Scanner = {
   },
 
   _startFacing(mode) {
-    const cfg = { fps: 3, qrbox: { width: 250, height: 190 } };
+    const cfg = { fps: 15, qrbox: { width: 250, height: 190 } };
     STATE.html5QrCode.start({ facingMode: mode }, cfg, Scanner._onSuccess, () => {})
       .then(() => STATE.isScannerRunning = true)
       .catch(() => {
@@ -76,12 +76,17 @@ const Scanner = {
       });
   },
 
-  _stop() {
+  async _stop() {
     if (STATE.html5QrCode && STATE.isScannerRunning) {
-      STATE.html5QrCode.stop().catch(() => {});
+      try { await STATE.html5QrCode.stop(); } catch(e) {}
     }
     STATE.isScannerRunning = false;
     STATE.html5QrCode = null;
+    // Pastikan semua track kamera dimatikan
+    try {
+      const videos = document.querySelectorAll('#reader video');
+      videos.forEach(v => { if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; } });
+    } catch(e) {}
     document.getElementById('reader').innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
   },
@@ -145,7 +150,7 @@ const Scanner = {
           STATE.obScanMap[STATE.obActiveTuj].push(awb);
       });
       STATE.scanItems = [];
-      Scanner._stop();
+      await Scanner._stop();
       CreatePage.renderObTabs();
       CreatePage.renderObScanList();
       UI.Toast.success('AWB ditambahkan ke ' + STATE.obActiveTuj);
@@ -158,7 +163,7 @@ const Scanner = {
         if (!STATE.ibScanned.includes(awb)) STATE.ibScanned.push(awb);
       });
       STATE.scanItems = [];
-      Scanner._stop();
+      await Scanner._stop();
       CreatePage.renderIbScanList();
       UI.Toast.success('AWB ditambahkan ke IB');
       UI.Page.show('pgCreate');
