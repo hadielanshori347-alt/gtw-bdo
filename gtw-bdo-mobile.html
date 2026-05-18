@@ -9,9 +9,14 @@
 <meta name="apple-mobile-web-app-title" content="GTW BDO">
 <meta name="mobile-web-app-capable" content="yes">
 <title>GTW BDO Mobile</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -48,7 +53,7 @@
 
 <div class="topbar">
   <button class="topbar-btn" onclick="UI.Sidebar.open()"><span class="material-icons-round">menu</span></button>
-  <div class="topbar-title" id="pageTitle">Dashboard</div>
+  <div class="topbar-title" id="pageTitle">Dashboard Hub</div>
   <button class="topbar-btn" onclick="reloadAll()"><span class="material-icons-round">refresh</span></button>
 </div>
 
@@ -60,12 +65,15 @@
       <div class="tab-item" id="tab-hvs" onclick="switchTab('hvs')">OB HVS</div>
       <div class="tab-item" id="tab-ib" onclick="switchTab('ib')">IB HVS</div>
     </div>
+    
     <div class="card-stats">
       <div class="stat-el"><div class="stat-lbl">Total AWB</div><div class="stat-val" id="statAwb">0</div></div>
       <div class="stat-el"><div class="stat-lbl">Selesai</div><div class="stat-val" style="color:var(--green)" id="statSelesai">0</div></div>
       <div class="stat-el"><div class="stat-lbl">Proses</div><div class="stat-val" style="color:var(--orange)" id="statProses">0</div></div>
     </div>
+    
     <button class="fab-btn" onclick="CreatePage.open()"><span class="material-icons-round" style="font-size:22px">add</span>Data Baru</button>
+    
     <div id="homeList"></div>
   </div>
 
@@ -117,8 +125,8 @@
     </div>
     <div id="scannerReader" style="width:100%;height:calc(100vh - 120px);background:#000"></div>
     <div class="scan-bottombar">
-      <div style="font-size:13px;opacity:0.8" id="scanCountLabel">0 AWB Ter-scan di sesi ini</div>
-      <button class="btn btn-primary" style="padding:10px 24px;border-radius:20px;font-size:13px" onclick="Scanner.done()"><span class="material-icons-round" style="font-size:16px">check</span> Selesai Scan</button>
+      <div style="font-size:13px;opacity:0.8" id="scanCountLabel">0 AWB Ter-scan</div>
+      <button class="btn btn-primary" style="padding:10px 24px;border-radius:20px;font-size:13px" onclick="Scanner.done()"><span class="material-icons-round" style="font-size:16px">check</span> Selesai</button>
     </div>
   </div>
 
@@ -143,28 +151,19 @@
       <button class="btn btn-primary" style="background:var(--blue3)" onclick="Photo.simpan()">✔ Simpan Foto</button>
     </div>
   </div>
-
 </div>
 
 <div class="modal-ov" id="icModal">
   <div class="modal-sheet">
-    <div class="modal-hdr">
-      <div class="modal-title">Pilih Person Incharge</div>
-      <button class="modal-close" onclick="IcModal.close()">✕</button>
-    </div>
-    <div style="padding:10px 14px">
-      <input class="search-input" id="icSearch" placeholder="Cari nama incharge..." autocomplete="off" oninput="IcModal.render()">
-    </div>
+    <div class="modal-hdr"><div class="modal-title">Pilih Person Incharge</div><button class="modal-close" onclick="IcModal.close()">✕</button></div>
+    <div style="padding:10px 14px"><input class="search-input" id="icSearch" placeholder="Cari nama incharge..." autocomplete="off" oninput="IcModal.render()"></div>
     <div class="modal-body" id="icList" style="max-height:280px;padding:0 4px 14px"></div>
   </div>
 </div>
 
 <div class="modal-ov" id="tujModal">
   <div class="modal-sheet" style="max-height:85vh">
-    <div class="modal-hdr">
-      <div class="modal-title">Tambah Tujuan</div>
-      <button class="modal-close" onclick="CreatePage.closeTujModal()">✕</button>
-    </div>
+    <div class="modal-hdr"><div class="modal-title">Tambah Tujuan</div><button class="modal-close" onclick="CreatePage.closeTujModal()">✕</button></div>
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">TUJUAN</label>
@@ -184,13 +183,8 @@
 
 <div class="modal-ov" id="awbModal">
   <div class="modal-sheet">
-    <div class="modal-hdr">
-      <div class="modal-title">List AWB (<span id="awbModalCount">0</span>)</div>
-      <button class="modal-close" onclick="UI.Modal.close('awbModal')">✕</button>
-    </div>
-    <div class="modal-body" style="padding:0">
-      <div id="awbModalList"></div>
-    </div>
+    <div class="modal-hdr"><div class="modal-title">List AWB (<span id="awbModalCount">0</span>)</div><button class="modal-close" onclick="UI.Modal.close('awbModal')">✕</button></div>
+    <div class="modal-body" style="padding:0"><div id="awbModalList"></div></div>
   </div>
 </div>
 
@@ -200,7 +194,7 @@
     <div id="confirmMsg" style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.5">Apakah Anda yakin?</div>
     <div style="display:flex;gap:10px">
       <button class="btn btn-outline" style="flex:1" onclick="UI.Modal.close('confirmModal')">Batal</button>
-      <button class="btn btn-danger" style="flex:1" id="confirmOkBtn">Ya, Hapus</button>
+      <button class="btn btn-danger" style="flex:1" id="confirmOkBtn">Ya</button>
     </div>
   </div>
 </div>
@@ -212,6 +206,5 @@
 <script src="js/photo.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/app.js"></script>
-
 </body>
 </html>
