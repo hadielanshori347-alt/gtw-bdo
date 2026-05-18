@@ -133,19 +133,17 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .scan-total{font-size:11px;font-weight:700;color:var(--text3);margin-bottom:6px}
 
 /* ── Scan page ── */
-.cam-wrap{background:#000;flex-shrink:0;position:relative;overflow:hidden;max-height:55vw}
-.cam-wrap video{width:100% !important;object-fit:cover;display:block}
-#reader{width:100%}
+.cam-wrap{background:#000;flex-shrink:0;position:relative;overflow:hidden;height:47vw;min-height:220px;max-height:320px}
+.cam-wrap video{width:100% !important;height:100% !important;object-fit:cover;display:block}
+#reader{width:100%;height:100%}
+#reader video{width:100% !important;height:100% !important;object-fit:cover}
 .cam-err{background:#fff8e1;padding:10px 14px;font-size:12px;color:#6d4c00;display:none;flex-shrink:0}
 .scan-ctx-bar{background:var(--blue-l);border-bottom:1px solid var(--blue-m);padding:8px 14px;font-size:12px;color:var(--blue);font-weight:700;flex-shrink:0;display:none;align-items:center;gap:6px}
 .torch-btn{color:#fff;background:none;border:none;font-size:22px;cursor:pointer;padding:4px}
 
-/* ── Scanner page — save button bottom ── */
-#btnSaveScan{
-  position:sticky;bottom:0;background:var(--green);color:#fff;border:none;width:100%;padding:15px;font-size:15px;font-weight:700;border-radius:12px;cursor:pointer;transition:.15s;font-family:var(--font)
-}
-#btnSaveScan:disabled{background:var(--border);color:var(--text3);cursor:not-allowed}
-#btnSaveScan:active:not(:disabled){opacity:.8}
+/* ── Scanner page — save button fixed bottom ── */
+#btnSaveScan:not(:disabled){background:var(--blue2) !important;color:#fff !important}
+#btnSaveScan:active:not(:disabled){opacity:.85}
 
 /* ── Photo ── */
 #photoVideo{width:100%;height:100%;object-fit:cover;display:block}
