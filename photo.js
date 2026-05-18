@@ -51,27 +51,42 @@ const Photo = {
     }, { enableHighAccuracy: true, timeout: 6000 });
   },
 
-  _startCamera() {
-    const tries = [
-      { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 } }, audio: false },
-      { video: { facingMode: 'environment' }, audio: false },
-      { video: { facingMode: 'user' }, audio: false },
-      { video: true, audio: false }
-    ];
-    const next = i => {
-      if (i >= tries.length) return;
-      navigator.mediaDevices.getUserMedia(tries[i])
-        .then(s => { STATE.photoStream = s; document.getElementById('photoVideo').srcObject = s; })
-        .catch(() => next(i + 1));
-    };
-    next(0);
-  },
-
   _stopStream() {
     if (STATE.photoStream) {
       STATE.photoStream.getTracks().forEach(t => t.stop());
       STATE.photoStream = null;
     }
+    // Pastikan video element juga dimatikan
+    const video = document.getElementById('photoVideo');
+    if (video && video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+  },
+
+  _startCamera() {
+    // Stop stream lama dulu, tunggu 300ms agar kamera benar-benar release
+    Photo._stopStream();
+    setTimeout(() => {
+      const tries = [
+        { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 } }, audio: false },
+        { video: { facingMode: 'environment' }, audio: false },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: true, audio: false }
+      ];
+      const next = i => {
+        if (i >= tries.length) return;
+        navigator.mediaDevices.getUserMedia(tries[i])
+          .then(s => {
+            STATE.photoStream = s;
+            const video = document.getElementById('photoVideo');
+            video.srcObject = s;
+            video.play().catch(() => {});
+          })
+          .catch(() => next(i + 1));
+      };
+      next(0);
+    }, 300);
   },
 
   ambil() {
