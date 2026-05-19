@@ -1,7 +1,10 @@
 /* ============================================================
-   GTW BDO — views.js v4.8
-   FIX: Header Row3 (KOTA) merge persis GSheet — DATE kolom tidak ikut merge
-   FIX: INBOUND_HVS DATE terisi di semua baris AWB (bukan hanya IB_LABEL)
+   GTW BDO — views.js v4.9
+   FIX v4.9: Semua header row (INCHARGE, SERVICE, KOTA, TYPE)
+             tidak ada merge cell — setiap kolom colspan=1
+   FIX v4.9: ibMap key include r1 (INCHARGE) → data tidak bocor
+             lintas incharge (SUKAJADI tidak bocor ke METRO)
+   FIX v4.8: INBOUND_HVS DATE terisi di semua baris AWB
    ============================================================ */
 
 window.addEventListener('DOMContentLoaded', function () {
@@ -43,17 +46,13 @@ function buildAllScanAwbs() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// OB & IB COMBINED VIEW v4.8
+// OB & IB COMBINED VIEW v4.9
 //
-// Struktur GSheet (persis):
-//   Row1: INCHARGE (merged span)
-//   Row2: SERVICE  (merged span)
-//   Row3: KOTA     (merged per grup, DATE kolom = cell kosong sendiri)
-//   Row4: DATE | OUTBOUND | DATE | OUTBOUND_HVS | DATE | INBOUND_HVS | DATE
-//
-// FIX v4.8:
-//   - Row3 KOTA: DATE kolom (r3 kosong) render sendiri colspan=1, tidak ikut merge
-//   - INBOUND_HVS DATE: semua baris AWB terisi date masing-masing
+// FIX v4.9:
+//   - Header Row1/Row2/Row3/Row4: TIDAK ADA colspan/merge
+//     Setiap kolom berdiri sendiri dengan nilai r1/r2/r3/colType-nya
+//   - ibMap key = r1|r2|r3 (include INCHARGE) → tidak bocor lintas incharge
+//   - DATE source search strict per r1 boundary
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
@@ -63,7 +62,10 @@ function renderObibPage() {
   showLoading('Memuat OB & IB...');
   gasGet('getOBIB').then(function (res) {
     hideLoading();
-    if (res.error) { wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>'; return; }
+    if (res.error) {
+      wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>';
+      return;
+    }
     _obibData = res;
     _buildObibTable(_obibData);
   }).catch(function (e) {
@@ -89,10 +91,11 @@ function _buildObibTable(data) {
 
   var nCols = colDefs.length;
 
-  // ── ibMap: key = SERVICE(r2)|FROM-kota(r3) → array of sections ──
+  // ── ibMap: key = r1(INCHARGE)|SERVICE(r2)|FROM-kota(r3) → array of sections ──
+  // FIX v4.9: include r1 supaya tidak bocor lintas incharge
   var ibMap = {};
   ibSections.forEach(function (sec) {
-    var k = (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
+    var k = (sec.incharge || '').toUpperCase() + '|' + (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
     if (!ibMap[k]) ibMap[k] = [];
     ibMap[k].push(sec);
   });
@@ -119,7 +122,8 @@ function _buildObibTable(data) {
     }
 
     if (ct === 'INBOUND_HVS') {
-      var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
+      // FIX v4.9: key include r1 (incharge) supaya tidak bocor lintas incharge
+      var k    = (def.r1 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       var secs = ibMap[k] || [];
       if (!secs.length && def.ibSections && def.ibSections.length) { secs = def.ibSections; }
 
@@ -169,20 +173,23 @@ function _buildObibTable(data) {
   }
 
   // ── Isi kolom DATE dari kolom AWB pasangannya ──
+  // FIX v4.9: strict stop jika r1 berbeda (tidak boleh lintas incharge)
   for (var ci = 0; ci < nCols; ci++) {
     if (flatCol[ci] !== null) continue;
 
     var srcCi = -1;
+    var curR1 = colDefs[ci].r1 || '';
+
     // Cari sumber di KANAN dalam grup r1 yang sama
     for (var j = ci + 1; j < nCols; j++) {
-      if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
+      if ((colDefs[j].r1 || '') !== curR1) break; // strict: stop jika beda incharge
       var jct = (colDefs[j].colType || '').toUpperCase();
       if (jct !== 'DATE' && flatCol[j] !== null) { srcCi = j; break; }
     }
-    // Fallback: cari di KIRI
+    // Fallback: cari di KIRI dalam r1 yang sama
     if (srcCi === -1) {
       for (var j = ci - 1; j >= 0; j--) {
-        if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
+        if ((colDefs[j].r1 || '') !== curR1) break; // strict: stop jika beda incharge
         var jct = (colDefs[j].colType || '').toUpperCase();
         if (jct !== 'DATE' && flatCol[j] !== null) { srcCi = j; break; }
       }
@@ -192,20 +199,16 @@ function _buildObibTable(data) {
 
     var srcCt = (colDefs[srcCi].colType || '').toUpperCase();
 
-    // ── FIX v4.8: Mirror date ──
     flatCol[ci] = (flatCol[srcCi] || []).map(function (r) {
       if (srcCt === 'INBOUND_HVS') {
-        // IB_LABEL → date label grup
         if (r.cellType === 'IB_LABEL') {
           return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
         }
-        // AWB di bawah IB_LABEL → FIX: tampilkan date AWB itu sendiri
         if (r.cellType === 'AWB') {
           return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
         }
         return { cellType: 'DATE_EMPTY', text: '', date: '' };
       }
-      // OUTBOUND / OUTBOUND_HVS → setiap AWB tampilkan date-nya
       if (r.cellType === 'AWB') {
         return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
       }
@@ -217,76 +220,41 @@ function _buildObibTable(data) {
   var maxRows = 0;
   flatCol.forEach(function (arr) { if (arr && arr.length > maxRows) maxRows = arr.length; });
 
-  // ── renderOrder ──
   var renderOrder = [];
   for (var ci = 0; ci < nCols; ci++) { renderOrder.push(ci); }
   var nRender = renderOrder.length;
 
-  // ── Row 1: INCHARGE — group by r1 ──
-  var hdrR1 = (function() {
-    var cells = [], i = 0;
-    while (i < nRender) {
-      var ci  = renderOrder[i];
-      var val = colDefs[ci].r1 || '';
-      var span = 1;
-      while (i + span < nRender && (colDefs[renderOrder[i + span]].r1 || '') === val) span++;
-      cells.push({ val: val, span: span }); i += span;
-    }
-    return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-incharge">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
-  })();
+  // ════════════════════════════════════════════════════════════════
+  // FIX v4.9: SEMUA HEADER ROW — tidak ada colspan/merge sama sekali
+  // Setiap kolom render sendiri dengan nilai aslinya (tidak propagasi)
+  // ════════════════════════════════════════════════════════════════
 
-  // ── Row 2: SERVICE — group by r1+r2 ──
-  var hdrR2 = (function() {
-    var cells = [], i = 0;
-    while (i < nRender) {
-      var ci   = renderOrder[i];
-      var key  = (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || '');
-      var val  = colDefs[ci].r2 || '';
-      var span = 1;
-      while (i + span < nRender) {
-        var nci  = renderOrder[i + span];
-        var nkey = (colDefs[nci].r1 || '') + '|||' + (colDefs[nci].r2 || '');
-        if (nkey === key) span++; else break;
-      }
-      cells.push({ val: val, span: span }); i += span;
-    }
-    return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-service">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
-  })();
+  // ── Row 1: INCHARGE — setiap kolom berdiri sendiri, nilai r1 kolom itu ──
+  var hdrR1 = '<tr>' +
+    '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
+    renderOrder.map(function (ci) {
+      return '<th class="obib-hdr-incharge">' + escH(colDefs[ci].r1 || '') + '</th>';
+    }).join('') +
+    '</tr>';
 
-  // ── Row 3: KOTA — FIX v4.8 ──
-  // DATE kolom (r3 kosong) = cell kosong sendiri, TIDAK ikut merge grup KOTA
-  // Non-DATE merge selama r1+r2+r3 sama DAN tidak melewati DATE kolom
-  var hdrR3 = (function() {
-    var cells = [], i = 0;
-    while (i < nRender) {
-      var ci  = renderOrder[i];
+  // ── Row 2: SERVICE — setiap kolom berdiri sendiri, nilai r2 kolom itu ──
+  var hdrR2 = '<tr>' +
+    '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
+    renderOrder.map(function (ci) {
+      return '<th class="obib-hdr-service">' + escH(colDefs[ci].r2 || '') + '</th>';
+    }).join('') +
+    '</tr>';
+
+  // ── Row 3: KOTA — setiap kolom berdiri sendiri ──
+  // DATE kolom tampil kosong, non-DATE tampil nilai r3-nya
+  var hdrR3 = '<tr>' +
+    '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
+    renderOrder.map(function (ci) {
       var ct  = (colDefs[ci].colType || '').toUpperCase();
-      var val = colDefs[ci].r3 || '';
-
-      // DATE kolom atau r3 kosong → render sendiri colspan=1
-      if (ct === 'DATE' || !val) {
-        cells.push({ val: val, span: 1 });
-        i++;
-        continue;
-      }
-
-      // Non-DATE dengan r3 berisi → merge selama key r1+r2+r3 sama dan bukan DATE
-      var key  = (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || '') + '|||' + val;
-      var span = 1;
-      while (i + span < nRender) {
-        var nci  = renderOrder[i + span];
-        var nct  = (colDefs[nci].colType || '').toUpperCase();
-        if (nct === 'DATE') break; // stop di DATE kolom
-        var nkey = (colDefs[nci].r1 || '') + '|||' + (colDefs[nci].r2 || '') + '|||' + (colDefs[nci].r3 || '');
-        if (nkey === key) span++; else break;
-      }
-      cells.push({ val: val, span: span }); i += span;
-    }
-    return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-kota">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
-  })();
+      var val = ct === 'DATE' ? '' : (colDefs[ci].r3 || '');
+      return '<th class="obib-hdr-kota">' + escH(val) + '</th>';
+    }).join('') +
+    '</tr>';
 
   // ── Row 4: TYPE — tidak di-merge ──
   function typeClass(t) {
@@ -294,11 +262,13 @@ function _buildObibTable(data) {
     return t === 'OUTBOUND' ? 'outbound' : t === 'OUTBOUND_HVS' ? 'outbound-hvs' : t === 'INBOUND_HVS' ? 'inbound-hvs' : 'date';
   }
 
-  var hdr4 = '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
+  var hdr4 = '<tr>' +
+    '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)">#</th>' +
     renderOrder.map(function (ci) {
       var ct = colDefs[ci].colType || '—';
       return '<th class="obib-hdr-type ' + typeClass(ct) + '">' + escH(ct) + '</th>';
-    }).join('') + '</tr>';
+    }).join('') +
+    '</tr>';
 
   // ── Build tbody ──
   var tbodyHtml = '';
@@ -367,7 +337,8 @@ function exportObibCSV() {
   var colDefs = _obibData.colDefs || [], ibSections = _obibData.ibSections || [];
   var ibMap = {};
   ibSections.forEach(function (sec) {
-    var k = (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
+    // FIX v4.9: key include incharge
+    var k = (sec.incharge || '').toUpperCase() + '|' + (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
     if (!ibMap[k]) ibMap[k] = [];
     ibMap[k].push(sec);
   });
@@ -377,9 +348,13 @@ function exportObibCSV() {
     if (ct === 'DATE') return;
     if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
       var ent = def.entries && def.entries.length ? def.entries : (def.flatRows || []);
-      ent.forEach(function (e) { var awb = e.awb || e.text || ''; if (awb) rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]); });
+      ent.forEach(function (e) {
+        var awb = e.awb || e.text || '';
+        if (awb) rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]);
+      });
     } else if (ct === 'INBOUND_HVS') {
-      var k = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
+      // FIX v4.9: key include r1
+      var k = (def.r1 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       (ibMap[k] || []).forEach(function (sec) {
         (sec.awbs || []).forEach(function (a) {
           rows.push([ct, def.r1, def.r2, def.r3, a.tujuan || sec.tujuan || '', sec.from || '', a.date || sec.date || '', a.awb || '']);
