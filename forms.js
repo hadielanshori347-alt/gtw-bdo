@@ -1,397 +1,142 @@
 /* ============================================================
-   GTW BDO — forms.js v4.3
-   Multi-tujuan scan, save, table render, mark selesai, delete
-   v4.3: Suara beep saat AWB berhasil di-scan
-         Modal detail: hanya lihat foto & tambah AWB (no upload)
+   GTW BDO — forms.js PATCH v4.4
+   CHANGES:
+   1. Detail modal: AWB staging list (belum langsung save)
+      - Input → masuk staging list dulu
+      - Setiap AWB ada icon hapus
+      - Ada tombol "Simpan AWB" untuk commit ke server
+   2. Duplikat AWB → playBeepError (nada rendah/error)
+   3. Performance: optimasi render & loading
    ============================================================ */
 
-// ─── BEEP SOUND ───
+// ─── BEEP SOUNDS ───
 function playBeep() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();
     var gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(1046, ctx.currentTime); // C6 — nada tinggi & jelas
+    osc.frequency.setValueAtTime(1046, ctx.currentTime);
     gain.gain.setValueAtTime(0.6, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.18);
-  } catch(e) { /* silent fail jika browser blokir AudioContext */ }
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.18);
+  } catch(e) {}
 }
 
-// ─── MULTI TUJUAN (OB / HVS) ───
-function initObTujuan(tuj) { if (!obScanMap[tuj]) obScanMap[tuj] = []; obActiveTuj = tuj; document.getElementById('obScanInput').disabled = false; renderObTabs(); renderObScanList(); }
-function initHvsTujuan(tuj) { if (!hvsScanMap[tuj]) hvsScanMap[tuj] = []; hvsActiveTuj = tuj; document.getElementById('hvsScanInput').disabled = false; renderHvsTabs(); renderHvsScanList(); }
-
-function addMultiTujuan(type) {
-  var hasService = (type === 'ob' ? document.getElementById('obService') : document.getElementById('hvsService')).value;
-  if (!hasService) { toast('Pilih service dahulu', 'error'); return; }
-  pendingTujuanType = type;
-  document.getElementById('newTujuanInput').value = '';
-  if (cbRegistry['newTujuanCb']) { cbRegistry['newTujuanCb'].options = cbOptions[type].tujuan || []; cbRegistry['newTujuanCb'].value = ''; renderCbOptions('newTujuanCb', ''); }
-  openModal('tujuanModal');
-  setTimeout(function() { document.getElementById('newTujuanInput').focus(); openCb2('newTujuanCb'); }, 120);
+function playBeepError() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    // Dua nada pendek turun — sinyal error
+    osc.frequency.setValueAtTime(520, ctx.currentTime);
+    osc.frequency.setValueAtTime(360, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.28);
+  } catch(e) {}
 }
 
-function confirmAddTujuan() {
-  var tuj = document.getElementById('newTujuanInput').value.trim();
-  if (!tuj) { toast('Masukkan tujuan', 'error'); return; }
-  closeModal('tujuanModal');
-  if (pendingTujuanType === 'ob') { initObTujuan(tuj); document.getElementById('obTujuan').value = tuj; if (cbRegistry['obTujuanCb']) cbRegistry['obTujuanCb'].value = tuj; checkObForm(); }
-  else if (pendingTujuanType === 'hvs') { initHvsTujuan(tuj); document.getElementById('hvsTujuan').value = tuj; if (cbRegistry['hvsTujuanCb']) cbRegistry['hvsTujuanCb'].value = tuj; checkHvsForm(); }
-}
+// ─── STAGING AWB (untuk detail modal) ───
+var _detailStagingAwbs = [];   // AWB yang belum disimpan
+var _detailExistingAwbs = [];  // AWB yang sudah ada di server (untuk cek duplikat)
 
-function renderObTabs() {
-  var keys = Object.keys(obScanMap);
-  document.getElementById('obTujuanTabs').innerHTML = keys.map(function(t) {
-    return '<span class="scan-tujuan-tab' + (t === obActiveTuj ? ' active' : '') + '" onclick="switchObTuj(\'' + escQ(t) + '\')">' + t + ' <span class="cnt">' + obScanMap[t].length + '</span><span class="rm-tuj material-icons-round" onclick="event.stopPropagation();removeObTuj(\'' + escQ(t) + '\')">cancel</span></span>';
-  }).join('');
-  updateObTotalLabel();
-}
-function switchObTuj(t) { obActiveTuj = t; renderObTabs(); renderObScanList(); }
-function removeObTuj(t) { delete obScanMap[t]; var k = Object.keys(obScanMap); obActiveTuj = k.length ? k[0] : ''; if (!obActiveTuj) document.getElementById('obScanInput').disabled = true; renderObTabs(); renderObScanList(); checkObForm(); }
-function renderObScanList() { var list = document.getElementById('obScanList'); if (!obActiveTuj || !obScanMap[obActiveTuj]) { list.innerHTML = '<div class="scan-empty">Pilih atau tambah tujuan</div>'; return; } var arr = obScanMap[obActiveTuj]; list.innerHTML = arr.length ? arr.map(function(awb, i) { return '<div class="scan-item"><span class="scan-item-awb">' + awb + '</span><span class="scan-item-tuj">' + obActiveTuj + '</span><span class="material-icons-round scan-item-del" onclick="removeObAwb(' + i + ')">delete</span></div>'; }).join('') : '<div class="scan-empty">Belum ada AWB untuk tujuan <strong>' + obActiveTuj + '</strong></div>'; }
-function removeObAwb(i) { obScanMap[obActiveTuj].splice(i, 1); renderObTabs(); renderObScanList(); }
-function updateObTotalLabel() { document.getElementById('obTotalScanLabel').innerText = Object.values(obScanMap).reduce(function(s, a) { return s + a.length; }, 0) + ' AWB total'; }
+function _renderDetailStaging() {
+  var container = document.getElementById('detailStagingList');
+  if (!container) return;
 
-function renderHvsTabs() {
-  var keys = Object.keys(hvsScanMap);
-  document.getElementById('hvsTujuanTabs').innerHTML = keys.map(function(t) {
-    return '<span class="scan-tujuan-tab' + (t === hvsActiveTuj ? ' active' : '') + '" onclick="switchHvsTuj(\'' + escQ(t) + '\')">' + t + ' <span class="cnt">' + hvsScanMap[t].length + '</span><span class="rm-tuj material-icons-round" onclick="event.stopPropagation();removeHvsTuj(\'' + escQ(t) + '\')">cancel</span></span>';
-  }).join('');
-  updateHvsTotalLabel();
-}
-function switchHvsTuj(t) { hvsActiveTuj = t; renderHvsTabs(); renderHvsScanList(); }
-function removeHvsTuj(t) { delete hvsScanMap[t]; var k = Object.keys(hvsScanMap); hvsActiveTuj = k.length ? k[0] : ''; if (!hvsActiveTuj) document.getElementById('hvsScanInput').disabled = true; renderHvsTabs(); renderHvsScanList(); checkHvsForm(); }
-function renderHvsScanList() { var list = document.getElementById('hvsScanList'); if (!hvsActiveTuj || !hvsScanMap[hvsActiveTuj]) { list.innerHTML = '<div class="scan-empty">Pilih atau tambah tujuan</div>'; return; } var arr = hvsScanMap[hvsActiveTuj]; list.innerHTML = arr.length ? arr.map(function(awb, i) { return '<div class="scan-item"><span class="scan-item-awb">' + awb + '</span><span class="scan-item-tuj">' + hvsActiveTuj + '</span><span class="material-icons-round scan-item-del" onclick="removeHvsAwb(' + i + ')">delete</span></div>'; }).join('') : '<div class="scan-empty">Belum ada AWB untuk tujuan <strong>' + hvsActiveTuj + '</strong></div>'; }
-function removeHvsAwb(i) { hvsScanMap[hvsActiveTuj].splice(i, 1); renderHvsTabs(); renderHvsScanList(); }
-function updateHvsTotalLabel() { document.getElementById('hvsTotalScanLabel').innerText = Object.values(hvsScanMap).reduce(function(s, a) { return s + a.length; }, 0) + ' AWB total'; }
+  var countEl = document.getElementById('detailStagingCount');
+  if (countEl) countEl.innerText = _detailStagingAwbs.length;
 
-function renderIbScanList() { var list = document.getElementById('ibScanList'); var total = ibScanned.length; document.getElementById('ibTotalScanLabel').innerText = total + ' AWB total'; list.innerHTML = !total ? '<div class="scan-empty">Belum ada AWB di-scan</div>' : ibScanned.map(function(awb, i) { return '<div class="scan-item"><span class="scan-item-awb">' + awb + '</span><span class="material-icons-round scan-item-del" onclick="ibScanned.splice(' + i + ',1);renderIbScanList()">delete</span></div>'; }).join(''); }
+  var saveBtn = document.getElementById('btnSaveDetailAwb');
+  if (saveBtn) saveBtn.disabled = _detailStagingAwbs.length === 0;
 
-// ─── SCAN INPUT ───
-function handleScan(e, type) {
-  if (e.key !== 'Enter') return;
-  var input = document.getElementById(type + 'ScanInput');
-  var val = input.value.trim(); if (!val) return;
-  var svcEl = document.getElementById(type + 'Service');
-  if (!svcEl || !svcEl.value) { toast('Pilih SERVICE dulu', 'error'); input.value = ''; return; }
-  if (type === 'ob') {
-    if (!obActiveTuj) { toast('Pilih tujuan dahulu', 'error'); return; }
-    if (!obScanMap[obActiveTuj]) obScanMap[obActiveTuj] = [];
-    if (obScanMap[obActiveTuj].indexOf(val) === -1) { obScanMap[obActiveTuj].unshift(val); playBeep(); }
-    else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
-    renderObTabs(); renderObScanList();
-  } else if (type === 'hvs') {
-    if (!hvsActiveTuj) { toast('Pilih tujuan dahulu', 'error'); return; }
-    if (!hvsScanMap[hvsActiveTuj]) hvsScanMap[hvsActiveTuj] = [];
-    if (hvsScanMap[hvsActiveTuj].indexOf(val) === -1) { hvsScanMap[hvsActiveTuj].unshift(val); playBeep(); }
-    else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
-    renderHvsTabs(); renderHvsScanList();
-  } else {
-    var from = document.getElementById('ibFrom').value;
-    var tuj = document.getElementById('ibTujuan').value;
-    if (!from || !tuj) { toast('Isi FROM & TUJUAN dulu', 'error'); input.value = ''; return; }
-    if (ibScanned.indexOf(val) === -1) { ibScanned.unshift(val); playBeep(); }
-    else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
-    renderIbScanList();
+  if (!_detailStagingAwbs.length) {
+    container.innerHTML = '<div class="staging-empty"><span class="material-icons-round">inbox</span>Belum ada AWB ditambahkan</div>';
+    return;
   }
-  input.value = '';
-}
 
-// ─── SAVE ───
-function saveOb() {
-  var service = document.getElementById('obService').value;
-  if (!globalIncharge || !service) return;
-  var tujuanKeys = Object.keys(obScanMap);
-  if (!tujuanKeys.length) { toast('Tambahkan minimal 1 tujuan', 'error'); return; }
-  showLoading('Menyimpan...');
-  Promise.all(tujuanKeys.map(function(tuj) { return gasPost('saveOb', { incharge: globalIncharge, service: service, tujuan: tuj, awbList: obScanMap[tuj] || [] }); }))
-    .then(function(results) {
-      hideLoading();
-      var errors = results.filter(function(r) { return r.error; });
-      if (errors.length) { toast('Ada error: ' + errors[0].error, 'error'); return; }
-      toast('✅ ' + results.length + ' NO TRACK dibuat', 'success');
-      resetObForm(); _mfLoaded = false; _obibData = null; buildAllScanAwbs();
-      gasGet('getObList').then(function(r) { obData = r.list || []; renderObTable(); updateObStats(); }).catch(function() { });
-    }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-}
-
-function resetObForm() {
-  document.getElementById('obService').value = ''; document.getElementById('obTujuan').value = '';
-  if (cbRegistry['obServiceCb']) cbRegistry['obServiceCb'].value = '';
-  if (cbRegistry['obTujuanCb']) cbRegistry['obTujuanCb'].value = '';
-  setCbDisabled('obTujuanCb', true);
-  obScanMap = {}; obActiveTuj = '';
-  document.getElementById('obTujuanTabs').innerHTML = '';
-  document.getElementById('obScanList').innerHTML = '<div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div>';
-  document.getElementById('obTotalScanLabel').innerText = '0 AWB total';
-  document.getElementById('obScanInput').disabled = true;
-  if (document.getElementById('obAddTujBtn')) document.getElementById('obAddTujBtn').disabled = true;
-  document.getElementById('obServiceHint').style.display = '';
-  checkObForm();
-  document.getElementById('obFormBody').classList.remove('open');
-  document.getElementById('obFormIcon').innerText = 'expand_more';
-}
-
-function saveHvs() {
-  var service = document.getElementById('hvsService').value;
-  if (!globalIncharge || !service) return;
-  var tujuanKeys = Object.keys(hvsScanMap);
-  if (!tujuanKeys.length) { toast('Tambahkan minimal 1 tujuan', 'error'); return; }
-  showLoading('Menyimpan...');
-  Promise.all(tujuanKeys.map(function(tuj) { return gasPost('saveHvs', { incharge: globalIncharge, service: service, tujuan: tuj, awbList: hvsScanMap[tuj] || [] }); }))
-    .then(function(results) {
-      hideLoading();
-      var errors = results.filter(function(r) { return r.error; });
-      if (errors.length) { toast('Ada error: ' + errors[0].error, 'error'); return; }
-      toast('✅ ' + results.length + ' NO TRACK dibuat', 'success');
-      resetHvsForm(); _mfLoaded = false; _obibData = null; buildAllScanAwbs();
-      gasGet('getHvsList').then(function(r) { hvsData = r.list || []; renderHvsTable(); updateHvsStats(); }).catch(function() { });
-    }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-}
-
-function resetHvsForm() {
-  document.getElementById('hvsService').value = ''; document.getElementById('hvsTujuan').value = '';
-  if (cbRegistry['hvsServiceCb']) cbRegistry['hvsServiceCb'].value = '';
-  if (cbRegistry['hvsTujuanCb']) cbRegistry['hvsTujuanCb'].value = '';
-  setCbDisabled('hvsTujuanCb', true);
-  hvsScanMap = {}; hvsActiveTuj = '';
-  document.getElementById('hvsTujuanTabs').innerHTML = '';
-  document.getElementById('hvsScanList').innerHTML = '<div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div>';
-  document.getElementById('hvsTotalScanLabel').innerText = '0 AWB total';
-  document.getElementById('hvsScanInput').disabled = true;
-  if (document.getElementById('hvsAddTujBtn')) document.getElementById('hvsAddTujBtn').disabled = true;
-  document.getElementById('hvsServiceHint').style.display = '';
-  checkHvsForm();
-  document.getElementById('hvsFormBody').classList.remove('open');
-  document.getElementById('hvsFormIcon').innerText = 'expand_more';
-}
-
-function saveIb() {
-  var service = document.getElementById('ibService').value;
-  var from = document.getElementById('ibFrom').value;
-  var tujuan = document.getElementById('ibTujuan').value;
-  if (!globalIncharge || !service || !from || !tujuan) { toast('Lengkapi semua field', 'error'); return; }
-  showLoading('Menyimpan...');
-  gasPost('saveIb', { incharge: globalIncharge, service: service, from: from, tujuan: tujuan, awbList: ibScanned.slice() })
-    .then(function(res) {
-      hideLoading();
-      if (res.error) { toast('Gagal: ' + res.error, 'error'); return; }
-      toast('✅ IB disimpan! NO TRACK: ' + res.noTrack, 'success');
-      resetIbForm(); _obibData = null; buildAllScanAwbs();
-      gasGet('getIbList').then(function(r) { ibData = r.list || []; renderIbTable(); updateIbStats(); }).catch(function() { });
-    }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-}
-
-function resetIbForm() {
-  ['ibService', 'ibFrom', 'ibTujuan'].forEach(function(id) { document.getElementById(id).value = ''; if (cbRegistry[id + 'Cb']) cbRegistry[id + 'Cb'].value = ''; });
-  setCbDisabled('ibFromCb', true); setCbDisabled('ibTujuanCb', true);
-  document.getElementById('ibScanInput').disabled = true;
-  document.getElementById('ibScanInput').placeholder = 'Isi FROM & TUJUAN dulu...';
-  document.getElementById('ibServiceHint').style.display = '';
-  var hint = document.getElementById('ibScanHint'); if (hint) hint.style.display = 'none';
-  ibScanned = []; renderIbScanList(); checkIbForm();
-  document.getElementById('ibFormBody').classList.remove('open');
-  document.getElementById('ibFormIcon').innerText = 'expand_more';
-}
-
-// ─── TABLE RENDER ───
-function statusBadge(s) { return (s === 'SELESAI' || s === 'selesai') ? '<span class="badge badge-selesai">✓ Selesai</span>' : '<span class="badge badge-proses">● On Proses</span>'; }
-function fotoThumb(url) {
-  if (!url) return '<span style="font-size:11px;color:var(--gray4)">—</span>';
-  return '<a href="' + url + '" target="_blank"><img src="' + url + '" style="width:42px;height:34px;object-fit:cover;border-radius:4px;border:1px solid var(--gray3)"></a>';
-}
-
-// Actions column: Selesai button is disabled if status is already SELESAI; Edit/Delete disabled if SELESAI
-function actionsBtns(type, noTrack, status) {
-  var isSelesai = (status === 'SELESAI');
-  var selesaiBtn = !isSelesai
-    ? '<button class="action-btn" title="Tandai Selesai" onclick="markSelesai(\'' + type + '\',\'' + escQ(noTrack) + '\')"><span class="material-icons-round" style="color:var(--green)">check_circle</span></button>'
-    : '';
-  var delBtn = '<button class="action-btn danger" title="' + (isSelesai ? 'Data SELESAI tidak dapat dihapus' : 'Hapus') + '" ' + (isSelesai ? 'disabled' : 'onclick="confirmDelete(\'' + type + '\',\'' + escQ(noTrack) + '\')"') + '><span class="material-icons-round">delete</span></button>';
-  return '<div style="display:flex;gap:3px">' + selesaiBtn + delBtn + '</div>';
-}
-
-function renderObTable(filter) {
-  var data = filteredData(obData);
-  if (filter) { var v = filter.toLowerCase(); data = data.filter(function(d) { return (d.no_track + d.incharge + d.service + d.tujuan + d.status).toLowerCase().indexOf(v) !== -1; }); }
-  document.getElementById('obTableCount').innerText = data.length + ' record';
-  var tbody = document.getElementById('obTbody');
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>'; return; }
-  tbody.innerHTML = data.map(function(d, i) {
-    return '<tr><td style="color:var(--gray5);font-size:11px">' + (i + 1) + '</td><td class="mono"><span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'ob\',\'' + escQ(d.no_track) + '\')">' + d.no_track + '</span></td><td>' + d.incharge + '</td><td><span class="badge badge-blue">' + d.service + '</span></td><td>' + d.tujuan + '</td><td style="font-size:11px;color:var(--gray6)">' + d.created_date + '</td><td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td><td>' + statusBadge(d.status) + '</td><td>' + fotoThumb(d.foto_url) + '</td><td>' + actionsBtns('ob', d.no_track, d.status) + '</td></tr>';
+  container.innerHTML = _detailStagingAwbs.map(function(awb, i) {
+    return '<div class="staging-item" id="staging-item-' + i + '">' +
+      '<span class="material-icons-round staging-item-icon">qr_code</span>' +
+      '<span class="staging-item-awb">' + escH(awb) + '</span>' +
+      '<span class="material-icons-round staging-item-del" onclick="removeDetailStaging(' + i + ')">delete</span>' +
+    '</div>';
   }).join('');
 }
 
-function renderHvsTable(filter) {
-  var data = filteredData(hvsData);
-  if (filter) { var v = filter.toLowerCase(); data = data.filter(function(d) { return (d.no_track + d.incharge + d.service + d.tujuan + d.status).toLowerCase().indexOf(v) !== -1; }); }
-  document.getElementById('hvsTableCount').innerText = data.length + ' record';
-  var tbody = document.getElementById('hvsTbody');
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>'; return; }
-  tbody.innerHTML = data.map(function(d, i) {
-    return '<tr><td style="color:var(--gray5);font-size:11px">' + (i + 1) + '</td><td class="mono"><span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'hvs\',\'' + escQ(d.no_track) + '\')">' + d.no_track + '</span></td><td>' + d.incharge + '</td><td><span class="badge badge-purple">' + d.service + '</span></td><td>' + d.tujuan + '</td><td style="font-size:11px;color:var(--gray6)">' + d.created_date + '</td><td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td><td>' + statusBadge(d.status) + '</td><td>' + fotoThumb(d.foto_url) + '</td><td>' + actionsBtns('hvs', d.no_track, d.status) + '</td></tr>';
-  }).join('');
+function removeDetailStaging(i) {
+  _detailStagingAwbs.splice(i, 1);
+  _renderDetailStaging();
 }
 
-function renderIbTable(filter) {
-  var data = filteredData(ibData);
-  if (filter) { var v = filter.toLowerCase(); data = data.filter(function(d) { return (d.no_track + d.incharge + d.service + d.tujuan + (d.from || '') + d.status).toLowerCase().indexOf(v) !== -1; }); }
-  document.getElementById('ibTableCount').innerText = data.length + ' record';
-  var tbody = document.getElementById('ibTbody');
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>'; return; }
-  tbody.innerHTML = data.map(function(d, i) {
-    return '<tr><td style="color:var(--gray5);font-size:11px">' + (i + 1) + '</td><td class="mono"><span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'ib\',\'' + escQ(d.no_track) + '\')">' + d.no_track + '</span></td><td>' + d.incharge + '</td><td><span class="badge badge-blue">' + d.service + '</span></td><td>' + (d.from || '—') + '</td><td>' + d.tujuan + '</td><td style="font-size:11px;color:var(--gray6)">' + d.created_date + '</td><td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td><td>' + statusBadge(d.status) + '</td><td>' + fotoThumb(d.foto_url) + '</td><td>' + actionsBtns('ib', d.no_track, d.status) + '</td></tr>';
-  }).join('');
-}
-
-function filterObTable() { renderObTable(document.getElementById('obSearch').value || ''); }
-function filterHvsTable() { renderHvsTable(document.getElementById('hvsSearch').value || ''); }
-function filterIbTable() { renderIbTable(document.getElementById('ibSearch').value || ''); }
-
-// ─── MARK SELESAI & DELETE ───
-function markSelesai(type, noTrack) {
-  var action = type === 'ob' ? 'updateObStatus' : type === 'hvs' ? 'updateHvsStatus' : 'updateIbStatus';
-  if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
-  showLoading('Mengubah status...');
-  gasPost(action, { noTrack: noTrack, newStatus: 'SELESAI' }).then(function(res) {
-    hideLoading();
-    if (res.success) {
-      var arr = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
-      var item = arr.find(function(d) { return d.no_track === noTrack; });
-      if (item) item.status = 'SELESAI';
-      if (type === 'ob') { renderObTable(); updateObStats(); }
-      else if (type === 'hvs') { renderHvsTable(); updateHvsStats(); }
-      else { renderIbTable(); updateIbStats(); }
-      toast('Status diubah ke SELESAI', 'success');
-      closeModal('detailModal');
-    } else toast('Gagal: ' + (res.error || ''), 'error');
-  }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-}
-
-function confirmDelete(type, noTrack) {
-  // Cek jika status SELESAI — tidak boleh dihapus
-  var arr = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
-  var item = arr.find(function(d) { return d.no_track === noTrack; });
-  if (item && item.status === 'SELESAI') { toast('Data yang sudah SELESAI tidak dapat dihapus', 'error'); return; }
-
-  document.getElementById('confirmTitle').innerText = 'Hapus Data';
-  document.getElementById('confirmMsg').innerText = 'Hapus ' + noTrack + '? Semua AWB terkait juga akan dihapus.';
-  var action = type === 'ob' ? 'deleteOb' : type === 'hvs' ? 'deleteHvs' : 'deleteIb';
-  document.getElementById('confirmBtn').onclick = function() {
-    closeModal('confirmModal'); closeModal('detailModal');
-    showLoading('Menghapus...');
-    gasPost(action, { noTrack: noTrack }).then(function(res) {
-      hideLoading();
-      if (res.success) {
-        if (type === 'ob') { obData = obData.filter(function(d) { return d.no_track !== noTrack; }); renderObTable(); updateObStats(); }
-        else if (type === 'hvs') { hvsData = hvsData.filter(function(d) { return d.no_track !== noTrack; }); renderHvsTable(); updateHvsStats(); }
-        else { ibData = ibData.filter(function(d) { return d.no_track !== noTrack; }); renderIbTable(); updateIbStats(); }
-        _mfLoaded = false; _obibData = null; buildAllScanAwbs();
-        toast('Data dihapus', 'success');
-      } else toast('Gagal: ' + (res.error || ''), 'error');
-    }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-  };
-  openModal('confirmModal');
-}
-
-// ─── DETAIL MODAL ───
-function openDetailModal(type, noTrack) {
-  var data = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
-  var item = data.find(function(d) { return d.no_track === noTrack; });
-  if (!item) {
-    var allData = obData.concat(hvsData).concat(ibData);
-    item = allData.find(function(d) { return d.no_track === noTrack; });
-    if (!item) { toast('Data tidak ditemukan', 'error'); return; }
-    if (noTrack.indexOf('OB_') === 0) type = 'ob';
-    else if (noTrack.indexOf('HVS_') === 0) type = 'hvs';
-    else if (noTrack.indexOf('IB_') === 0) type = 'ib';
-  }
-  currentDetailItem = item; currentDetailType = type;
-  document.getElementById('detailModalTitle').innerText = noTrack;
-
-  // ── Photo box — VIEW ONLY (foto diinput dari web Android) ──
-  var pb = document.getElementById('detailPhotoBox');
-  pb.onclick = null;
-  pb.style.cursor = 'default';
-  if (item.foto_url) {
-    pb.innerHTML = '<img src="' + item.foto_url + '" onerror="this.parentElement.innerHTML=\'<span class=no-img><span class=material-icons-round>broken_image</span>Foto gagal dimuat</span>\'">';
-  } else {
-    pb.innerHTML = '<span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>';
-  }
-
-  var fields = type === 'ib'
-    ? [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service], ['FROM', item.from || '—'], ['TUJUAN', item.tujuan], ['DATE', item.created_date], ['STATUS', item.status], ['TOTAL AWB', item.total_awb]]
-    : [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service], ['TUJUAN', item.tujuan], ['DATE', item.created_date], ['STATUS', item.status], ['TOTAL AWB', item.total_awb]];
-  document.getElementById('detailGrid').innerHTML = fields.map(function(f) { return '<div class="d-field"><div class="d-label">' + f[0] + '</div><div class="d-value">' + f[1] + '</div></div>'; }).join('');
-
-  // ── Readonly notice if selesai ──
-  var readonlyEl = document.getElementById('detailReadonlyBar');
-  var isSelesai = item.status === 'SELESAI';
-  if (readonlyEl) readonlyEl.style.display = isSelesai ? '' : 'none';
-
-  // ── AWB list + input tambah AWB ──
-  document.getElementById('detailAwbList').innerHTML = '<div class="awb-row" style="color:var(--gray5)">Memuat AWB...</div>';
-  document.getElementById('awbCount').innerText = '...';
-  gasGet('getAwbList', { noTrack: noTrack, type: type.toUpperCase() }).then(function(res) {
-    var list = res.list || [];
-    document.getElementById('awbCount').innerText = list.length;
-    document.getElementById('detailAwbList').innerHTML = !list.length
-      ? '<div class="awb-row" style="color:var(--gray5)">Belum ada AWB</div>'
-      : list.map(function(r) { return '<div class="awb-row"><span>' + (r.awb || r) + '</span>' + (r.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + r.tujuan + '</span>' : '') + '</div>'; }).join('');
-  }).catch(function() { });
-
-  // ── Tambah AWB section (hanya jika belum SELESAI) ──
-  var addAwbEl = document.getElementById('detailAddAwbSection');
-  if (addAwbEl) {
-    addAwbEl.style.display = isSelesai ? 'none' : '';
-    document.getElementById('detailAddAwbInput').value = '';
-  }
-
-  var footer = '<button class="btn btn-outline btn-sm" onclick="closeModal(\'detailModal\')">Tutup</button>';
-  if (!isSelesai) {
-    footer += '<button class="btn btn-success btn-sm" onclick="markSelesai(\'' + type + '\',\'' + escQ(noTrack) + '\')"><span class="material-icons-round">check_circle</span> Selesai</button>';
-    footer += '<button class="btn btn-danger btn-sm" onclick="confirmDelete(\'' + type + '\',\'' + escQ(noTrack) + '\')"><span class="material-icons-round">delete</span></button>';
-  }
-  document.getElementById('detailModalFooter').innerHTML = footer;
-  openModal('detailModal');
-}
-
-// ─── TAMBAH AWB KE EXISTING TRACK (dari detail modal) ───
 function handleDetailAddAwb(e) {
   if (e.key !== 'Enter') return;
   var input = document.getElementById('detailAddAwbInput');
   var val = input.value.trim();
   if (!val || !currentDetailItem) return;
 
-  // Cek duplikat dari list yang sudah ditampilkan
-  var existing = Array.from(document.querySelectorAll('#detailAwbList .awb-row span:first-child')).map(function(el) { return el.textContent.trim(); });
-  if (existing.indexOf(val) !== -1) { toast('AWB sudah ada di list ini', 'error'); input.value = ''; return; }
+  // Cek duplikat di staging
+  if (_detailStagingAwbs.indexOf(val) !== -1) {
+    playBeepError();
+    toast('AWB sudah ada di daftar tambah', 'error');
+    input.value = '';
+    return;
+  }
 
-  showLoading('Menambah AWB...');
+  // Cek duplikat di existing (sudah tersimpan)
+  if (_detailExistingAwbs.indexOf(val) !== -1) {
+    playBeepError();
+    toast('AWB sudah ada di list ini', 'error');
+    input.value = '';
+    return;
+  }
+
+  // Masuk staging
+  _detailStagingAwbs.unshift(val);
+  playBeep();
+  input.value = '';
+  _renderDetailStaging();
+}
+
+function saveDetailStagingAwbs() {
+  if (!_detailStagingAwbs.length || !currentDetailItem) return;
+
+  var btn = document.getElementById('btnSaveDetailAwb');
+  var originalText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons-round" style="animation:spin .6s linear infinite">sync</span> Menyimpan...';
+  }
+
   gasPost('addAwbToTrack', {
     noTrack : currentDetailItem.no_track,
     type    : currentDetailType.toUpperCase(),
-    awbList : [val]
+    awbList : _detailStagingAwbs.slice()
   }).then(function(res) {
-    hideLoading();
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
     if (res.success) {
-      playBeep();
-      toast('AWB ditambahkan', 'success');
-      input.value = '';
-      // Reload AWB list & update total
+      var added = _detailStagingAwbs.length;
+      _detailExistingAwbs = _detailExistingAwbs.concat(_detailStagingAwbs);
+      _detailStagingAwbs = [];
+      _renderDetailStaging();
+      toast('✅ ' + added + ' AWB berhasil disimpan', 'success');
+
+      // Reload AWB list
       gasGet('getAwbList', { noTrack: currentDetailItem.no_track, type: currentDetailType.toUpperCase() }).then(function(r) {
         var list = r.list || [];
         document.getElementById('awbCount').innerText = list.length;
         currentDetailItem.total_awb = list.length;
         document.getElementById('detailAwbList').innerHTML = !list.length
           ? '<div class="awb-row" style="color:var(--gray5)">Belum ada AWB</div>'
-          : list.map(function(rr) { return '<div class="awb-row"><span>' + (rr.awb || rr) + '</span>' + (rr.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + rr.tujuan + '</span>' : '') + '</div>'; }).join('');
-        // Sync ke array utama
+          : list.map(function(rr) {
+              return '<div class="awb-row"><span>' + escH(rr.awb || rr) + '</span>' +
+                (rr.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + escH(rr.tujuan) + '</span>' : '') + '</div>';
+            }).join('');
+        // Sync array utama
         var arr = currentDetailType === 'ob' ? obData : currentDetailType === 'hvs' ? hvsData : ibData;
         var itm = arr.find(function(d) { return d.no_track === currentDetailItem.no_track; });
         if (itm) itm.total_awb = list.length;
@@ -400,10 +145,137 @@ function handleDetailAddAwb(e) {
         else renderIbTable();
         buildAllScanAwbs();
       });
-    } else { toast('Gagal: ' + (res.error || ''), 'error'); }
-  }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+    } else {
+      if (btn) btn.disabled = false;
+      toast('Gagal: ' + (res.error || ''), 'error');
+    }
+  }).catch(function(ex) {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+    toast('Error: ' + ex.message, 'error');
+  });
 }
 
+// ─── PATCH openDetailModal: inject staging UI + reset staging state ───
+var _origOpenDetailModal = window.openDetailModal;
 
-// ─── FOTO (tidak digunakan di web ini — foto diinput dari web Android) ───
-// Fungsi onFotoChange dihapus di v4.3 — upload foto hanya dari web Android
+window.openDetailModal = function(type, noTrack) {
+  // Reset staging setiap buka modal
+  _detailStagingAwbs = [];
+  _detailExistingAwbs = [];
+
+  // Panggil original
+  _origOpenDetailModal(type, noTrack);
+
+  // Setelah modal terbuka, patch section tambah AWB
+  var addSection = document.getElementById('detailAddAwbSection');
+  if (!addSection) return;
+
+  // Inject HTML baru (staging list + tombol simpan)
+  var isSelesai = currentDetailItem && currentDetailItem.status === 'SELESAI';
+  if (!isSelesai) {
+    addSection.innerHTML =
+      '<div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">' +
+        'TAMBAH AWB' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">' +
+        '<input class="scan-inp" id="detailAddAwbInput" placeholder="Scan / ketik AWB lalu Enter..." autocomplete="off" ' +
+          'onkeydown="handleDetailAddAwb(event)" style="flex:1">' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--gray5);margin-bottom:8px">' +
+        '<span class="material-icons-round" style="font-size:12px;vertical-align:middle">info</span> ' +
+        'Tekan Enter untuk menambah ke daftar, lalu klik <strong>Simpan AWB</strong>' +
+      '</div>' +
+      // Staging list
+      '<div style="font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">' +
+        'DAFTAR TAMBAH (<span id="detailStagingCount">0</span>)' +
+      '</div>' +
+      '<div class="staging-list" id="detailStagingList">' +
+        '<div class="staging-empty"><span class="material-icons-round">inbox</span>Belum ada AWB ditambahkan</div>' +
+      '</div>' +
+      '<div style="margin-top:8px;display:flex;justify-content:flex-end">' +
+        '<button class="btn btn-success btn-sm" id="btnSaveDetailAwb" disabled onclick="saveDetailStagingAwbs()">' +
+          '<span class="material-icons-round">save</span> Simpan AWB' +
+        '</button>' +
+      '</div>';
+
+    // Focus input
+    setTimeout(function() {
+      var inp = document.getElementById('detailAddAwbInput');
+      if (inp) inp.focus();
+    }, 120);
+  }
+
+  // Kumpulkan existing AWBs setelah list dimuat
+  // Kita listen dengan observer sementara atau tunggu load selesai
+  gasGet('getAwbList', { noTrack: noTrack, type: type.toUpperCase() }).then(function(res) {
+    _detailExistingAwbs = (res.list || []).map(function(r) { return r.awb || r; });
+  }).catch(function() {});
+};
+
+// ─── PERFORMANCE: Fast scan input (OB / HVS / IB) ───
+// Override handleScan agar lebih responsif — hapus delay tidak perlu
+var _origHandleScan = window.handleScan;
+window.handleScan = function(e, type) {
+  if (e.key !== 'Enter') return;
+  var input = document.getElementById(type + 'ScanInput');
+  var val = input.value.trim();
+  if (!val) return;
+
+  var svcEl = document.getElementById(type + 'Service');
+  if (!svcEl || !svcEl.value) { playBeepError(); toast('Pilih SERVICE dulu', 'error'); input.value = ''; return; }
+
+  if (type === 'ob') {
+    if (!obActiveTuj) { playBeepError(); toast('Pilih tujuan dahulu', 'error'); return; }
+    if (!obScanMap[obActiveTuj]) obScanMap[obActiveTuj] = [];
+    if (obScanMap[obActiveTuj].indexOf(val) !== -1) { playBeepError(); toast('AWB sudah ada', 'error'); input.value = ''; return; }
+    obScanMap[obActiveTuj].unshift(val); playBeep();
+    renderObTabs(); renderObScanList();
+  } else if (type === 'hvs') {
+    if (!hvsActiveTuj) { playBeepError(); toast('Pilih tujuan dahulu', 'error'); return; }
+    if (!hvsScanMap[hvsActiveTuj]) hvsScanMap[hvsActiveTuj] = [];
+    if (hvsScanMap[hvsActiveTuj].indexOf(val) !== -1) { playBeepError(); toast('AWB sudah ada', 'error'); input.value = ''; return; }
+    hvsScanMap[hvsActiveTuj].unshift(val); playBeep();
+    renderHvsTabs(); renderHvsScanList();
+  } else {
+    var from = document.getElementById('ibFrom').value;
+    var tuj = document.getElementById('ibTujuan').value;
+    if (!from || !tuj) { playBeepError(); toast('Isi FROM & TUJUAN dulu', 'error'); input.value = ''; return; }
+    if (ibScanned.indexOf(val) !== -1) { playBeepError(); toast('AWB sudah ada', 'error'); input.value = ''; return; }
+    ibScanned.unshift(val); playBeep();
+    renderIbScanList();
+  }
+  input.value = '';
+};
+
+// ─── PERFORMANCE: Debounce reloadAll & buildAllScanAwbs ───
+// buildAllScanAwbs tidak perlu tunggu — fire-and-forget, tidak blocking UI
+var _bawTimer = null;
+var _origBuildAllScanAwbs = window.buildAllScanAwbs;
+window.buildAllScanAwbs = function() {
+  clearTimeout(_bawTimer);
+  _bawTimer = setTimeout(function() {
+    gasGet('getAllScanAwbs').then(function(r) {
+      if (r && r.list) allScanAwbs = r.list;
+    }).catch(function() {});
+  }, 400);
+};
+
+/* ─── CSS INJECTION: Staging list styles ─── */
+(function() {
+  var style = document.createElement('style');
+  style.textContent = [
+    '.staging-list{background:var(--blue-light);border:1.5px solid var(--blue-mid);border-radius:8px;min-height:44px;max-height:160px;overflow-y:auto}',
+    '.staging-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--blue-mid);font-size:12px}',
+    '.staging-item:last-child{border-bottom:none}',
+    '.staging-item-icon{font-size:14px;color:var(--blue);flex-shrink:0}',
+    '.staging-item-awb{flex:1;font-family:var(--mono);font-weight:600;color:var(--gray8)}',
+    '.staging-item-del{font-size:16px;color:var(--red);cursor:pointer;padding:2px;border-radius:4px;flex-shrink:0;transition:.15s}',
+    '.staging-item-del:hover{background:var(--red-light)}',
+    '.staging-empty{padding:12px;text-align:center;color:var(--blue2);font-size:12px;opacity:.6;display:flex;align-items:center;justify-content:center;gap:6px}',
+    '.staging-empty .material-icons-round{font-size:15px}',
+    // Animasi add item
+    '@keyframes slideInStaging{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}',
+    '.staging-item{animation:slideInStaging .15s ease}'
+  ].join('\n');
+  document.head.appendChild(style);
+})();
