@@ -1,8 +1,7 @@
 /* ============================================================
-   GTW BDO — views.js v4.7
-   FIX: Header OB&IB sesuai GSheet — DATE selalu di KIRI kolom AWB
-   FIX: 4-row header merge persis GSheet (R1=Incharge, R2=Service, R3=Kota, R4=Type)
-   FIX: INBOUND_HVS selalu dirender (meski kosong)
+   GTW BDO — views.js v4.8
+   FIX: Header Row3 (KOTA) merge persis GSheet — DATE kolom tidak ikut merge
+   FIX: INBOUND_HVS DATE terisi di semua baris AWB (bukan hanya IB_LABEL)
    ============================================================ */
 
 window.addEventListener('DOMContentLoaded', function () {
@@ -44,17 +43,17 @@ function buildAllScanAwbs() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// OB & IB COMBINED VIEW v4.7
+// OB & IB COMBINED VIEW v4.8
 //
 // Struktur GSheet (persis):
 //   Row1: INCHARGE (merged span)
 //   Row2: SERVICE  (merged span)
-//   Row3: KOTA     (merged span)
+//   Row3: KOTA     (merged per grup, DATE kolom = cell kosong sendiri)
 //   Row4: DATE | OUTBOUND | DATE | OUTBOUND_HVS | DATE | INBOUND_HVS | DATE
 //
-// Urutan kolom di web HARUS SAMA dengan GSheet:
-//   DATE selalu di KIRI kolom AWB pasangannya
-//   (backend sudah kirim colDefs dalam urutan GSheet)
+// FIX v4.8:
+//   - Row3 KOTA: DATE kolom (r3 kosong) render sendiri colspan=1, tidak ikut merge
+//   - INBOUND_HVS DATE: semua baris AWB terisi date masing-masing
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
@@ -81,9 +80,6 @@ function _buildObibTable(data) {
   var wrap = document.getElementById('obibTableWrap');
   var colDefs    = data.colDefs    || [];
   var ibSections = data.ibSections || [];
-  var headerR1   = data.headerR1   || [];
-  var headerR2   = data.headerR2   || [];
-  var headerR3   = data.headerR3   || [];
   var filter     = (document.getElementById('obibSearch').value || '').toLowerCase().trim();
 
   if (!colDefs.length) {
@@ -101,11 +97,9 @@ function _buildObibTable(data) {
     ibMap[k].push(sec);
   });
 
-  // ── Build flatRows per kolom (SESUAI URUTAN colDefs dari backend = urutan GSheet) ──
+  // ── Build flatRows per kolom ──
   var flatCol = [];
-  for (var ci = 0; ci < nCols; ci++) {
-    flatCol.push(null);
-  }
+  for (var ci = 0; ci < nCols; ci++) { flatCol.push(null); }
 
   for (var ci = 0; ci < nCols; ci++) {
     var def = colDefs[ci];
@@ -127,10 +121,7 @@ function _buildObibTable(data) {
     if (ct === 'INBOUND_HVS') {
       var k    = (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       var secs = ibMap[k] || [];
-
-      if (!secs.length && def.ibSections && def.ibSections.length) {
-        secs = def.ibSections;
-      }
+      if (!secs.length && def.ibSections && def.ibSections.length) { secs = def.ibSections; }
 
       var tujOrder  = [];
       var tujGroups = {};
@@ -138,13 +129,11 @@ function _buildObibTable(data) {
 
       secs.forEach(function (sec) {
         var awbList = sec.awbs || [];
-
         if (!awbList.length && sec.tujuan) {
           var t = sec.tujuan;
           if (!tujGroups[t]) { tujGroups[t] = []; tujOrder.push(t); tujDate[t] = sec.date || ''; }
           return;
         }
-
         awbList.forEach(function (a) {
           var tuj = a.tujuan || sec.tujuan || '';
           var awb = a.awb || '';
@@ -155,11 +144,7 @@ function _buildObibTable(data) {
                 tuj.toLowerCase().indexOf(filter) === -1 &&
                 dt.indexOf(filter) === -1) return;
           }
-          if (!tujGroups[tuj]) {
-            tujGroups[tuj] = [];
-            tujOrder.push(tuj);
-            tujDate[tuj] = dt;
-          }
+          if (!tujGroups[tuj]) { tujGroups[tuj] = []; tujOrder.push(tuj); tujDate[tuj] = dt; }
           tujGroups[tuj].push({ awb: awb, date: dt });
         });
       });
@@ -178,23 +163,17 @@ function _buildObibTable(data) {
       continue;
     }
 
-    // DATE → akan diisi dari kolom AWB pasangannya
-    if (ct === 'DATE') {
-      flatCol[ci] = null; // placeholder, diisi di bawah
-      continue;
-    }
+    if (ct === 'DATE') { flatCol[ci] = null; continue; }
 
     flatCol[ci] = [];
   }
 
   // ── Isi kolom DATE dari kolom AWB pasangannya ──
-  // Di GSheet, DATE selalu berpasangan dengan kolom AWB di sebelah KANAN-nya
-  // Cari kolom AWB terdekat di kanan dalam grup r1 yang sama
   for (var ci = 0; ci < nCols; ci++) {
-    if (flatCol[ci] !== null) continue; // bukan DATE
+    if (flatCol[ci] !== null) continue;
 
     var srcCi = -1;
-    // Cari sumber AWB di KANAN dalam r1-group yang sama
+    // Cari sumber di KANAN dalam grup r1 yang sama
     for (var j = ci + 1; j < nCols; j++) {
       if ((colDefs[j].r1 || '') !== (colDefs[ci].r1 || '')) break;
       var jct = (colDefs[j].colType || '').toUpperCase();
@@ -211,16 +190,24 @@ function _buildObibTable(data) {
 
     if (srcCi === -1) { flatCol[ci] = []; continue; }
 
-    // Mirror date dari sumber
+    var srcCt = (colDefs[srcCi].colType || '').toUpperCase();
+
+    // ── FIX v4.8: Mirror date ──
     flatCol[ci] = (flatCol[srcCi] || []).map(function (r) {
-      if (!r.date) return { cellType: 'DATE_EMPTY', text: '', date: '' };
-      // Untuk IB_LABEL tampilkan date, untuk AWB bawahnya kosongkan
-      if (r.cellType === 'IB_LABEL') return { cellType: 'DATE_VAL', text: r.date, date: r.date };
+      if (srcCt === 'INBOUND_HVS') {
+        // IB_LABEL → date label grup
+        if (r.cellType === 'IB_LABEL') {
+          return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
+        }
+        // AWB di bawah IB_LABEL → FIX: tampilkan date AWB itu sendiri
+        if (r.cellType === 'AWB') {
+          return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
+        }
+        return { cellType: 'DATE_EMPTY', text: '', date: '' };
+      }
+      // OUTBOUND / OUTBOUND_HVS → setiap AWB tampilkan date-nya
       if (r.cellType === 'AWB') {
-        // Cek apakah sumber adalah INBOUND_HVS
-        var srcCt = (colDefs[srcCi].colType || '').toUpperCase();
-        if (srcCt === 'INBOUND_HVS') return { cellType: 'DATE_EMPTY', text: '', date: '' };
-        return { cellType: 'DATE_VAL', text: r.date, date: r.date };
+        return r.date ? { cellType: 'DATE_VAL', text: r.date, date: r.date } : { cellType: 'DATE_EMPTY', text: '', date: '' };
       }
       return { cellType: 'DATE_EMPTY', text: '', date: '' };
     });
@@ -230,139 +217,78 @@ function _buildObibTable(data) {
   var maxRows = 0;
   flatCol.forEach(function (arr) { if (arr && arr.length > maxRows) maxRows = arr.length; });
 
-  // ══════════════════════════════════════════════════════════════════
-  // RENDER ORDER: IKUTI URUTAN colDefs (= urutan GSheet)
-  // TIDAK ada reordering — backend sudah kirim dalam urutan yang benar
-  // DATE di kiri OUTBOUND = urutan di GSheet sheet itu sendiri
-  // ══════════════════════════════════════════════════════════════════
+  // ── renderOrder ──
   var renderOrder = [];
-  for (var ci = 0; ci < nCols; ci++) {
-    renderOrder.push(ci);
-  }
+  for (var ci = 0; ci < nCols; ci++) { renderOrder.push(ci); }
   var nRender = renderOrder.length;
 
-  // ── Helper: build merged header row ──
-  // Merge sel yang punya nilai sama & berurutan dalam group r1 yang sama
-  function buildMergedHdr(hArr, cls, isR1) {
-    // hArr sudah propagated dari backend (r1, r2, r3 sudah propagate ke kanan)
-    // Kita perlu re-detect: cell yang merupakan "lanjutan" merge = r[ci] === r[ci-1] && tidak ada nilai baru
-    // Cara mudah: gunakan rawR1/R2/R3 dari colDefs sebagai batas group
-
-    var cells = [];
-    var i = 0;
+  // ── Row 1: INCHARGE — group by r1 ──
+  var hdrR1 = (function() {
+    var cells = [], i = 0;
     while (i < nRender) {
       var ci  = renderOrder[i];
-      var val = (hArr[ci] || '').toString().trim();
-
-      // Hitung span: selama kolom berikutnya punya nilai KOSONG atau SAMA dalam grup r1 yang sama
+      var val = colDefs[ci].r1 || '';
       var span = 1;
-      while (i + span < nRender) {
-        var nci  = renderOrder[i + span];
-        var nval = (hArr[nci] || '').toString().trim();
-
-        // Batasi merge hanya dalam r1-group yang sama (khusus r2 dan r3)
-        if (!isR1 && (colDefs[nci].r1 || '') !== (colDefs[ci].r1 || '')) break;
-
-        // Lanjutkan merge jika nilai kosong atau sama dengan induk
-        if (!nval || nval === val) {
-          span++;
-        } else {
-          break;
-        }
-      }
-
-      cells.push({ val: val, span: span });
-      i += span;
+      while (i + span < nRender && (colDefs[renderOrder[i + span]].r1 || '') === val) span++;
+      cells.push({ val: val, span: span }); i += span;
     }
+    return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
+      cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-incharge">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
+  })();
 
-    return '<tr>' +
-      '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function (c) {
-        return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>';
-      }).join('') +
-      '</tr>';
-  }
-
-  // ── Header Row 1: INCHARGE (menggunakan r1 dari colDefs, bukan headerR1 yang sudah propagate) ──
-  // Buat array r1 dengan nilai hanya di kolom pertama setiap group
-  function buildGroupHeader(getVal, cls) {
-    var cells = [];
-    var i = 0;
-    while (i < nRender) {
-      var ci  = renderOrder[i];
-      var val = getVal(ci);
-      var span = 1;
-
-      // Hitung span: selama kolom berikutnya masih dalam group yang sama (nilai getVal sama)
-      while (i + span < nRender) {
-        var nci = renderOrder[i + span];
-        if (getVal(nci) === val) span++;
-        else break;
-      }
-
-      cells.push({ val: val, span: span });
-      i += span;
-    }
-
-    return '<tr>' +
-      '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function (c) {
-        return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>';
-      }).join('') +
-      '</tr>';
-  }
-
-  // Row 1: group by r1
-  var hdrR1 = buildGroupHeader(function(ci) { return colDefs[ci].r1 || ''; }, 'obib-hdr-incharge');
-  // Row 2: group by r1+r2
-  var hdrR2 = buildGroupHeader(function(ci) { return (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || ''); }, 'obib-hdr-service');
-  // R2 cells perlu tampil nilai r2 bukan composite key — rebuild:
-  hdrR2 = (function() {
-    var cells = [];
-    var i = 0;
+  // ── Row 2: SERVICE — group by r1+r2 ──
+  var hdrR2 = (function() {
+    var cells = [], i = 0;
     while (i < nRender) {
       var ci   = renderOrder[i];
       var key  = (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || '');
       var val  = colDefs[ci].r2 || '';
       var span = 1;
       while (i + span < nRender) {
-        var nci = renderOrder[i + span];
+        var nci  = renderOrder[i + span];
         var nkey = (colDefs[nci].r1 || '') + '|||' + (colDefs[nci].r2 || '');
-        if (nkey === key) span++;
-        else break;
+        if (nkey === key) span++; else break;
       }
-      cells.push({ val: val, span: span });
-      i += span;
+      cells.push({ val: val, span: span }); i += span;
     }
     return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
       cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-service">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
   })();
 
-  // Row 3: group by r1+r2+r3
+  // ── Row 3: KOTA — FIX v4.8 ──
+  // DATE kolom (r3 kosong) = cell kosong sendiri, TIDAK ikut merge grup KOTA
+  // Non-DATE merge selama r1+r2+r3 sama DAN tidak melewati DATE kolom
   var hdrR3 = (function() {
-    var cells = [];
-    var i = 0;
+    var cells = [], i = 0;
     while (i < nRender) {
-      var ci   = renderOrder[i];
-      var key  = (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || '') + '|||' + (colDefs[ci].r3 || '');
-      var val  = colDefs[ci].r3 || '';
+      var ci  = renderOrder[i];
+      var ct  = (colDefs[ci].colType || '').toUpperCase();
+      var val = colDefs[ci].r3 || '';
+
+      // DATE kolom atau r3 kosong → render sendiri colspan=1
+      if (ct === 'DATE' || !val) {
+        cells.push({ val: val, span: 1 });
+        i++;
+        continue;
+      }
+
+      // Non-DATE dengan r3 berisi → merge selama key r1+r2+r3 sama dan bukan DATE
+      var key  = (colDefs[ci].r1 || '') + '|||' + (colDefs[ci].r2 || '') + '|||' + val;
       var span = 1;
       while (i + span < nRender) {
         var nci  = renderOrder[i + span];
+        var nct  = (colDefs[nci].colType || '').toUpperCase();
+        if (nct === 'DATE') break; // stop di DATE kolom
         var nkey = (colDefs[nci].r1 || '') + '|||' + (colDefs[nci].r2 || '') + '|||' + (colDefs[nci].r3 || '');
-        if (nkey === key) span++;
-        else break;
+        if (nkey === key) span++; else break;
       }
-      cells.push({ val: val, span: span });
-      i += span;
+      cells.push({ val: val, span: span }); i += span;
     }
     return '<tr><th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
-      cells.map(function(c) { return '<th colspan="1" class="obib-hdr-kota">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
-    // Row 3 tidak di-merge antar kolom — tiap kolom tampil nilai r3-nya sendiri
-    // (DATE kolom punya r3 kosong, tampil kosong)
+      cells.map(function(c) { return '<th colspan="' + c.span + '" class="obib-hdr-kota">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
   })();
 
-  // Row 4: TYPE (tidak di-merge) — DATE | OUTBOUND | DATE | OUTBOUND_HVS | ...
+  // ── Row 4: TYPE — tidak di-merge ──
   function typeClass(t) {
     t = (t || '').toUpperCase();
     return t === 'OUTBOUND' ? 'outbound' : t === 'OUTBOUND_HVS' ? 'outbound-hvs' : t === 'INBOUND_HVS' ? 'inbound-hvs' : 'date';
