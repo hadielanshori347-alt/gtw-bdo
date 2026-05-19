@@ -1,7 +1,26 @@
 /* ============================================================
-   GTW BDO — forms.js v4.2
+   GTW BDO — forms.js v4.3
    Multi-tujuan scan, save, table render, mark selesai, delete
+   v4.3: Suara beep saat AWB berhasil di-scan
+         Modal detail: hanya lihat foto & tambah AWB (no upload)
    ============================================================ */
+
+// ─── BEEP SOUND ───
+function playBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1046, ctx.currentTime); // C6 — nada tinggi & jelas
+    gain.gain.setValueAtTime(0.6, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.18);
+  } catch(e) { /* silent fail jika browser blokir AudioContext */ }
+}
 
 // ─── MULTI TUJUAN (OB / HVS) ───
 function initObTujuan(tuj) { if (!obScanMap[tuj]) obScanMap[tuj] = []; obActiveTuj = tuj; document.getElementById('obScanInput').disabled = false; renderObTabs(); renderObScanList(); }
@@ -63,20 +82,20 @@ function handleScan(e, type) {
   if (type === 'ob') {
     if (!obActiveTuj) { toast('Pilih tujuan dahulu', 'error'); return; }
     if (!obScanMap[obActiveTuj]) obScanMap[obActiveTuj] = [];
-    if (obScanMap[obActiveTuj].indexOf(val) === -1) obScanMap[obActiveTuj].unshift(val);
+    if (obScanMap[obActiveTuj].indexOf(val) === -1) { obScanMap[obActiveTuj].unshift(val); playBeep(); }
     else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
     renderObTabs(); renderObScanList();
   } else if (type === 'hvs') {
     if (!hvsActiveTuj) { toast('Pilih tujuan dahulu', 'error'); return; }
     if (!hvsScanMap[hvsActiveTuj]) hvsScanMap[hvsActiveTuj] = [];
-    if (hvsScanMap[hvsActiveTuj].indexOf(val) === -1) hvsScanMap[hvsActiveTuj].unshift(val);
+    if (hvsScanMap[hvsActiveTuj].indexOf(val) === -1) { hvsScanMap[hvsActiveTuj].unshift(val); playBeep(); }
     else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
     renderHvsTabs(); renderHvsScanList();
   } else {
     var from = document.getElementById('ibFrom').value;
     var tuj = document.getElementById('ibTujuan').value;
     if (!from || !tuj) { toast('Isi FROM & TUJUAN dulu', 'error'); input.value = ''; return; }
-    if (ibScanned.indexOf(val) === -1) ibScanned.unshift(val);
+    if (ibScanned.indexOf(val) === -1) { ibScanned.unshift(val); playBeep(); }
     else { toast('AWB sudah ada', 'error'); input.value = ''; return; }
     renderIbScanList();
   }
@@ -295,21 +314,14 @@ function openDetailModal(type, noTrack) {
   currentDetailItem = item; currentDetailType = type;
   document.getElementById('detailModalTitle').innerText = noTrack;
 
-  var isSelesai = item.status === 'SELESAI';
+  // ── Photo box — VIEW ONLY (foto diinput dari web Android) ──
   var pb = document.getElementById('detailPhotoBox');
-
-  // Photo box — if selesai, no click to change; if not selesai, allow click to upload
+  pb.onclick = null;
+  pb.style.cursor = 'default';
   if (item.foto_url) {
-    pb.innerHTML = '<img src="' + item.foto_url + '" onerror="this.parentElement.innerHTML=\'<span class=no-img><span class=material-icons-round>broken_image</span>Foto gagal dimuat</span>\'">' +
-      (!isSelesai ? '<div class="photo-overlay"><span class="material-icons-round">photo_camera</span></div>' : '');
-    if (!isSelesai) pb.onclick = function() { document.getElementById('fotoInput').click(); };
-    else pb.onclick = null;
-    pb.style.cursor = isSelesai ? 'default' : 'pointer';
+    pb.innerHTML = '<img src="' + item.foto_url + '" onerror="this.parentElement.innerHTML=\'<span class=no-img><span class=material-icons-round>broken_image</span>Foto gagal dimuat</span>\'">';
   } else {
-    pb.innerHTML = '<span class="no-img"><span class="material-icons-round">photo_camera</span>' + (isSelesai ? 'Tidak ada foto' : 'Klik untuk tambah foto') + '</span>';
-    if (!isSelesai) pb.onclick = function() { document.getElementById('fotoInput').click(); };
-    else pb.onclick = null;
-    pb.style.cursor = isSelesai ? 'default' : 'pointer';
+    pb.innerHTML = '<span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>';
   }
 
   var fields = type === 'ib'
@@ -317,14 +329,12 @@ function openDetailModal(type, noTrack) {
     : [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service], ['TUJUAN', item.tujuan], ['DATE', item.created_date], ['STATUS', item.status], ['TOTAL AWB', item.total_awb]];
   document.getElementById('detailGrid').innerHTML = fields.map(function(f) { return '<div class="d-field"><div class="d-label">' + f[0] + '</div><div class="d-value">' + f[1] + '</div></div>'; }).join('');
 
-  // Foto button — hide if selesai
-  var fotoRowEl = document.getElementById('detailFotoRow');
-  if (fotoRowEl) fotoRowEl.style.display = isSelesai ? 'none' : '';
-
-  // Readonly notice if selesai
+  // ── Readonly notice if selesai ──
   var readonlyEl = document.getElementById('detailReadonlyBar');
+  var isSelesai = item.status === 'SELESAI';
   if (readonlyEl) readonlyEl.style.display = isSelesai ? '' : 'none';
 
+  // ── AWB list + input tambah AWB ──
   document.getElementById('detailAwbList').innerHTML = '<div class="awb-row" style="color:var(--gray5)">Memuat AWB...</div>';
   document.getElementById('awbCount').innerText = '...';
   gasGet('getAwbList', { noTrack: noTrack, type: type.toUpperCase() }).then(function(res) {
@@ -335,6 +345,13 @@ function openDetailModal(type, noTrack) {
       : list.map(function(r) { return '<div class="awb-row"><span>' + (r.awb || r) + '</span>' + (r.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + r.tujuan + '</span>' : '') + '</div>'; }).join('');
   }).catch(function() { });
 
+  // ── Tambah AWB section (hanya jika belum SELESAI) ──
+  var addAwbEl = document.getElementById('detailAddAwbSection');
+  if (addAwbEl) {
+    addAwbEl.style.display = isSelesai ? 'none' : '';
+    document.getElementById('detailAddAwbInput').value = '';
+  }
+
   var footer = '<button class="btn btn-outline btn-sm" onclick="closeModal(\'detailModal\')">Tutup</button>';
   if (!isSelesai) {
     footer += '<button class="btn btn-success btn-sm" onclick="markSelesai(\'' + type + '\',\'' + escQ(noTrack) + '\')"><span class="material-icons-round">check_circle</span> Selesai</button>';
@@ -344,32 +361,49 @@ function openDetailModal(type, noTrack) {
   openModal('detailModal');
 }
 
-// ─── FOTO ───
-function onFotoChange(e) {
-  var file = e.target.files[0];
-  if (!file || !currentDetailItem) return;
-  if (currentDetailItem.status === 'SELESAI') { toast('Data SELESAI tidak dapat diubah', 'error'); return; }
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    var b64 = ev.target.result.split(',')[1];
-    showLoading('Mengupload foto...');
-    gasPost('updateFoto', { noTrack: currentDetailItem.no_track, type: currentDetailType.toUpperCase(), base64Data: b64 })
-      .then(function(res) {
-        hideLoading();
-        if (res.success && res.url) {
-          var pb = document.getElementById('detailPhotoBox');
-          pb.innerHTML = '<img src="' + res.url + '"><div class="photo-overlay"><span class="material-icons-round">photo_camera</span></div>';
-          currentDetailItem.foto_url = res.url;
-          toast('Foto berhasil diperbarui', 'success');
-          var arr = currentDetailType === 'ob' ? obData : currentDetailType === 'hvs' ? hvsData : ibData;
-          var item = arr.find(function(d) { return d.no_track === currentDetailItem.no_track; });
-          if (item) item.foto_url = res.url;
-          if (currentDetailType === 'ob') renderObTable();
-          else if (currentDetailType === 'hvs') renderHvsTable();
-          else renderIbTable();
-        } else toast('Gagal upload: ' + (res.error || ''), 'error');
-      }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
+// ─── TAMBAH AWB KE EXISTING TRACK (dari detail modal) ───
+function handleDetailAddAwb(e) {
+  if (e.key !== 'Enter') return;
+  var input = document.getElementById('detailAddAwbInput');
+  var val = input.value.trim();
+  if (!val || !currentDetailItem) return;
+
+  // Cek duplikat dari list yang sudah ditampilkan
+  var existing = Array.from(document.querySelectorAll('#detailAwbList .awb-row span:first-child')).map(function(el) { return el.textContent.trim(); });
+  if (existing.indexOf(val) !== -1) { toast('AWB sudah ada di list ini', 'error'); input.value = ''; return; }
+
+  showLoading('Menambah AWB...');
+  gasPost('addAwbToTrack', {
+    noTrack : currentDetailItem.no_track,
+    type    : currentDetailType.toUpperCase(),
+    awbList : [val]
+  }).then(function(res) {
+    hideLoading();
+    if (res.success) {
+      playBeep();
+      toast('AWB ditambahkan', 'success');
+      input.value = '';
+      // Reload AWB list & update total
+      gasGet('getAwbList', { noTrack: currentDetailItem.no_track, type: currentDetailType.toUpperCase() }).then(function(r) {
+        var list = r.list || [];
+        document.getElementById('awbCount').innerText = list.length;
+        currentDetailItem.total_awb = list.length;
+        document.getElementById('detailAwbList').innerHTML = !list.length
+          ? '<div class="awb-row" style="color:var(--gray5)">Belum ada AWB</div>'
+          : list.map(function(rr) { return '<div class="awb-row"><span>' + (rr.awb || rr) + '</span>' + (rr.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + rr.tujuan + '</span>' : '') + '</div>'; }).join('');
+        // Sync ke array utama
+        var arr = currentDetailType === 'ob' ? obData : currentDetailType === 'hvs' ? hvsData : ibData;
+        var itm = arr.find(function(d) { return d.no_track === currentDetailItem.no_track; });
+        if (itm) itm.total_awb = list.length;
+        if (currentDetailType === 'ob') renderObTable();
+        else if (currentDetailType === 'hvs') renderHvsTable();
+        else renderIbTable();
+        buildAllScanAwbs();
+      });
+    } else { toast('Gagal: ' + (res.error || ''), 'error'); }
+  }).catch(function(e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
 }
+
+
+// ─── FOTO (tidak digunakan di web ini — foto diinput dari web Android) ───
+// Fungsi onFotoChange dihapus di v4.3 — upload foto hanya dari web Android
