@@ -250,13 +250,21 @@
   <div class="modal" style="width:540px">
     <div class="modal-hdr"><div class="modal-title" id="detailModalTitle">Detail</div><button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button></div>
     <div class="modal-body">
-      <div class="photo-box" id="detailPhotoBox"><span class="no-img"><span class="material-icons-round">photo_camera</span>Klik untuk tambah foto</span></div>
-      <div id="detailFotoRow" style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <label class="foto-btn" style="cursor:pointer"><span class="material-icons-round" style="font-size:14px">photo_camera</span> Ganti Foto<input type="file" accept="image/*" style="display:none" onchange="onFotoChange(event)" id="fotoInput"></label>
-      </div>
+      <div class="photo-box" id="detailPhotoBox"><span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span></div>
       <div id="detailReadonlyBar" class="readonly-bar" style="display:none"><span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah</div>
       <div class="detail-grid" id="detailGrid"></div>
-      <div style="margin-top:6px"><div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div><div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div></div>
+      <div style="margin-top:6px">
+        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div>
+        <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
+      </div>
+      <!-- Tambah AWB section — hanya tampil jika belum SELESAI -->
+      <div id="detailAddAwbSection" style="margin-top:10px;display:none">
+        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">TAMBAH AWB</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="scan-inp" id="detailAddAwbInput" placeholder="Scan / ketik AWB lalu Enter..." autocomplete="off" onkeydown="handleDetailAddAwb(event)" style="flex:1">
+        </div>
+        <div style="font-size:11px;color:var(--gray5);margin-top:4px"><span class="material-icons-round" style="font-size:12px;vertical-align:middle">info</span> Tekan Enter untuk menambah AWB ke track ini</div>
+      </div>
     </div>
     <div class="modal-footer" id="detailModalFooter"></div>
   </div>
