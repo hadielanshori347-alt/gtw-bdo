@@ -91,6 +91,42 @@ function _buildObibTable(data) {
 
   var nCols = colDefs.length;
 
+  // ── FIX v4.9: Propagasi r1/r2/r3 di frontend ──
+  // Backend hanya isi cell pertama per grup (GSheet merged cell),
+  // sisanya kosong string. Propagasi di sini supaya header tampil benar.
+  // KRITIS: reset propR3 setiap r1 atau r2 berubah supaya
+  //         r3 grup SUKAJADI tidak bocor ke grup METRO.
+  var propR1 = '', propR2 = '', propR3 = '';
+  colDefs.forEach(function (def) {
+    var inR1 = def.r1 || '';
+    var inR2 = def.r2 || '';
+
+    // Deteksi pergantian grup r1 → reset semua
+    if (inR1 && inR1 !== propR1) {
+      propR1 = inR1;
+      propR2 = '';
+      propR3 = '';
+    } else if (!inR1) {
+      def.r1 = propR1;
+    }
+
+    // Deteksi pergantian grup r2 → reset r3
+    var curR2 = def.r2 || inR2;
+    if (inR2 && inR2 !== propR2) {
+      propR2 = inR2;
+      propR3 = '';
+    } else if (!inR2) {
+      def.r2 = propR2;
+    }
+
+    // r3: propagasi hanya untuk non-DATE, reset saat grup baru
+    var ct = (def.colType || '').toUpperCase();
+    if (ct !== 'DATE') {
+      if (def.r3) propR3 = def.r3;
+      else def.r3 = propR3;
+    }
+  });
+
   // ── ibMap: key = r1(INCHARGE)|SERVICE(r2)|FROM-kota(r3) → array of sections ──
   // FIX v4.9: include r1 supaya tidak bocor lintas incharge
   var ibMap = {};
