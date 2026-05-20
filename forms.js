@@ -1,17 +1,17 @@
 /* ============================================================
-   GTW BDO — forms.js v4.4
+   GTW BDO - forms.js v4.4
    CHANGES dari v4.3:
    - Detail modal: AWB staging list (antrian) sebelum disimpan
-     • Setiap AWB punya icon hapus
-     • Tombol "Simpan AWB" untuk commit ke server
+     * Setiap AWB punya icon hapus
+     * Tombol "Simpan AWB" untuk commit ke server
    - Duplikat AWB: playBeepError (nada turun/error)
    - Scan biasa duplikat: playBeepError
-   - Save OB/HVS/IB: optimistic update — UI update duluan,
+   - Save OB/HVS/IB: optimistic update - UI update duluan,
      server sync di background (terasa instant)
    - buildAllScanAwbs: debounced 400ms, tidak blocking UI
    ============================================================ */
 
-// ─── BEEP SOUNDS ───
+// --- BEEP SOUNDS ---
 function playBeep() {
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -41,7 +41,7 @@ function playBeepError() {
   } catch(e) {}
 }
 
-// ─── MULTI TUJUAN (OB / HVS) ───
+// --- MULTI TUJUAN (OB / HVS) ---
 function initObTujuan(tuj) {
   if (!obScanMap[tuj]) obScanMap[tuj] = [];
   obActiveTuj = tuj;
@@ -183,7 +183,7 @@ function renderIbScanList() {
       }).join('');
 }
 
-// ─── SCAN INPUT ───
+// --- SCAN INPUT ---
 function handleScan(e, type) {
   if (e.key !== 'Enter') return;
   var input = document.getElementById(type + 'ScanInput');
@@ -228,7 +228,7 @@ function handleScan(e, type) {
   input.value = '';
 }
 
-// ─── SAVE OB — OPTIMISTIC UPDATE ───
+// --- SAVE OB - OPTIMISTIC UPDATE ---
 function saveOb() {
   var service = document.getElementById('obService').value;
   if (!globalIncharge || !service) return;
@@ -261,7 +261,7 @@ function saveOb() {
     obData.unshift(item);
   });
   renderObTable(); updateObStats();
-  toast('⏳ Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
+  toast('... Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
 
   // Reset form segera agar user bisa input lagi
   var savedMap = {};
@@ -289,7 +289,7 @@ function saveOb() {
       return;
     }
     // Refresh dari server (background, tidak blocking)
-    toast('✅ ' + results.length + ' NO TRACK dibuat', 'success');
+    toast(results.length + ' NO TRACK dibuat', 'success');
     _mfLoaded = false; _obibData = null;
     gasGet('getObList').then(function(r) {
       obData = r.list || [];
@@ -325,7 +325,7 @@ function resetObForm() {
   document.getElementById('obFormIcon').innerText = 'expand_more';
 }
 
-// ─── SAVE HVS — OPTIMISTIC UPDATE ───
+// --- SAVE HVS - OPTIMISTIC UPDATE ---
 function saveHvs() {
   var service = document.getElementById('hvsService').value;
   if (!globalIncharge || !service) return;
@@ -355,7 +355,7 @@ function saveHvs() {
     hvsData.unshift(item);
   });
   renderHvsTable(); updateHvsStats();
-  toast('⏳ Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
+  toast('... Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
 
   var savedMap = {};
   tujuanKeys.forEach(function(t) { savedMap[t] = (hvsScanMap[t] || []).slice(); });
@@ -379,7 +379,7 @@ function saveHvs() {
       renderHvsTable(); updateHvsStats();
       return;
     }
-    toast('✅ ' + results.length + ' NO TRACK dibuat', 'success');
+    toast(results.length + ' NO TRACK dibuat', 'success');
     _mfLoaded = false; _obibData = null;
     gasGet('getHvsList').then(function(r) {
       hvsData = r.list || [];
@@ -414,7 +414,7 @@ function resetHvsForm() {
   document.getElementById('hvsFormIcon').innerText = 'expand_more';
 }
 
-// ─── SAVE IB — OPTIMISTIC UPDATE ───
+// --- SAVE IB - OPTIMISTIC UPDATE ---
 function saveIb() {
   var service = document.getElementById('ibService').value;
   var from    = document.getElementById('ibFrom').value;
@@ -442,7 +442,7 @@ function saveIb() {
   };
   ibData.unshift(optimisticItem);
   renderIbTable(); updateIbStats();
-  toast('⏳ Menyimpan...', '');
+  toast('... Menyimpan...', '');
 
   var savedAwbs = ibScanned.slice();
   resetIbForm();
@@ -461,7 +461,7 @@ function saveIb() {
       renderIbTable(); updateIbStats();
       return;
     }
-    toast('✅ IB disimpan! NO TRACK: ' + res.noTrack, 'success');
+    toast('IB disimpan! NO TRACK: ' + res.noTrack, 'success');
     _obibData = null;
     gasGet('getIbList').then(function(r) {
       ibData = r.list || [];
@@ -495,14 +495,14 @@ function resetIbForm() {
   document.getElementById('ibFormIcon').innerText = 'expand_more';
 }
 
-// ─── TABLE RENDER ───
+// --- TABLE RENDER ---
 function statusBadge(s) {
   return (s === 'SELESAI' || s === 'selesai')
-    ? '<span class="badge badge-selesai">✓ Selesai</span>'
-    : '<span class="badge badge-proses">● On Proses</span>';
+    ? '<span class="badge badge-selesai">&#10003; Selesai</span>'
+    : '<span class="badge badge-proses">* On Proses</span>';
 }
 function fotoThumb(url) {
-  if (!url) return '<span style="font-size:11px;color:var(--gray4)">—</span>';
+  if (!url) return '<span style="font-size:11px;color:var(--gray4)">-</span>';
   return '<a href="' + url + '" target="_blank">' +
     '<img src="' + url + '" style="width:42px;height:34px;object-fit:cover;border-radius:4px;border:1px solid var(--gray3)">' +
     '</a>';
@@ -625,7 +625,7 @@ function renderIbTable(filter) {
       '</td>' +
       '<td>' + escH(d.incharge) + '</td>' +
       '<td><span class="badge badge-blue">' + escH(d.service) + '</span></td>' +
-      '<td>' + escH(d.from || '—') + '</td>' +
+      '<td>' + escH(d.from || '-') + '</td>' +
       '<td>' + escH(d.tujuan) + '</td>' +
       '<td style="font-size:11px;color:var(--gray6)">' + escH(d.created_date) + '</td>' +
       '<td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td>' +
@@ -640,7 +640,7 @@ function filterObTable()  { renderObTable(document.getElementById('obSearch').va
 function filterHvsTable() { renderHvsTable(document.getElementById('hvsSearch').value || ''); }
 function filterIbTable()  { renderIbTable(document.getElementById('ibSearch').value || ''); }
 
-// ─── MARK SELESAI & DELETE ───
+// --- MARK SELESAI & DELETE ---
 function markSelesai(type, noTrack) {
   var action = type === 'ob' ? 'updateObStatus' : type === 'hvs' ? 'updateHvsStatus' : 'updateIbStatus';
   if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
@@ -725,7 +725,7 @@ function confirmDelete(type, noTrack) {
   openModal('confirmModal');
 }
 
-// ─── DETAIL MODAL ───
+// --- DETAIL MODAL ---
 // State staging AWB
 var _detailStagingAwbs  = [];
 var _detailExistingAwbs = [];
@@ -750,7 +750,7 @@ function openDetailModal(type, noTrack) {
   currentDetailType = type;
   document.getElementById('detailModalTitle').innerText = noTrack;
 
-  // Photo box — view only
+  // Photo box - view only
   var pb = document.getElementById('detailPhotoBox');
   pb.onclick = null;
   pb.style.cursor = 'default';
@@ -763,7 +763,7 @@ function openDetailModal(type, noTrack) {
 
   var fields = type === 'ib'
     ? [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service],
-       ['FROM', item.from || '—'], ['TUJUAN', item.tujuan], ['DATE', item.created_date],
+       ['FROM', item.from || '-'], ['TUJUAN', item.tujuan], ['DATE', item.created_date],
        ['STATUS', item.status], ['TOTAL AWB', item.total_awb]]
     : [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service],
        ['TUJUAN', item.tujuan], ['DATE', item.created_date], ['STATUS', item.status], ['TOTAL AWB', item.total_awb]];
@@ -776,7 +776,7 @@ function openDetailModal(type, noTrack) {
   var isSelesai  = item.status === 'SELESAI';
   if (readonlyEl) readonlyEl.style.display = isSelesai ? '' : 'none';
 
-  // AWB list — muat dari server
+  // AWB list - muat dari server
   document.getElementById('detailAwbList').innerHTML =
     '<div class="awb-row" style="color:var(--gray5)">Memuat AWB...</div>';
   document.getElementById('awbCount').innerText = '...';
@@ -843,7 +843,7 @@ function openDetailModal(type, noTrack) {
   openModal('detailModal');
 }
 
-// ─── STAGING AWB: render ───
+// --- STAGING AWB: render ---
 function _renderDetailStaging() {
   var container = document.getElementById('detailStagingList');
   var countEl   = document.getElementById('detailStagingCount');
@@ -870,7 +870,7 @@ function removeDetailStaging(i) {
   _renderDetailStaging();
 }
 
-// ─── TAMBAH AWB KE STAGING (dari detail modal) ───
+// --- TAMBAH AWB KE STAGING (dari detail modal) ---
 function handleDetailAddAwb(e) {
   if (e.key !== 'Enter') return;
   var input = document.getElementById('detailAddAwbInput');
@@ -899,7 +899,7 @@ function handleDetailAddAwb(e) {
   _renderDetailStaging();
 }
 
-// ─── SIMPAN STAGING KE SERVER ───
+// --- SIMPAN STAGING KE SERVER ---
 function saveDetailStagingAwbs() {
   if (!_detailStagingAwbs.length || !currentDetailItem) return;
 
@@ -926,7 +926,7 @@ function saveDetailStagingAwbs() {
       _detailExistingAwbs = _detailExistingAwbs.concat(toSave);
       _detailStagingAwbs  = [];
       _renderDetailStaging();
-      toast('✅ ' + added + ' AWB disimpan', 'success');
+      toast(added + ' AWB disimpan', 'success');
 
       // Reload AWB list di modal
       gasGet('getAwbList', {
@@ -965,7 +965,7 @@ function saveDetailStagingAwbs() {
   });
 }
 
-// ─── buildAllScanAwbs DEBOUNCED ───
+// --- buildAllScanAwbs DEBOUNCED ---
 var _bawTimer = null;
 function buildAllScanAwbs() {
   _debouncedBuildAllScanAwbs();
@@ -979,7 +979,7 @@ function _debouncedBuildAllScanAwbs() {
   }, 500);
 }
 
-// ─── HELPER: timestamp display ───
+// --- HELPER: timestamp display ---
 function _nowDisplayStr() {
   var d = new Date();
   var pad = function(n) { return String(n).padStart(2, '0'); };
@@ -987,7 +987,7 @@ function _nowDisplayStr() {
     ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-// ─── CSS untuk staging list (inject sekali) ───
+// --- CSS untuk staging list (inject sekali) ---
 (function injectStagingCSS() {
   if (document.getElementById('_stagingCSS')) return;
   var style = document.createElement('style');
@@ -1019,5 +1019,5 @@ function _nowDisplayStr() {
   document.head.appendChild(style);
 })();
 
-// ─── FOTO (tidak digunakan di web — dari web Android) ───
-// Fungsi onFotoChange dihapus di v4.3 — upload foto hanya dari web Android
+// --- FOTO (tidak digunakan di web - dari web Android) ---
+// Fungsi onFotoChange dihapus di v4.3 - upload foto hanya dari web Android
