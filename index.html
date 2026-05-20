@@ -3,10 +3,50 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OUTBOUND GTW BDO — v4.5</title>
+<title>OUTBOUND GTW BDO — v4.10</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <link rel="stylesheet" href="main.css">
+<style>
+/* ── Manifest DATE di kiri: compact, warm yellow ── */
+.mf-cell-date {
+  background: #FFF8E1;
+  color: var(--gray6);
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 4px 6px;
+  text-align: center;
+  min-width: 82px;
+  max-width: 92px;
+  white-space: nowrap;
+  border-right: 2px solid #FFE082 !important;
+  cursor: default;
+}
+.mf-hdr-date {
+  background: #FFF3CD;
+  color: #856404;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  padding: 5px 6px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  min-width: 82px;
+  border-right: 2px solid #FFE082 !important;
+}
+/* Toggle button group */
+.mf-mode-group {
+  display: flex;
+  gap: 3px;
+  background: var(--gray2);
+  border-radius: 8px;
+  padding: 3px;
+}
+.mf-mode-group .btn {
+  border-radius: 6px !important;
+  transition: all .15s ease;
+}
+</style>
 </head>
 <body>
 
@@ -34,7 +74,7 @@
       <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
     </div>
   </div>
-  <div class="sidebar-bottom"><div class="ver">v4.5 — GTW BDO</div></div>
+  <div class="sidebar-bottom"><div class="ver">v4.10 — GTW BDO</div></div>
 </div>
 
 <div class="main">
@@ -92,31 +132,6 @@
           </div>
         </div>
       </div>
-
-      <div class="fp-panel" id="fpobPanel">
-        <div class="fp-hdr" onclick="toggleFp('ob')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter</span>
-          <span id="fpobActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fpobIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fpobBody" style="display:none">
-          <div class="fp-grid">
-            <div class="fp-field"><label>From</label><input type="date" id="fpobFrom" class="fp-input"></div>
-            <div class="fp-field"><label>To</label><input type="date" id="fpobTo" class="fp-input"></div>
-            <div class="fp-field"><label>Incharge</label><select id="fpobIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Service</label><select id="fpobService" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tujuan</label><select id="fpobTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Status</label><select id="fpobStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
-          </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('ob')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('ob')"><span class="material-icons-round">close</span> Clear</button>
-            <button class="export-btn" onclick="exportCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-            <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportObExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
-          </div>
-        </div>
-      </div>
       <div class="table-panel">
         <div class="table-toolbar"><div class="table-toolbar-title">Outbound BDO — <span style="color:var(--gray5);font-weight:400" id="obTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="obSearch" placeholder="Cari no track, tujuan..." oninput="filterObTable()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="obTbody"><tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Loading...</div></td></tr></tbody></table></div>
@@ -148,31 +163,6 @@
             <div class="scan-list" id="hvsScanList"><div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div></div>
           </div>
           <div class="form-actions" id="hvsFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetHvsForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveHvs" disabled onclick="saveHvs()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button></div>
-        </div>
-      </div>
-
-      <div class="fp-panel" id="fphvsPanel">
-        <div class="fp-hdr" onclick="toggleFp('hvs')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter</span>
-          <span id="fphvsActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fphvsIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fphvsBody" style="display:none">
-          <div class="fp-grid">
-            <div class="fp-field"><label>From</label><input type="date" id="fphvsFrom" class="fp-input"></div>
-            <div class="fp-field"><label>To</label><input type="date" id="fphvsTo" class="fp-input"></div>
-            <div class="fp-field"><label>Incharge</label><select id="fphvsIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Service</label><select id="fphvsService" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tujuan</label><select id="fphvsTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Status</label><select id="fphvsStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
-          </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('hvs')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('hvs')"><span class="material-icons-round">close</span> Clear</button>
-            <button class="export-btn" onclick="exportCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-            <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportHvsExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
-          </div>
         </div>
       </div>
       <div class="table-panel">
@@ -208,32 +198,6 @@
           <div class="form-actions" id="ibFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button></div>
         </div>
       </div>
-
-      <div class="fp-panel" id="fpibPanel">
-        <div class="fp-hdr" onclick="toggleFp('ib')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter</span>
-          <span id="fpibActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fpibIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fpibBody" style="display:none">
-          <div class="fp-grid">
-            <div class="fp-field"><label>From</label><input type="date" id="fpibFrom" class="fp-input"></div>
-            <div class="fp-field"><label>To</label><input type="date" id="fpibTo" class="fp-input"></div>
-            <div class="fp-field"><label>From (Kota)</label><select id="fpibFromCity" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Incharge</label><select id="fpibIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Service</label><select id="fpibService" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tujuan</label><select id="fpibTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Status</label><select id="fpibStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
-          </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('ib')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('ib')"><span class="material-icons-round">close</span> Clear</button>
-            <button class="export-btn" onclick="exportCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-            <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportIbExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
-          </div>
-        </div>
-      </div>
       <div class="table-panel">
         <div class="table-toolbar"><div class="table-toolbar-title">Inbound HVS — <span style="color:var(--gray5);font-weight:400" id="ibTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="ibSearch" placeholder="Cari..." oninput="filterIbTable()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>FROM</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="ibTbody"></tbody></table></div>
@@ -242,31 +206,21 @@
 
     <!-- MANIFEST PAGE -->
     <div id="page-manifest" style="display:none">
-      <div class="fp-panel" id="fpmfPanel">
-        <div class="fp-hdr" onclick="toggleFp('mf')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter</span>
-          <span id="fpmfActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fpmfIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fpmfBody" style="display:none">
-          <div class="fp-grid">
-            <div class="fp-field"><label>From</label><input type="date" id="fpmfFrom" class="fp-input"></div>
-            <div class="fp-field"><label>To</label><input type="date" id="fpmfTo" class="fp-input"></div>
-            <div class="fp-field"><label>Incharge</label><select id="fpmfIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Service</label><select id="fpmfService" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tujuan</label><select id="fpmfTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-          </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('mf')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('mf')"><span class="material-icons-round">close</span> Clear</button>
-            <button class="export-btn" onclick="exportManifestCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-            <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportManifestExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
-          </div>
-        </div>
-      </div>
       <div class="mf-toolbar">
         <span style="font-weight:700;font-size:14px;color:var(--gray8);flex:1">Manifest AWB</span>
+
+        <!-- Toggle Hari Ini / Semua Data -->
+        <div class="mf-mode-group">
+          <button id="mfBtnToday" class="btn btn-primary btn-sm"
+            onclick="loadManifestPage('today')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">today</span> Hari Ini
+          </button>
+          <button id="mfBtnAll" class="btn btn-outline btn-sm"
+            onclick="loadManifestPage('all')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">calendar_month</span> Semua Data
+          </button>
+        </div>
+
         <div class="search-box"><span class="material-icons-round">search</span><input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:170px"></div>
         <button class="btn btn-outline btn-sm" onclick="reloadManifest()"><span class="material-icons-round">refresh</span> Refresh</button>
         <button class="export-btn" onclick="exportManifestCSV()"><span class="material-icons-round">file_download</span> Export CSV</button>
@@ -284,12 +238,22 @@
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
         <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">
           <span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>
-          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest Hari Ini</div>
-          <div style="font-size:13px;color:var(--gray5);max-width:300px;line-height:1.6">Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.</div>
-          <button class="btn btn-primary" style="padding:13px 32px;font-size:14px;border-radius:10px;gap:10px;margin-top:8px" onclick="loadManifestPage()">
-            <span class="material-icons-round" style="font-size:20px">grid_on</span>
-            Muat Manifest Hari Ini
-          </button>
+          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest AWB</div>
+          <div style="font-size:13px;color:var(--gray5);max-width:320px;line-height:1.6">
+            Pilih mode tampilan data manifest:
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
+              onclick="loadManifestPage('today')">
+              <span class="material-icons-round" style="font-size:18px">today</span>
+              Hari Ini
+            </button>
+            <button class="btn btn-outline" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
+              onclick="loadManifestPage('all')">
+              <span class="material-icons-round" style="font-size:18px">calendar_month</span>
+              Semua Data
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -297,27 +261,6 @@
     <!-- OB&IB PAGE -->
     <div id="page-obib" style="display:none">
       <div class="table-panel">
-        <div class="fp-panel" id="fpobibPanel">
-          <div class="fp-hdr" onclick="toggleFp('obib')">
-            <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-            <span>Filter</span>
-            <span id="fpobibActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-            <span class="material-icons-round fp-hdr-icon" id="fpobibIcon">expand_more</span>
-          </div>
-          <div class="fp-body" id="fpobibBody" style="display:none">
-            <div class="fp-grid">
-              <div class="fp-field"><label>Incharge</label><select id="fpobibIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-              <div class="fp-field"><label>Service</label><select id="fpobibService" class="fp-input"><option value="">— Semua —</option></select></div>
-              <div class="fp-field"><label>Tujuan</label><select id="fpobibTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-            </div>
-            <div class="fp-actions">
-              <button class="btn btn-primary btn-sm" onclick="applyFp('obib')"><span class="material-icons-round">filter_list</span> Filter</button>
-              <button class="btn btn-outline btn-sm" onclick="clearFp('obib')"><span class="material-icons-round">close</span> Clear</button>
-              <button class="export-btn" onclick="exportObibCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-              <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportObibExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
-            </div>
-          </div>
-        </div>
         <div class="table-toolbar">
           <div class="table-toolbar-title">OB &amp; IB — Combined View</div>
           <div class="search-box"><span class="material-icons-round">search</span><input id="obibSearch" placeholder="Cari AWB, tujuan, service..." oninput="filterObib()"></div>
@@ -332,28 +275,6 @@
 
     <!-- SEARCH AWB PAGE -->
     <div id="page-search" style="display:none">
-      <div class="fp-panel" id="fpSearchPanel">
-        <div class="fp-hdr" onclick="toggleFp('search')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter Hasil Pencarian</span>
-          <span id="fpSearchActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fpSearchIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fpSearchBody" style="display:none">
-          <div class="fp-grid">
-            <div class="fp-field"><label>From</label><input type="date" id="fpSearchFrom" class="fp-input"></div>
-            <div class="fp-field"><label>To</label><input type="date" id="fpSearchTo" class="fp-input"></div>
-            <div class="fp-field"><label>Incharge</label><select id="fpSearchIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Service</label><select id="fpSearchService" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tujuan</label><select id="fpSearchTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
-            <div class="fp-field"><label>Tipe</label><select id="fpSearchType" class="fp-input"><option value="">— Semua —</option><option value="ob">Outbound BDO</option><option value="hvs">Outbound HVS</option><option value="ib">Inbound HVS</option></select></div>
-          </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('search')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('search')"><span class="material-icons-round">close</span> Clear</button>
-          </div>
-        </div>
-      </div>
       <div class="search-awb-hero">
         <div class="search-awb-hero-title"><span class="material-icons-round">manage_search</span> Cari AWB</div>
         <div class="search-awb-hero-sub">Cari nomor AWB di seluruh data: Outbound BDO, Outbound HVS, dan Inbound HVS</div>
@@ -369,7 +290,10 @@
       <div class="search-awb-result" id="searchAwbResult">
         <div class="search-awb-result-hdr"><span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari</div>
         <div class="search-awb-result-body" id="searchAwbResultBody">
-          <div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas untuk mencari di semua data</div>
+          <div class="search-awb-empty">
+            <span class="material-icons-round">search</span>
+            Ketik nomor AWB di atas untuk mencari di semua data
+          </div>
         </div>
       </div>
     </div>
@@ -383,40 +307,23 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detailModal">
-  <div class="modal" style="width:560px">
-    <div class="modal-hdr">
-      <div class="modal-title" id="detailModalTitle">Detail</div>
-      <button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button>
-    </div>
+  <div class="modal" style="width:540px">
+    <div class="modal-hdr"><div class="modal-title" id="detailModalTitle">Detail</div><button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button></div>
     <div class="modal-body">
-      <!-- FOTO BOX -->
-      <div class="photo-box" id="detailPhotoBox">
-        <span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>
-      </div>
-      <!-- FOTO ROW: tombol upload + multi foto info -->
-      <div id="detailFotoRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
-        <span id="detailFotoCount" style="font-size:11px;color:var(--gray5)"></span>
-        <label class="foto-btn" style="cursor:pointer">
-          <span class="material-icons-round" style="font-size:14px">photo_camera</span>
-          Tambah / Ganti Foto
-          <input type="file" accept="image/*" multiple style="display:none" onchange="onFotoChange(event)" id="fotoInput">
-        </label>
-      </div>
-      <!-- READONLY BAR -->
-      <div id="detailReadonlyBar" class="readonly-bar" style="display:none">
-        <span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah
-      </div>
-      <!-- DETAIL GRID -->
+      <div class="photo-box" id="detailPhotoBox"><span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span></div>
+      <div id="detailReadonlyBar" class="readonly-bar" style="display:none"><span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah</div>
       <div class="detail-grid" id="detailGrid"></div>
-      <!-- AWB LIST -->
       <div style="margin-top:6px">
-        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
-          LIST AWB (<span id="awbCount">0</span>)
-        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div>
         <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
       </div>
-      <!-- TAMBAH AWB SECTION — di-inject oleh openDetailModal() saat ON PROSES -->
-      <div id="detailAddAwbSection" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2);display:none"></div>
+      <div id="detailAddAwbSection" style="margin-top:10px;display:none">
+        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">TAMBAH AWB</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="scan-inp" id="detailAddAwbInput" placeholder="Scan / ketik AWB lalu Enter..." autocomplete="off" onkeydown="handleDetailAddAwb(event)" style="flex:1">
+        </div>
+        <div style="font-size:11px;color:var(--gray5);margin-top:4px"><span class="material-icons-round" style="font-size:12px;vertical-align:middle">info</span> Tekan Enter untuk menambah AWB ke track ini</div>
+      </div>
     </div>
     <div class="modal-footer" id="detailModalFooter"></div>
   </div>
