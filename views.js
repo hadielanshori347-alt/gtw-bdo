@@ -1,36 +1,65 @@
 /* ============================================================
-   GTW BDO — views.js v4.10
-   CHANGES dari v4.9:
-   - Manifest: tombol toggle "Hari Ini" / "Semua Data"
-   - Manifest: kolom DATE tampil di KIRI kolom AWB
-   - Manifest: format tanggal compact "15/01 14:30"
-   - Manifest: mode 'today' pakai getManifest, 'all' pakai getManifestData
+   GTW BDO — views.js v4.11
+   CHANGES dari v4.10:
+   - STARTUP CEPAT: tidak ada showLoading overlay saat buka
+   - Paralel fetch: getMasterData + getObList bersamaan
+   - HVS & IB lazy load di background (tidak blokir render OB)
+   - getAllScanAwbs delay 1 detik setelah render awal
+   - reloadAll: pakai spinner kecil di tombol, bukan overlay fullscreen
+   - switchPage: pakai requestAnimationFrame supaya sidebar klik terasa instant
    ============================================================ */
 
 // ── State manifest tambahan ──
 var _mfDateMode = 'today'; // 'today' | 'all'
 
 window.addEventListener('DOMContentLoaded', function () {
-  showLoading('Memuat data...');
-  gasGet('getMasterData').then(function (r) {
-    masterData = r || {};
+  // ── Paralel: getMasterData + getObList bersamaan ──
+  // Tidak ada showLoading — halaman langsung tampil
+  Promise.all([
+    gasGet('getMasterData'),
+    gasGet('getObList')
+  ]).then(function (results) {
+    masterData = results[0] || {};
     populateGlobalIncharge();
     buildCbOptions();
     initAllCbs();
-    return Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')]);
-  }).then(function (results) {
-    obData  = results[0].list || [];
-    hvsData = results[1].list || [];
-    ibData  = results[2].list || [];
-    renderObTable(); renderHvsTable(); renderIbTable();
-    updateObStats(); updateHvsStats(); updateIbStats();
-    buildAllScanAwbs();
-    hideLoading();
-  }).catch(function (e) { hideLoading(); toast('Gagal memuat data: ' + e.message, 'error'); });
+
+    // Render OB duluan — halaman default
+    obData = results[1].list || [];
+    renderObTable();
+    updateObStats();
+
+    // HVS di background — tidak halangi UI
+    gasGet('getHvsList').then(function (r) {
+      hvsData = r.list || [];
+      renderHvsTable();
+      updateHvsStats();
+    }).catch(function () {});
+
+    // IB di background — tidak halangi UI
+    gasGet('getIbList').then(function (r) {
+      ibData = r.list || [];
+      renderIbTable();
+      updateIbStats();
+    }).catch(function () {});
+
+    // getAllScanAwbs berat — delay 1 detik setelah render awal selesai
+    setTimeout(function () { buildAllScanAwbs(); }, 1000);
+
+  }).catch(function (e) {
+    toast('Gagal memuat data: ' + e.message, 'error');
+  });
+  // Tidak ada hideLoading — tidak pernah ada overlay
 });
 
+// ── reloadAll: spinner kecil di tombol, bukan overlay fullscreen ──
 function reloadAll() {
-  showLoading('Memuat ulang...');
+  var btn = document.querySelector('[onclick="reloadAll()"]');
+  var origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons-round" style="animation:spin .6s linear infinite;font-size:15px">sync</span> Memuat...';
+  }
   _mfLoaded = false; _obibData = null;
   Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')])
     .then(function (results) {
@@ -39,13 +68,19 @@ function reloadAll() {
       ibData  = results[2].list || [];
       renderObTable(); renderHvsTable(); renderIbTable();
       updateObStats(); updateHvsStats(); updateIbStats();
-      buildAllScanAwbs(); hideLoading();
+      buildAllScanAwbs();
+      if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
       toast('Data diperbarui', 'success');
-    }).catch(function (e) { hideLoading(); toast('Gagal reload: ' + e.message, 'error'); });
+    }).catch(function (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+      toast('Gagal reload: ' + e.message, 'error');
+    });
 }
 
 function buildAllScanAwbs() {
-  gasGet('getAllScanAwbs').then(function (r) { if (r && r.list) allScanAwbs = r.list; }).catch(function () {});
+  gasGet('getAllScanAwbs').then(function (r) {
+    if (r && r.list) allScanAwbs = r.list;
+  }).catch(function () {});
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -360,7 +395,6 @@ function loadManifestPage(forceMode) {
   if (forceMode) _mfDateMode = forceMode;
   _updateMfModeButtons();
 
-  // Cek cache
   if (_mfLoaded && _mfData && _mfData._mode === _mfDateMode) {
     renderManifestSheet();
     return;
@@ -407,7 +441,6 @@ function filterManifest() {
   if (_mfLoaded) renderManifestSheet();
 }
 
-// ── Update tampilan tombol toggle aktif ──
 function _updateMfModeButtons() {
   var btnToday = document.getElementById('mfBtnToday');
   var btnAll   = document.getElementById('mfBtnAll');
@@ -421,8 +454,6 @@ function _updateMfModeButtons() {
   }
 }
 
-// ── Convert response getManifest {columns:[]} → format internal colDefs/awbRows ──
-// DATE kolom diletakkan di KIRI setiap AWB kolom
 function _normaliseManifestColumns(res) {
   var columns = res.columns || [];
   if (!columns.length) {
@@ -435,7 +466,6 @@ function _normaliseManifestColumns(res) {
   var colIdx  = 0;
 
   columns.forEach(function (col) {
-    // DATE kolom DI KIRI
     var dateCi = colIdx;
     r0.push('');
     r1.push('');
@@ -450,7 +480,6 @@ function _normaliseManifestColumns(res) {
     colData[dateCi] = (col.rows || []).map(function (row) { return row[1] || ''; });
     colIdx++;
 
-    // AWB kolom DI KANAN
     var awbCi = colIdx;
     r0.push(col.incharge || '');
     r1.push(col.service  || '');
@@ -489,15 +518,9 @@ function _normaliseManifestColumns(res) {
   };
 }
 
-// ── Bangun render order: DATE selalu di KIRI AWB pasangannya ──
-// Untuk mode 'all' (getManifestData), DATE biasanya ada di KANAN → perlu reorder
-// Untuk mode 'today' (sudah dinormalise), urutan sudah benar → no-op
 function _buildMfRenderOrder(colDefs) {
   if (!colDefs.length) return [];
 
-  // Deteksi apakah DATE sudah di kiri (normalised) atau di kanan (getManifestData)
-  // Cek: jika colDef[0].isDate → DATE di kiri → sudah benar
-  // Cek: jika colDef[0] bukan date dan ada DATE di kanannya → perlu reorder
   var firstDate = -1;
   var firstAwb  = -1;
   for (var i = 0; i < colDefs.length; i++) {
@@ -506,28 +529,24 @@ function _buildMfRenderOrder(colDefs) {
     if (firstDate >= 0 && firstAwb >= 0) break;
   }
 
-  // DATE sudah di kiri AWB → urutan sudah benar
   if (firstDate < firstAwb || firstDate < 0) {
     var order = [];
     for (var i = 0; i < colDefs.length; i++) order.push(i);
     return order;
   }
 
-  // DATE ada di kanan AWB → reorder: untuk setiap AWB, cari DATE pasangan di kanan
   var used  = new Array(colDefs.length).fill(false);
   var order = [];
 
   for (var i = 0; i < colDefs.length; i++) {
     if (used[i] || colDefs[i].isDate) continue;
 
-    // Cari DATE pasangan di kanan dalam incharge yang sama
     var datePair = -1;
     for (var j = i + 1; j < colDefs.length; j++) {
       if ((colDefs[j].incharge || '') !== (colDefs[i].incharge || '')) break;
       if (colDefs[j].isDate) { datePair = j; break; }
     }
 
-    // Emit DATE dulu (kiri), lalu AWB (kanan)
     if (datePair !== -1) {
       order.push(datePair);
       used[datePair] = true;
@@ -536,7 +555,6 @@ function _buildMfRenderOrder(colDefs) {
     used[i] = true;
   }
 
-  // Sisa kolom yang belum masuk (edge case)
   for (var i = 0; i < colDefs.length; i++) {
     if (!used[i]) { order.push(i); used[i] = true; }
   }
@@ -544,7 +562,6 @@ function _buildMfRenderOrder(colDefs) {
   return order;
 }
 
-// ── Build header row dengan colspan merged, mengikuti renderOrder ──
 function _buildMfSpannedRow(hArr, cls, renderOrder, colDefs) {
   var reordered = renderOrder.map(function (ci) {
     return (hArr && hArr[colDefs[ci].colIdx]) ? hArr[colDefs[ci].colIdx].toString().trim() : '';
@@ -566,7 +583,6 @@ function _buildMfSpannedRow(hArr, cls, renderOrder, colDefs) {
     }).join('') + '</tr>';
 }
 
-// ── Format tanggal compact: "2025-01-15 14:30:00" → "15/01 14:30" ──
 function _shortDate(dateStr) {
   if (!dateStr) return '';
   try {
@@ -579,7 +595,6 @@ function _shortDate(dateStr) {
   return dateStr.substring(0, 16);
 }
 
-// ── Render manifest sheet ──
 function renderManifestSheet() {
   if (!_mfData) {
     document.getElementById('mfSheetOuter').innerHTML =
@@ -602,10 +617,8 @@ function renderManifestSheet() {
 
   _mfFilteredRows = filteredAwbRows;
 
-  // Render order (DATE di kiri)
   var renderOrder = _buildMfRenderOrder(colDefs);
 
-  // ── Stats ──
   var incSet  = {};
   var tujCols = [];
   colDefs.forEach(function (c) {
@@ -622,7 +635,6 @@ function renderManifestSheet() {
   document.getElementById('mfTotalAwb').innerText  = totalAwb;
   document.getElementById('mfTotalInc').innerText  = Object.keys(incSet).length;
 
-  // ── Header rows ──
   var row0Html = _buildMfSpannedRow(hRows[0], 'mf-hdr-incharge', renderOrder, colDefs);
   var row1Html = _buildMfSpannedRow(hRows[1], 'mf-hdr-service',  renderOrder, colDefs);
 
@@ -634,7 +646,6 @@ function renderManifestSheet() {
         : '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>';
     }).join('') + '</tr>';
 
-  // ── Data rows ──
   var dataHtml = filteredAwbRows.length
     ? filteredAwbRows.map(function (row, ri) {
         return '<tr class="mf-data-row" data-ri="' + ri + '">' +
@@ -751,22 +762,18 @@ function exportManifestCSV() {
   var order   = _buildMfRenderOrder(colDefs);
   var csvRows = [];
 
-  // Header row 0: incharge
   csvRows.push(['"#"'].concat(order.map(function (ci) {
     var h = hRows[0] && hRows[0][colDefs[ci].colIdx] ? hRows[0][colDefs[ci].colIdx] : '';
     return '"' + h + '"';
   })).join(','));
-  // Header row 1: service
   csvRows.push(['""'].concat(order.map(function (ci) {
     var h = hRows[1] && hRows[1][colDefs[ci].colIdx] ? hRows[1][colDefs[ci].colIdx] : '';
     return '"' + h + '"';
   })).join(','));
-  // Header row 2: tujuan / DATE
   csvRows.push(['""'].concat(order.map(function (ci) {
     var c = colDefs[ci];
     return '"' + (c.isDate ? 'DATE' : (c.tujuan || '')) + '"';
   })).join(','));
-  // Data
   awbRows.forEach(function (row, i) {
     csvRows.push(['"' + (i + 1) + '"'].concat(order.map(function (ci) {
       return '"' + (row[colDefs[ci].colIdx] || '') + '"';
@@ -844,6 +851,49 @@ function handleSidebarSearch(e) {
   doSearchAwb(q);
   document.getElementById('sidebarSearchInput').value = '';
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// PAGE SWITCHING — pakai requestAnimationFrame agar klik sidebar instant
+// ═══════════════════════════════════════════════════════════════════
+
+// Override switchPage dari incharge.js agar pakai rAF
+var _origSwitchPage = switchPage;
+switchPage = function(page) {
+  // Sembunyikan semua page dulu secara sinkron (cepat)
+  var pages = ['ob', 'hvs', 'ib', 'manifest', 'obib', 'search'];
+  pages.forEach(function (p) {
+    var el = document.getElementById('page-' + p);
+    if (el) el.style.display = 'none';
+    var n = document.getElementById('nav-' + p);
+    if (n) n.classList.remove('active');
+  });
+  // Aktifkan nav item target segera
+  var navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  var titleMap = {
+    ob      : 'Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span>',
+    hvs     : 'Outbound HVS <span class="topbar-sub">High Value Shipment keluar</span>',
+    ib      : 'Inbound HVS <span class="topbar-sub">High Value Shipment masuk</span>',
+    manifest: 'Manifest <span class="topbar-sub">Rekap AWB per incharge &amp; tujuan</span>',
+    obib    : 'OB &amp; IB <span class="topbar-sub">Combined view</span>',
+    search  : 'Cari AWB <span class="topbar-sub">Pencarian AWB di semua data</span>'
+  };
+  document.getElementById('topbarTitle').innerHTML = titleMap[page] || page;
+
+  // Render page target di frame berikutnya agar browser sempat repaint dulu
+  requestAnimationFrame(function () {
+    var target = document.getElementById('page-' + page);
+    if (target) target.style.display = '';
+    if (page === 'manifest') loadManifestPage();
+    if (page === 'obib') renderObibPage();
+    if (page === 'search') {
+      setTimeout(function () {
+        var inp = document.getElementById('searchAwbMainInput');
+        if (inp) inp.focus();
+      }, 100);
+    }
+  });
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // EXPORT CSV
