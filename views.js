@@ -1,33 +1,65 @@
 /* ============================================================
-   GTW BDO — views.js v4.9
-   FIX v4.9: Semua header row (INCHARGE, SERVICE, KOTA, TYPE)
-             tidak ada merge cell — setiap kolom colspan=1
-   FIX v4.9: ibMap key include r1 (INCHARGE) → data tidak bocor
-             lintas incharge (SUKAJADI tidak bocor ke METRO)
-   FIX v4.8: INBOUND_HVS DATE terisi di semua baris AWB
+   GTW BDO — views.js v4.11
+   CHANGES dari v4.10:
+   - STARTUP CEPAT: tidak ada showLoading overlay saat buka
+   - Paralel fetch: getMasterData + getObList bersamaan
+   - HVS & IB lazy load di background (tidak blokir render OB)
+   - getAllScanAwbs delay 1 detik setelah render awal
+   - reloadAll: pakai spinner kecil di tombol, bukan overlay fullscreen
+   - switchPage: pakai requestAnimationFrame supaya sidebar klik terasa instant
    ============================================================ */
 
+// ── State manifest tambahan ──
+var _mfDateMode = 'today'; // 'today' | 'all'
+
 window.addEventListener('DOMContentLoaded', function () {
-  showLoading('Memuat data...');
-  gasGet('getMasterData').then(function (r) {
-    masterData = r || {};
+  // ── Paralel: getMasterData + getObList bersamaan ──
+  // Tidak ada showLoading — halaman langsung tampil
+  Promise.all([
+    gasGet('getMasterData'),
+    gasGet('getObList')
+  ]).then(function (results) {
+    masterData = results[0] || {};
     populateGlobalIncharge();
     buildCbOptions();
     initAllCbs();
-    return Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')]);
-  }).then(function (results) {
-    obData  = results[0].list || [];
-    hvsData = results[1].list || [];
-    ibData  = results[2].list || [];
-    renderObTable(); renderHvsTable(); renderIbTable();
-    updateObStats(); updateHvsStats(); updateIbStats();
-    buildAllScanAwbs();
-    hideLoading();
-  }).catch(function (e) { hideLoading(); toast('Gagal memuat data: ' + e.message, 'error'); });
+
+    // Render OB duluan — halaman default
+    obData = results[1].list || [];
+    renderObTable();
+    updateObStats();
+
+    // HVS di background — tidak halangi UI
+    gasGet('getHvsList').then(function (r) {
+      hvsData = r.list || [];
+      renderHvsTable();
+      updateHvsStats();
+    }).catch(function () {});
+
+    // IB di background — tidak halangi UI
+    gasGet('getIbList').then(function (r) {
+      ibData = r.list || [];
+      renderIbTable();
+      updateIbStats();
+    }).catch(function () {});
+
+    // getAllScanAwbs berat — delay 1 detik setelah render awal selesai
+    setTimeout(function () { buildAllScanAwbs(); }, 1000);
+
+  }).catch(function (e) {
+    toast('Gagal memuat data: ' + e.message, 'error');
+  });
+  // Tidak ada hideLoading — tidak pernah ada overlay
 });
 
+// ── reloadAll: spinner kecil di tombol, bukan overlay fullscreen ──
 function reloadAll() {
-  showLoading('Memuat ulang...');
+  var btn = document.querySelector('[onclick="reloadAll()"]');
+  var origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-icons-round" style="animation:spin .6s linear infinite;font-size:15px">sync</span> Memuat...';
+  }
   _mfLoaded = false; _obibData = null;
   Promise.all([gasGet('getObList'), gasGet('getHvsList'), gasGet('getIbList')])
     .then(function (results) {
@@ -36,32 +68,35 @@ function reloadAll() {
       ibData  = results[2].list || [];
       renderObTable(); renderHvsTable(); renderIbTable();
       updateObStats(); updateHvsStats(); updateIbStats();
-      buildAllScanAwbs(); hideLoading();
+      buildAllScanAwbs();
+      if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
       toast('Data diperbarui', 'success');
-    }).catch(function (e) { hideLoading(); toast('Gagal reload: ' + e.message, 'error'); });
+    }).catch(function (e) {
+      if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+      toast('Gagal reload: ' + e.message, 'error');
+    });
 }
 
 function buildAllScanAwbs() {
-  gasGet('getAllScanAwbs').then(function (r) { if (r && r.list) allScanAwbs = r.list; }).catch(function () {});
+  gasGet('getAllScanAwbs').then(function (r) {
+    if (r && r.list) allScanAwbs = r.list;
+  }).catch(function () {});
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // OB & IB COMBINED VIEW v4.9
-//
-// FIX v4.9:
-//   - Header Row1/Row2/Row3/Row4: TIDAK ADA colspan/merge
-//     Setiap kolom berdiri sendiri dengan nilai r1/r2/r3/colType-nya
-//   - ibMap key = r1|r2|r3 (include INCHARGE) → tidak bocor lintas incharge
-//   - DATE source search strict per r1 boundary
 // ═══════════════════════════════════════════════════════════════════
 
 function renderObibPage() {
   var wrap = document.getElementById('obibTableWrap');
-  wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat...</div>';
   if (_obibData) { _buildObibTable(_obibData); return; }
-  showLoading('Memuat OB & IB...');
+  // Spinner inline — tidak menutup layar
+  wrap.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--gray5)">' +
+      '<div style="width:32px;height:32px;border:3px solid var(--gray3);border-top:3px solid var(--blue2);border-radius:50%;animation:spin .65s linear infinite"></div>' +
+      '<div style="font-size:13px">Memuat OB &amp; IB...</div>' +
+    '</div>';
   gasGet('getOBIB').then(function (res) {
-    hideLoading();
     if (res.error) {
       wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>';
       return;
@@ -69,7 +104,6 @@ function renderObibPage() {
     _obibData = res;
     _buildObibTable(_obibData);
   }).catch(function (e) {
-    hideLoading();
     wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(e.message) + '</div>';
   });
 }
@@ -77,7 +111,6 @@ function renderObibPage() {
 function reloadObib() { _obibData = null; renderObibPage(); }
 function filterObib()  { if (_obibData) _buildObibTable(_obibData); }
 
-// ─── Core builder ───
 function _buildObibTable(data) {
   var wrap = document.getElementById('obibTableWrap');
   var colDefs    = data.colDefs    || [];
@@ -91,35 +124,23 @@ function _buildObibTable(data) {
 
   var nCols = colDefs.length;
 
-  // ── FIX v4.9: Propagasi r1/r2/r3 di frontend ──
-  // Backend hanya isi cell pertama per grup (GSheet merged cell),
-  // sisanya kosong string. Propagasi di sini supaya header tampil benar.
-  // KRITIS: reset propR3 setiap r1 atau r2 berubah supaya
-  //         r3 grup SUKAJADI tidak bocor ke grup METRO.
   var propR1 = '', propR2 = '', propR3 = '';
   colDefs.forEach(function (def) {
     var inR1 = def.r1 || '';
     var inR2 = def.r2 || '';
 
-    // Deteksi pergantian grup r1 → reset semua
     if (inR1 && inR1 !== propR1) {
-      propR1 = inR1;
-      propR2 = '';
-      propR3 = '';
+      propR1 = inR1; propR2 = ''; propR3 = '';
     } else if (!inR1) {
       def.r1 = propR1;
     }
 
-    // Deteksi pergantian grup r2 → reset r3
-    var curR2 = def.r2 || inR2;
     if (inR2 && inR2 !== propR2) {
-      propR2 = inR2;
-      propR3 = '';
+      propR2 = inR2; propR3 = '';
     } else if (!inR2) {
       def.r2 = propR2;
     }
 
-    // r3: propagasi hanya untuk non-DATE, reset saat grup baru
     var ct = (def.colType || '').toUpperCase();
     if (ct !== 'DATE') {
       if (def.r3) propR3 = def.r3;
@@ -127,8 +148,6 @@ function _buildObibTable(data) {
     }
   });
 
-  // ── ibMap: key = r1(INCHARGE)|SERVICE(r2)|FROM-kota(r3) → array of sections ──
-  // FIX v4.9: include r1 supaya tidak bocor lintas incharge
   var ibMap = {};
   ibSections.forEach(function (sec) {
     var k = (sec.incharge || '').toUpperCase() + '|' + (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
@@ -136,7 +155,6 @@ function _buildObibTable(data) {
     ibMap[k].push(sec);
   });
 
-  // ── Build flatRows per kolom ──
   var flatCol = [];
   for (var ci = 0; ci < nCols; ci++) { flatCol.push(null); }
 
@@ -158,7 +176,6 @@ function _buildObibTable(data) {
     }
 
     if (ct === 'INBOUND_HVS') {
-      // FIX v4.9: key include r1 (incharge) supaya tidak bocor lintas incharge
       var k    = (def.r1 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       var secs = ibMap[k] || [];
       if (!secs.length && def.ibSections && def.ibSections.length) { secs = def.ibSections; }
@@ -208,24 +225,19 @@ function _buildObibTable(data) {
     flatCol[ci] = [];
   }
 
-  // ── Isi kolom DATE dari kolom AWB pasangannya ──
-  // FIX v4.9: strict stop jika r1 berbeda (tidak boleh lintas incharge)
   for (var ci = 0; ci < nCols; ci++) {
     if (flatCol[ci] !== null) continue;
-
     var srcCi = -1;
     var curR1 = colDefs[ci].r1 || '';
 
-    // Cari sumber di KANAN dalam grup r1 yang sama
     for (var j = ci + 1; j < nCols; j++) {
-      if ((colDefs[j].r1 || '') !== curR1) break; // strict: stop jika beda incharge
+      if ((colDefs[j].r1 || '') !== curR1) break;
       var jct = (colDefs[j].colType || '').toUpperCase();
       if (jct !== 'DATE' && flatCol[j] !== null) { srcCi = j; break; }
     }
-    // Fallback: cari di KIRI dalam r1 yang sama
     if (srcCi === -1) {
       for (var j = ci - 1; j >= 0; j--) {
-        if ((colDefs[j].r1 || '') !== curR1) break; // strict: stop jika beda incharge
+        if ((colDefs[j].r1 || '') !== curR1) break;
         var jct = (colDefs[j].colType || '').toUpperCase();
         if (jct !== 'DATE' && flatCol[j] !== null) { srcCi = j; break; }
       }
@@ -234,7 +246,6 @@ function _buildObibTable(data) {
     if (srcCi === -1) { flatCol[ci] = []; continue; }
 
     var srcCt = (colDefs[srcCi].colType || '').toUpperCase();
-
     flatCol[ci] = (flatCol[srcCi] || []).map(function (r) {
       if (srcCt === 'INBOUND_HVS') {
         if (r.cellType === 'IB_LABEL') {
@@ -252,7 +263,6 @@ function _buildObibTable(data) {
     });
   }
 
-  // ── maxRows ──
   var maxRows = 0;
   flatCol.forEach(function (arr) { if (arr && arr.length > maxRows) maxRows = arr.length; });
 
@@ -260,39 +270,26 @@ function _buildObibTable(data) {
   for (var ci = 0; ci < nCols; ci++) { renderOrder.push(ci); }
   var nRender = renderOrder.length;
 
-  // ════════════════════════════════════════════════════════════════
-  // FIX v4.9: SEMUA HEADER ROW — tidak ada colspan/merge sama sekali
-  // Setiap kolom render sendiri dengan nilai aslinya (tidak propagasi)
-  // ════════════════════════════════════════════════════════════════
-
-  // ── Row 1: INCHARGE — setiap kolom berdiri sendiri, nilai r1 kolom itu ──
   var hdrR1 = '<tr>' +
     '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
     renderOrder.map(function (ci) {
       return '<th class="obib-hdr-incharge">' + escH(colDefs[ci].r1 || '') + '</th>';
-    }).join('') +
-    '</tr>';
+    }).join('') + '</tr>';
 
-  // ── Row 2: SERVICE — setiap kolom berdiri sendiri, nilai r2 kolom itu ──
   var hdrR2 = '<tr>' +
     '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
     renderOrder.map(function (ci) {
       return '<th class="obib-hdr-service">' + escH(colDefs[ci].r2 || '') + '</th>';
-    }).join('') +
-    '</tr>';
+    }).join('') + '</tr>';
 
-  // ── Row 3: KOTA — setiap kolom berdiri sendiri ──
-  // DATE kolom tampil kosong, non-DATE tampil nilai r3-nya
   var hdrR3 = '<tr>' +
     '<th class="obib-rn" style="position:sticky;left:0;z-index:8;background:var(--gray2)"></th>' +
     renderOrder.map(function (ci) {
       var ct  = (colDefs[ci].colType || '').toUpperCase();
       var val = ct === 'DATE' ? '' : (colDefs[ci].r3 || '');
       return '<th class="obib-hdr-kota">' + escH(val) + '</th>';
-    }).join('') +
-    '</tr>';
+    }).join('') + '</tr>';
 
-  // ── Row 4: TYPE — tidak di-merge ──
   function typeClass(t) {
     t = (t || '').toUpperCase();
     return t === 'OUTBOUND' ? 'outbound' : t === 'OUTBOUND_HVS' ? 'outbound-hvs' : t === 'INBOUND_HVS' ? 'inbound-hvs' : 'date';
@@ -303,10 +300,8 @@ function _buildObibTable(data) {
     renderOrder.map(function (ci) {
       var ct = colDefs[ci].colType || '—';
       return '<th class="obib-hdr-type ' + typeClass(ct) + '">' + escH(ct) + '</th>';
-    }).join('') +
-    '</tr>';
+    }).join('') + '</tr>';
 
-  // ── Build tbody ──
   var tbodyHtml = '';
   if (maxRows === 0) {
     tbodyHtml = '<tr><td class="obib-rn">—</td><td colspan="' + nRender + '" style="text-align:center;padding:24px;color:var(--gray5)">Belum ada data AWB</td></tr>';
@@ -314,7 +309,6 @@ function _buildObibTable(data) {
     for (var ri = 0; ri < maxRows; ri++) {
       tbodyHtml += '<tr>';
       tbodyHtml += '<td class="obib-rn">' + (ri + 1) + '</td>';
-
       for (var roi = 0; roi < nRender; roi++) {
         var ci  = renderOrder[roi];
         var arr = flatCol[ci] || [];
@@ -329,7 +323,6 @@ function _buildObibTable(data) {
           }
           continue;
         }
-
         if (ct === 'INBOUND_HVS') {
           if (!row) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:160px"></td>';
@@ -340,7 +333,6 @@ function _buildObibTable(data) {
           }
           continue;
         }
-
         if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
           if (!row || !row.text) {
             tbodyHtml += '<td class="obib-cell-empty" style="min-width:140px"></td>';
@@ -349,7 +341,6 @@ function _buildObibTable(data) {
           }
           continue;
         }
-
         tbodyHtml += row && row.text
           ? '<td class="obib-cell-awb">' + escH(row.text) + '</td>'
           : '<td class="obib-cell-empty"></td>';
@@ -360,20 +351,15 @@ function _buildObibTable(data) {
 
   wrap.innerHTML =
     '<table class="obib-table"><thead>' +
-      hdrR1 +
-      hdrR2 +
-      hdrR3 +
-      hdr4 +
+      hdrR1 + hdrR2 + hdrR3 + hdr4 +
     '</thead><tbody>' + tbodyHtml + '</tbody></table>';
 }
 
-// ─── Export OB&IB CSV ───
 function exportObibCSV() {
   if (!_obibData) { toast('Muat data dulu', 'error'); return; }
   var colDefs = _obibData.colDefs || [], ibSections = _obibData.ibSections || [];
   var ibMap = {};
   ibSections.forEach(function (sec) {
-    // FIX v4.9: key include incharge
     var k = (sec.incharge || '').toUpperCase() + '|' + (sec.service || '').toUpperCase() + '|' + (sec.from || '').toUpperCase();
     if (!ibMap[k]) ibMap[k] = [];
     ibMap[k].push(sec);
@@ -389,7 +375,6 @@ function exportObibCSV() {
         if (awb) rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date || '', awb]);
       });
     } else if (ct === 'INBOUND_HVS') {
-      // FIX v4.9: key include r1
       var k = (def.r1 || '').toUpperCase() + '|' + (def.r2 || '').toUpperCase() + '|' + (def.r3 || '').toUpperCase();
       (ibMap[k] || []).forEach(function (sec) {
         (sec.awbs || []).forEach(function (a) {
@@ -402,30 +387,59 @@ function exportObibCSV() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// MANIFEST PAGE
+// MANIFEST PAGE v4.10
+// - Toggle "Hari Ini" / "Semua Data"
+// - DATE kolom tampil di KIRI AWB
+// - Format tanggal compact "15/01 14:30"
 // ═══════════════════════════════════════════════════════════════════
 
-function loadManifestPage() {
-  if (_mfLoaded) { renderManifestSheet(); return; }
-  showLoading('Memuat manifest...');
-  gasGet('getManifestData').then(function (res) {
-    hideLoading();
+function loadManifestPage(forceMode) {
+  if (forceMode) _mfDateMode = forceMode;
+  _updateMfModeButtons();
+
+  if (_mfLoaded && _mfData && _mfData._mode === _mfDateMode) {
+    renderManifestSheet();
+    return;
+  }
+
+  // Spinner inline di area manifest — tidak menutup layar
+  var outer = document.getElementById('mfSheetOuter');
+  outer.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;gap:12px;color:var(--gray5)">' +
+      '<div style="width:32px;height:32px;border:3px solid var(--gray3);border-top:3px solid var(--blue2);border-radius:50%;animation:spin .65s linear infinite"></div>' +
+      '<div style="font-size:13px">Memuat manifest...</div>' +
+    '</div>';
+
+  var apiCall = _mfDateMode === 'today'
+    ? gasGet('getManifest', { dateFilter: 'today' })
+    : gasGet('getManifestData');
+
+  apiCall.then(function (res) {
     if (res.error) { toast('Error manifest: ' + res.error, 'error'); return; }
-    _mfData = res; _mfLoaded = true; _mfSelRow = -1; _mfSelCol = -1;
-    renderManifestSheet(); setupMfKeyboard();
-  }).catch(function (e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+
+    if (_mfDateMode === 'today' && res.columns !== undefined) {
+      _mfData = _normaliseManifestColumns(res);
+    } else {
+      _mfData = res;
+    }
+    _mfData._mode = _mfDateMode;
+    _mfLoaded     = true;
+    _mfSelRow     = -1;
+    _mfSelCol     = -1;
+
+    renderManifestSheet();
+    setupMfKeyboard();
+  }).catch(function (e) {
+    toast('Error: ' + e.message, 'error');
+  });
 }
 
 function reloadManifest() {
-  _mfLoaded = false; _mfData = null; _mfSelRow = -1; _mfSelCol = -1;
-  showLoading('Refresh manifest...');
-  gasGet('getManifestData').then(function (res) {
-    hideLoading();
-    if (res.error) { toast('Error: ' + res.error, 'error'); return; }
-    _mfData = res; _mfLoaded = true;
-    renderManifestSheet(); setupMfKeyboard();
-    toast('Manifest diperbarui', 'success');
-  }).catch(function (e) { hideLoading(); toast('Error: ' + e.message, 'error'); });
+  _mfLoaded = false;
+  _mfData   = null;
+  _mfSelRow = -1;
+  _mfSelCol = -1;
+  loadManifestPage(_mfDateMode);
 }
 
 function filterManifest() {
@@ -433,68 +447,261 @@ function filterManifest() {
   if (_mfLoaded) renderManifestSheet();
 }
 
+function _updateMfModeButtons() {
+  var btnToday = document.getElementById('mfBtnToday');
+  var btnAll   = document.getElementById('mfBtnAll');
+  if (!btnToday || !btnAll) return;
+  if (_mfDateMode === 'today') {
+    btnToday.className = 'btn btn-primary btn-sm';
+    btnAll.className   = 'btn btn-outline btn-sm';
+  } else {
+    btnToday.className = 'btn btn-outline btn-sm';
+    btnAll.className   = 'btn btn-primary btn-sm';
+  }
+}
+
+function _normaliseManifestColumns(res) {
+  var columns = res.columns || [];
+  if (!columns.length) {
+    return { headerRows: [[], [], []], colDefs: [], awbRows: [], totalCols: 0, _mode: 'today' };
+  }
+
+  var r0 = [], r1 = [], r2 = [];
+  var colDefs = [];
+  var colData = {};
+  var colIdx  = 0;
+
+  columns.forEach(function (col) {
+    var dateCi = colIdx;
+    r0.push('');
+    r1.push('');
+    r2.push('DATE');
+    colDefs.push({
+      colIdx  : dateCi,
+      tujuan  : '',
+      incharge: col.incharge || '',
+      service : col.service  || '',
+      isDate  : true
+    });
+    colData[dateCi] = (col.rows || []).map(function (row) { return row[1] || ''; });
+    colIdx++;
+
+    var awbCi = colIdx;
+    r0.push(col.incharge || '');
+    r1.push(col.service  || '');
+    r2.push(col.tujuan   || '');
+    colDefs.push({
+      colIdx  : awbCi,
+      tujuan  : col.tujuan  || '',
+      incharge: col.incharge || '',
+      service : col.service  || '',
+      isDate  : false
+    });
+    colData[awbCi] = (col.rows || []).map(function (row) { return row[0] || ''; });
+    colIdx++;
+  });
+
+  var maxRows = 0;
+  for (var ci = 0; ci < colIdx; ci++) {
+    if (colData[ci] && colData[ci].length > maxRows) maxRows = colData[ci].length;
+  }
+
+  var awbRows = [];
+  for (var ri = 0; ri < maxRows; ri++) {
+    var row = new Array(colIdx).fill('');
+    for (var ci = 0; ci < colIdx; ci++) {
+      row[ci] = (colData[ci] && ri < colData[ci].length) ? colData[ci][ri] : '';
+    }
+    awbRows.push(row);
+  }
+
+  return {
+    headerRows: [r0, r1, r2],
+    colDefs   : colDefs,
+    awbRows   : awbRows,
+    totalCols : colDefs.length,
+    _mode     : 'today'
+  };
+}
+
+function _buildMfRenderOrder(colDefs) {
+  if (!colDefs.length) return [];
+
+  var firstDate = -1;
+  var firstAwb  = -1;
+  for (var i = 0; i < colDefs.length; i++) {
+    if (colDefs[i].isDate  && firstDate < 0) firstDate = i;
+    if (!colDefs[i].isDate && firstAwb  < 0) firstAwb  = i;
+    if (firstDate >= 0 && firstAwb >= 0) break;
+  }
+
+  if (firstDate < firstAwb || firstDate < 0) {
+    var order = [];
+    for (var i = 0; i < colDefs.length; i++) order.push(i);
+    return order;
+  }
+
+  var used  = new Array(colDefs.length).fill(false);
+  var order = [];
+
+  for (var i = 0; i < colDefs.length; i++) {
+    if (used[i] || colDefs[i].isDate) continue;
+
+    var datePair = -1;
+    for (var j = i + 1; j < colDefs.length; j++) {
+      if ((colDefs[j].incharge || '') !== (colDefs[i].incharge || '')) break;
+      if (colDefs[j].isDate) { datePair = j; break; }
+    }
+
+    if (datePair !== -1) {
+      order.push(datePair);
+      used[datePair] = true;
+    }
+    order.push(i);
+    used[i] = true;
+  }
+
+  for (var i = 0; i < colDefs.length; i++) {
+    if (!used[i]) { order.push(i); used[i] = true; }
+  }
+
+  return order;
+}
+
+function _buildMfSpannedRow(hArr, cls, renderOrder, colDefs) {
+  var reordered = renderOrder.map(function (ci) {
+    return (hArr && hArr[colDefs[ci].colIdx]) ? hArr[colDefs[ci].colIdx].toString().trim() : '';
+  });
+
+  var cells = [], i = 0;
+  while (i < reordered.length) {
+    var val = reordered[i] || '';
+    if (!val) { cells.push({ val: '', span: 1 }); i++; continue; }
+    var span = 1;
+    while (i + span < reordered.length && (!reordered[i + span] || reordered[i + span] === '')) span++;
+    cells.push({ val: val, span: span });
+    i += span;
+  }
+
+  return '<tr><th class="mf-rn" style="z-index:5">#</th>' +
+    cells.map(function (c) {
+      return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>';
+    }).join('') + '</tr>';
+}
+
+function _shortDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    var parts    = dateStr.split(' ');
+    var datePart = parts[0] || '';
+    var timePart = parts[1] ? parts[1].substring(0, 5) : '';
+    var dp = datePart.split('-');
+    if (dp.length === 3) return dp[2] + '/' + dp[1] + ' ' + timePart;
+  } catch (e) {}
+  return dateStr.substring(0, 16);
+}
+
 function renderManifestSheet() {
   if (!_mfData) {
-    document.getElementById('mfSheetOuter').innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray5)"><span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>Klik Manifest di sidebar</div>';
+    document.getElementById('mfSheetOuter').innerHTML =
+      '<div style="padding:40px;text-align:center;color:var(--gray5)">' +
+      '<span class="material-icons-round" style="font-size:40px;color:var(--gray4);display:block;margin-bottom:8px">grid_on</span>' +
+      'Klik <strong>Hari Ini</strong> atau <strong>Semua Data</strong> untuk memuat manifest.</div>';
     return;
   }
-  var hRows = _mfData.headerRows || [], colDefs = _mfData.colDefs || [], awbRows = _mfData.awbRows || [];
-  var totalCols = _mfData.totalCols || 0;
-  var fq = (_mfFilter || '').toLowerCase().trim();
-  var filteredAwbRows = fq ? awbRows.filter(function (row) { return row.some(function (c) { return (c || '').toLowerCase().indexOf(fq) !== -1; }); }) : awbRows;
+
+  var hRows   = _mfData.headerRows || [];
+  var colDefs = _mfData.colDefs    || [];
+  var awbRows = _mfData.awbRows    || [];
+  var fq      = (_mfFilter || '').toLowerCase().trim();
+
+  var filteredAwbRows = fq
+    ? awbRows.filter(function (row) {
+        return row.some(function (c) { return (c || '').toLowerCase().indexOf(fq) !== -1; });
+      })
+    : awbRows;
+
   _mfFilteredRows = filteredAwbRows;
-  var incSet = {}; colDefs.forEach(function (c) { if (c.incharge) incSet[c.incharge] = true; });
-  var tujCols = colDefs.filter(function (c) { return !c.isDate && c.tujuan; });
-  var totalAwb = tujCols.reduce(function (s, c) { return s + awbRows.filter(function (r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length; }, 0);
+
+  var renderOrder = _buildMfRenderOrder(colDefs);
+
+  var incSet  = {};
+  var tujCols = [];
+  colDefs.forEach(function (c) {
+    if (!c.isDate && c.tujuan) {
+      tujCols.push(c);
+      if (c.incharge) incSet[c.incharge] = true;
+    }
+  });
+  var totalAwb = tujCols.reduce(function (s, c) {
+    return s + awbRows.filter(function (r) { return r[c.colIdx] && r[c.colIdx].trim(); }).length;
+  }, 0);
+
   document.getElementById('mfTotalCols').innerText = tujCols.length;
   document.getElementById('mfTotalAwb').innerText  = totalAwb;
   document.getElementById('mfTotalInc').innerText  = Object.keys(incSet).length;
-  var nCols = totalCols;
-  function buildSpannedRow(hArr, cls) {
-    var cells = [], i = 0;
-    while (i < nCols) {
-      var val = hArr[i] || '';
-      if (!val) { cells.push({ val: '', span: 1 }); i++; continue; }
-      var span = 1;
-      while (i + span < nCols && (!hArr[i + span] || hArr[i + span] === '')) span++;
-      cells.push({ val: val, span: span }); i += span;
-    }
-    return '<tr><th class="mf-rn" style="z-index:5">#</th>' + cells.map(function (c) { return '<th colspan="' + c.span + '" class="' + cls + '">' + escH(c.val) + '</th>'; }).join('') + '</tr>';
-  }
-  var row0Html = buildSpannedRow(hRows[0] || [], 'mf-hdr-incharge');
-  var row1Html = buildSpannedRow(hRows[1] || [], 'mf-hdr-service');
-  var row2Html = '<tr><th class="mf-rn">—</th>' + colDefs.map(function (c) { return c.isDate ? '<th class="mf-hdr-date">DATE</th>' : '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>'; }).join('') + '</tr>';
+
+  var row0Html = _buildMfSpannedRow(hRows[0], 'mf-hdr-incharge', renderOrder, colDefs);
+  var row1Html = _buildMfSpannedRow(hRows[1], 'mf-hdr-service',  renderOrder, colDefs);
+
+  var row2Html = '<tr><th class="mf-rn">—</th>' +
+    renderOrder.map(function (ci) {
+      var c = colDefs[ci];
+      return c.isDate
+        ? '<th class="mf-hdr-date">DATE</th>'
+        : '<th class="mf-hdr-tujuan">' + escH(c.tujuan) + '</th>';
+    }).join('') + '</tr>';
+
   var dataHtml = filteredAwbRows.length
     ? filteredAwbRows.map(function (row, ri) {
-        return '<tr class="mf-data-row" data-ri="' + ri + '"><td class="mf-rn">' + (ri + 1) + '</td>' +
-          colDefs.map(function (c, ci) {
+        return '<tr class="mf-data-row" data-ri="' + ri + '">' +
+          '<td class="mf-rn">' + (ri + 1) + '</td>' +
+          renderOrder.map(function (ci, rci) {
+            var c   = colDefs[ci];
             var val = row[c.colIdx] || '';
-            var sel = (_mfSelRow === ri && _mfSelCol === ci) ? ' mf-cell-selected' : '';
-            var attr = ' data-ci="' + ci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + ci + ')"';
-            if (c.isDate) return '<td class="mf-cell-date' + sel + '"' + attr + '>' + escH(val) + '</td>';
-            if (!val)     return '<td class="mf-cell-empty' + sel + '"' + attr + '></td>';
+            var sel = (_mfSelRow === ri && _mfSelCol === rci) ? ' mf-cell-selected' : '';
+            var attr = ' data-ci="' + rci + '" data-ri="' + ri + '" onclick="mfSelectCell(' + ri + ',' + rci + ')"';
+            if (c.isDate) {
+              return val
+                ? '<td class="mf-cell-date' + sel + '"' + attr + ' title="' + escH(val) + '">' + escH(_shortDate(val)) + '</td>'
+                : '<td class="mf-cell-date' + sel + '"' + attr + '></td>';
+            }
+            if (!val) return '<td class="mf-cell-empty' + sel + '"' + attr + '></td>';
             return '<td class="mf-cell-awb' + sel + '"' + attr + ' title="' + escH(val) + '">' + escH(val) + '</td>';
-          }).join('') + '</tr>';
+          }).join('') +
+        '</tr>';
       }).join('')
-    : '<tr><td class="mf-rn">—</td><td colspan="' + (nCols || 1) + '" style="text-align:center;padding:20px;color:var(--gray5)">Tidak ada data AWB</td></tr>';
-  document.getElementById('mfSheetOuter').innerHTML = '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
+    : '<tr><td class="mf-rn">—</td><td colspan="' + (renderOrder.length || 1) +
+      '" style="text-align:center;padding:24px;color:var(--gray5)">Tidak ada data AWB' +
+      (_mfDateMode === 'today' ? ' hari ini' : '') + '</td></tr>';
+
+  document.getElementById('mfSheetOuter').innerHTML =
+    '<table class="mf-table"><thead>' + row0Html + row1Html + row2Html + '</thead><tbody>' + dataHtml + '</tbody></table>';
+
   updateMfActiveCellLabel();
 }
 
-function mfSelectCell(ri, ci) {
-  _mfSelRow = ri; _mfSelCol = ci;
+function mfSelectCell(ri, rci) {
+  _mfSelRow = ri; _mfSelCol = rci;
   document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
-  var t = document.querySelector('[data-ri="' + ri + '"][data-ci="' + ci + '"]');
+  var t = document.querySelector('[data-ri="' + ri + '"][data-ci="' + rci + '"]');
   if (t) { t.classList.add('mf-cell-selected'); t.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }
   updateMfActiveCellLabel();
   document.getElementById('mfSheetOuter').focus();
 }
 
 function updateMfActiveCellLabel() {
-  var el = document.getElementById('mfActiveCell'); if (!el) return;
+  var el = document.getElementById('mfActiveCell');
+  if (!el) return;
   if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) { el.innerText = '—'; return; }
-  var row = _mfFilteredRows[_mfSelRow], c = (_mfData.colDefs || [])[_mfSelCol];
-  el.innerText = (row && c) ? (row[c.colIdx] || '(kosong)') : '—';
+  var row   = _mfFilteredRows[_mfSelRow];
+  var defs  = _mfData.colDefs || [];
+  var order = _buildMfRenderOrder(defs);
+  var ci    = _mfSelCol < order.length ? order[_mfSelCol] : -1;
+  var c     = ci >= 0 ? defs[ci] : null;
+  if (!row || !c) { el.innerText = '—'; return; }
+  var val = row[c.colIdx] || '';
+  el.innerText = val ? (c.isDate ? _shortDate(val) : val) : '(kosong)';
 }
 
 function setupMfKeyboard() {
@@ -503,7 +710,9 @@ function setupMfKeyboard() {
   outer._kbSetup = true;
   outer.addEventListener('keydown', function (e) {
     if (!_mfData) return;
-    var nRows = _mfFilteredRows.length, nCols = (_mfData.colDefs || []).length;
+    var nRows  = _mfFilteredRows.length;
+    var order  = _buildMfRenderOrder(_mfData.colDefs || []);
+    var nCols  = order.length;
     if (!nRows || !nCols) return;
     if (_mfSelRow < 0) { _mfSelRow = 0; _mfSelCol = 0; }
     var moved = false;
@@ -511,7 +720,7 @@ function setupMfKeyboard() {
     else if (e.key === 'ArrowUp')    { e.preventDefault(); _mfSelRow = Math.max(_mfSelRow - 1, 0); moved = true; }
     else if (e.key === 'ArrowRight') { e.preventDefault(); _mfSelCol = Math.min(_mfSelCol + 1, nCols - 1); moved = true; }
     else if (e.key === 'ArrowLeft')  { e.preventDefault(); _mfSelCol = Math.max(_mfSelCol - 1, 0); moved = true; }
-    else if (e.key === 'Tab') { e.preventDefault(); _mfSelCol = (_mfSelCol + 1) % nCols; if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
+    else if (e.key === 'Tab')        { e.preventDefault(); _mfSelCol = (_mfSelCol + 1) % nCols; if (_mfSelCol === 0) _mfSelRow = Math.min(_mfSelRow + 1, nRows - 1); moved = true; }
     else if (e.key === 'c' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); copyMfCell(); return; }
     if (moved) {
       document.querySelectorAll('.mf-cell-selected').forEach(function (el) { el.classList.remove('mf-cell-selected'); });
@@ -524,12 +733,17 @@ function setupMfKeyboard() {
 
 function copyMfCell() {
   if (_mfSelRow < 0 || _mfSelCol < 0 || !_mfData) return;
-  var row = _mfFilteredRows[_mfSelRow], c = (_mfData.colDefs || [])[_mfSelCol];
+  var row   = _mfFilteredRows[_mfSelRow];
+  var defs  = _mfData.colDefs || [];
+  var order = _buildMfRenderOrder(defs);
+  var ci    = _mfSelCol < order.length ? order[_mfSelCol] : -1;
+  var c     = ci >= 0 ? defs[ci] : null;
   if (!row || !c) return;
   var val = row[c.colIdx] || '';
   if (!val) { toast('Sel kosong', 'error'); return; }
   navigator.clipboard.writeText(val).then(function () { showCopyFlash(val); }).catch(function () {
-    var ta = document.createElement('textarea'); ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    var ta = document.createElement('textarea');
+    ta.value = val; ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
     try { document.execCommand('copy'); showCopyFlash(val); } catch (x) { toast('Gagal copy', 'error'); }
     document.body.removeChild(ta);
@@ -538,20 +752,41 @@ function copyMfCell() {
 
 function showCopyFlash(val) {
   var el = document.getElementById('copyFlash');
-  el.innerText = '✓ Copied: ' + val; el.classList.add('show');
-  clearTimeout(el._t); el._t = setTimeout(function () { el.classList.remove('show'); }, 1200);
+  el.innerText = '✓ Copied: ' + val;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(function () { el.classList.remove('show'); }, 1200);
 }
 
 function exportManifestCSV() {
   if (!_mfData) { toast('Manifest belum dimuat', 'error'); return; }
-  var colDefs = _mfData.colDefs || [], awbRows = _mfData.awbRows || [], hRows = _mfData.headerRows || [];
+  var colDefs = _mfData.colDefs || [];
+  var awbRows = _mfData.awbRows || [];
+  var hRows   = _mfData.headerRows || [];
   if (!colDefs.length) { toast('Tidak ada data manifest', 'error'); return; }
+
+  var order   = _buildMfRenderOrder(colDefs);
   var csvRows = [];
-  csvRows.push(['#'].concat(hRows[0] || []).map(function (v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(hRows[1] || []).map(function (v) { return '"' + v + '"'; }).join(','));
-  csvRows.push([''].concat(hRows[2] || []).map(function (v) { return '"' + v + '"'; }).join(','));
-  awbRows.forEach(function (row, i) { csvRows.push(['"' + (i + 1) + '"'].concat(row.map(function (c) { return '"' + (c || '') + '"'; })).join(',')); });
-  _downloadCSV(csvRows.join('\n'), 'manifest_export_' + _dateStr() + '.csv');
+
+  csvRows.push(['"#"'].concat(order.map(function (ci) {
+    var h = hRows[0] && hRows[0][colDefs[ci].colIdx] ? hRows[0][colDefs[ci].colIdx] : '';
+    return '"' + h + '"';
+  })).join(','));
+  csvRows.push(['""'].concat(order.map(function (ci) {
+    var h = hRows[1] && hRows[1][colDefs[ci].colIdx] ? hRows[1][colDefs[ci].colIdx] : '';
+    return '"' + h + '"';
+  })).join(','));
+  csvRows.push(['""'].concat(order.map(function (ci) {
+    var c = colDefs[ci];
+    return '"' + (c.isDate ? 'DATE' : (c.tujuan || '')) + '"';
+  })).join(','));
+  awbRows.forEach(function (row, i) {
+    csvRows.push(['"' + (i + 1) + '"'].concat(order.map(function (ci) {
+      return '"' + (row[colDefs[ci].colIdx] || '') + '"';
+    })).join(','));
+  });
+
+  _downloadCSV(csvRows.join('\r\n'), 'manifest_export_' + _dateStr() + '.csv');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -567,7 +802,7 @@ function doSearchAwb(q) {
     body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas</div>';
     return;
   }
-  var ql = q.toLowerCase();
+  var ql      = q.toLowerCase();
   var results = allScanAwbs.filter(function (item) { return (item.awb || '').toLowerCase().indexOf(ql) !== -1; });
   hdr.innerHTML = '<span class="material-icons-round">' + (results.length ? 'check_circle' : 'search_off') + '</span> ' +
     (results.length ? results.length + ' hasil untuk "' + escH(q) + '"' : 'Tidak ada hasil untuk "' + escH(q) + '"');
@@ -577,9 +812,12 @@ function doSearchAwb(q) {
       var list = res.list || [];
       hdr.innerHTML = '<span class="material-icons-round">' + (list.length ? 'check_circle' : 'search_off') + '</span> ' +
         (list.length ? list.length + ' hasil untuk "' + escH(q) + '"' : 'AWB tidak ditemukan');
-      body.innerHTML = list.length ? list.map(function (r) { return _searchItem(r, q); }).join('') :
-        '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
-    }).catch(function () { body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>'; });
+      body.innerHTML = list.length
+        ? list.map(function (r) { return _searchItem(r, q); }).join('')
+        : '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
+    }).catch(function () {
+      body.innerHTML = '<div class="search-awb-empty"><span class="material-icons-round">search_off</span>AWB tidak ditemukan</div>';
+    });
     return;
   }
   body.innerHTML = results.map(function (r) { return _searchItem(r, q); }).join('');
@@ -605,7 +843,10 @@ function _searchItem(r, q) {
     '</div></div>';
 }
 
-function clearSearchAwb() { document.getElementById('searchAwbMainInput').value = ''; doSearchAwb(''); }
+function clearSearchAwb() {
+  document.getElementById('searchAwbMainInput').value = '';
+  doSearchAwb('');
+}
 
 function handleSidebarSearch(e) {
   if (e.key !== 'Enter') return;
@@ -618,12 +859,59 @@ function handleSidebarSearch(e) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// PAGE SWITCHING — pakai requestAnimationFrame agar klik sidebar instant
+// ═══════════════════════════════════════════════════════════════════
+
+// Override switchPage dari incharge.js agar pakai rAF
+var _origSwitchPage = switchPage;
+switchPage = function(page) {
+  // Sembunyikan semua page dulu secara sinkron (cepat)
+  var pages = ['ob', 'hvs', 'ib', 'manifest', 'obib', 'search'];
+  pages.forEach(function (p) {
+    var el = document.getElementById('page-' + p);
+    if (el) el.style.display = 'none';
+    var n = document.getElementById('nav-' + p);
+    if (n) n.classList.remove('active');
+  });
+  // Aktifkan nav item target segera
+  var navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  var titleMap = {
+    ob      : 'Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span>',
+    hvs     : 'Outbound HVS <span class="topbar-sub">High Value Shipment keluar</span>',
+    ib      : 'Inbound HVS <span class="topbar-sub">High Value Shipment masuk</span>',
+    manifest: 'Manifest <span class="topbar-sub">Rekap AWB per incharge &amp; tujuan</span>',
+    obib    : 'OB &amp; IB <span class="topbar-sub">Combined view</span>',
+    search  : 'Cari AWB <span class="topbar-sub">Pencarian AWB di semua data</span>'
+  };
+  document.getElementById('topbarTitle').innerHTML = titleMap[page] || page;
+
+  // Render page target di frame berikutnya agar browser sempat repaint dulu
+  requestAnimationFrame(function () {
+    var target = document.getElementById('page-' + page);
+    if (target) target.style.display = '';
+    if (page === 'manifest') loadManifestPage();
+    if (page === 'obib') renderObibPage();
+    if (page === 'search') {
+      setTimeout(function () {
+        var inp = document.getElementById('searchAwbMainInput');
+        if (inp) inp.focus();
+      }, 100);
+    }
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════
 // EXPORT CSV
 // ═══════════════════════════════════════════════════════════════════
 
 function exportCSV() {
-  var pages = ['ob', 'hvs', 'ib', 'manifest', 'obib'], active = '';
-  pages.forEach(function (p) { var el = document.getElementById('page-' + p); if (el && el.style.display !== 'none') active = p; });
+  var pages  = ['ob', 'hvs', 'ib', 'manifest', 'obib'];
+  var active = '';
+  pages.forEach(function (p) {
+    var el = document.getElementById('page-' + p);
+    if (el && el.style.display !== 'none') active = p;
+  });
   if      (active === 'ob')       _exportListCSV(filteredData(obData),  ['no_track','incharge','service','tujuan','created_date','status','total_awb'], 'outbound_bdo_' + _dateStr() + '.csv');
   else if (active === 'hvs')      _exportListCSV(filteredData(hvsData), ['no_track','incharge','service','tujuan','created_date','status','total_awb'], 'outbound_hvs_' + _dateStr() + '.csv');
   else if (active === 'ib')       _exportListCSV(filteredData(ibData),  ['no_track','incharge','service','from','tujuan','created_date','status','total_awb'], 'inbound_hvs_' + _dateStr() + '.csv');
@@ -634,7 +922,9 @@ function exportCSV() {
 
 function _exportListCSV(data, headers, filename) {
   var rows = [headers];
-  data.forEach(function (r) { rows.push(headers.map(function (h) { return r[h] !== undefined ? r[h] : ''; })); });
+  data.forEach(function (r) {
+    rows.push(headers.map(function (h) { return r[h] !== undefined ? r[h] : ''; }));
+  });
   _downloadCSV(rows, filename);
 }
 
@@ -647,7 +937,8 @@ function _downloadCSV(rows, filename) {
     }).join(',');
   }).join('\r\n');
   var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
   a.href = url; a.download = filename; a.style.display = 'none';
   document.body.appendChild(a); a.click();
   setTimeout(function () { URL.revokeObjectURL(url); document.body.removeChild(a); }, 1000);
@@ -657,450 +948,4 @@ function _downloadCSV(rows, filename) {
 function _dateStr() {
   var d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// FILTER PANEL — semua tab
-// ═══════════════════════════════════════════════════════════════════
-
-// State filter per page
-var _fpState = {
-  ob    : { from:'', to:'', incharge:'', service:'', tujuan:'', status:'', fromCity:'' },
-  hvs   : { from:'', to:'', incharge:'', service:'', tujuan:'', status:'', fromCity:'' },
-  ib    : { from:'', to:'', incharge:'', service:'', tujuan:'', status:'', fromCity:'' },
-  mf    : { from:'', to:'', incharge:'', service:'', tujuan:'' },
-  obib  : { incharge:'', service:'', tujuan:'' },
-  search: { from:'', to:'', incharge:'', service:'', tujuan:'', type:'' }
-};
-
-// Toggle panel buka/tutup
-function toggleFp(page) {
-  var body = document.getElementById('fp' + page + 'Body');
-  var icon = document.getElementById('fp' + page + 'Icon');
-  if (!body) return;
-  var open = body.style.display === 'none';
-  body.style.display = open ? '' : 'none';
-  if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
-  // Isi dropdown saat pertama dibuka
-  if (open) _populateFpDropdowns(page);
-}
-
-// Populate dropdown dari data master / data aktif
-function _populateFpDropdowns(page) {
-  var sourceData = page === 'ob' ? obData : page === 'hvs' ? hvsData : page === 'ib' ? ibData
-    : page === 'search' ? obData.concat(hvsData).concat(ibData) : [];
-
-  // Untuk obib, ambil dari masterData
-  if (page === 'obib') {
-    var inc = Object.keys(masterData.obData || {}).concat(Object.keys(masterData.ibData || {}));
-    inc = inc.filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
-    _fillSelect('fpobibIncharge', inc);
-    _fillSelect('fpobibService', []);
-    _fillSelect('fpobibTujuan', []);
-    return;
-  }
-  if (page === 'mf') {
-    // Dari colDefs manifest
-    if (_mfData && _mfData.colDefs) {
-      var incs = [], svcs = [], tujs = [];
-      _mfData.colDefs.forEach(function(c) {
-        if (c.incharge && incs.indexOf(c.incharge) === -1) incs.push(c.incharge);
-        if (c.service  && svcs.indexOf(c.service)  === -1) svcs.push(c.service);
-        if (c.tujuan   && tujs.indexOf(c.tujuan)   === -1 && !c.isDate) tujs.push(c.tujuan);
-      });
-      _fillSelect('fpmfIncharge', incs.sort());
-      _fillSelect('fpmfService',  svcs.sort());
-      _fillSelect('fpmfTujuan',   tujs.sort());
-    }
-    return;
-  }
-
-  var incs = [], svcs = [], tujs = [], froms = [];
-  sourceData.forEach(function(d) {
-    if (d.incharge && incs.indexOf(d.incharge)   === -1) incs.push(d.incharge);
-    if (d.service  && svcs.indexOf(d.service)    === -1) svcs.push(d.service);
-    if (d.tujuan   && tujs.indexOf(d.tujuan)     === -1) tujs.push(d.tujuan);
-    if (d.from     && froms.indexOf(d.from)      === -1) froms.push(d.from);
-  });
-  _fillSelect('fp' + page + 'Incharge', incs.sort());
-  _fillSelect('fp' + page + 'Service',  svcs.sort());
-  _fillSelect('fp' + page + 'Tujuan',   tujs.sort());
-  if (page === 'ib')     _fillSelect('fpibFromCity',    froms.sort());
-  if (page === 'search') _fillSelect('fpSearchTujuan',  tujs.sort());
-}
-
-function _fillSelect(id, options) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  var cur = el.value;
-  el.innerHTML = '<option value="">— Semua —</option>' +
-    options.map(function(v) { return '<option value="' + escH(v) + '">' + escH(v) + '</option>'; }).join('');
-  if (cur) el.value = cur;
-}
-
-// Apply filter
-function applyFp(page) {
-  var s = _fpState[page];
-  if (page === 'ob' || page === 'hvs' || page === 'ib') {
-    s.from     = (document.getElementById('fp' + page + 'From')     || {}).value || '';
-    s.to       = (document.getElementById('fp' + page + 'To')       || {}).value || '';
-    s.incharge = (document.getElementById('fp' + page + 'Incharge') || {}).value || '';
-    s.service  = (document.getElementById('fp' + page + 'Service')  || {}).value || '';
-    s.tujuan   = (document.getElementById('fp' + page + 'Tujuan')   || {}).value || '';
-    s.status   = (document.getElementById('fp' + page + 'Status')   || {}).value || '';
-    if (page === 'ib') s.fromCity = (document.getElementById('fpibFromCity') || {}).value || '';
-    var hasFilter = !!(s.from || s.to || s.incharge || s.service || s.tujuan || s.status || s.fromCity);
-    _showActiveTag(page, hasFilter);
-    if (page === 'ob')  renderObTable();
-    if (page === 'hvs') renderHvsTable();
-    if (page === 'ib')  renderIbTable();
-  }
-  if (page === 'mf') {
-    s.from     = (document.getElementById('fpmfFrom')     || {}).value || '';
-    s.to       = (document.getElementById('fpmfTo')       || {}).value || '';
-    s.incharge = (document.getElementById('fpmfIncharge') || {}).value || '';
-    s.service  = (document.getElementById('fpmfService')  || {}).value || '';
-    s.tujuan   = (document.getElementById('fpmfTujuan')   || {}).value || '';
-    var hasFilter = !!(s.from || s.to || s.incharge || s.service || s.tujuan);
-    _showActiveTag('mf', hasFilter);
-    if (_mfLoaded) renderManifestSheet();
-  }
-  if (page === 'obib') {
-    s.incharge = (document.getElementById('fpobibIncharge') || {}).value || '';
-    s.service  = (document.getElementById('fpobibService')  || {}).value || '';
-    s.tujuan   = (document.getElementById('fpobibTujuan')   || {}).value || '';
-    var hasFilter = !!(s.incharge || s.service || s.tujuan);
-    _showActiveTag('obib', hasFilter);
-    if (_obibData) _buildObibTable(_obibData);
-  }
-  if (page === 'search') {
-    s.from     = (document.getElementById('fpSearchFrom')     || {}).value || '';
-    s.to       = (document.getElementById('fpSearchTo')       || {}).value || '';
-    s.incharge = (document.getElementById('fpSearchIncharge') || {}).value || '';
-    s.service  = (document.getElementById('fpSearchService')  || {}).value || '';
-    s.tujuan   = (document.getElementById('fpSearchTujuan')   || {}).value || '';
-    s.type     = (document.getElementById('fpSearchType')     || {}).value || '';
-    var hasFilter = !!(s.from || s.to || s.incharge || s.service || s.tujuan || s.type);
-    _showActiveTag('search', hasFilter);
-    doSearchAwb(document.getElementById('searchAwbMainInput').value);
-  }
-}
-
-// Clear filter
-function clearFp(page) {
-  var s = _fpState[page];
-  Object.keys(s).forEach(function(k) { s[k] = ''; });
-  ['From','To','Incharge','Service','Tujuan','Status','FromCity','Type'].forEach(function(f) {
-    var el = document.getElementById('fp' + page + f) || document.getElementById('fp' + _cap(page) + f);
-    if (el) el.value = '';
-  });
-  _showActiveTag(page, false);
-  if (page === 'ob')  renderObTable();
-  if (page === 'hvs') renderHvsTable();
-  if (page === 'ib')  renderIbTable();
-  if (page === 'mf' && _mfLoaded) renderManifestSheet();
-  if (page === 'obib' && _obibData) _buildObibTable(_obibData);
-  if (page === 'search') doSearchAwb(document.getElementById('searchAwbMainInput').value);
-}
-
-function _cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-function _showActiveTag(page, active) {
-  var tag = document.getElementById('fp' + page + 'ActiveTag');
-  if (tag) tag.style.display = active ? '' : 'none';
-}
-
-// ── Helper: apakah tanggal lolos filter from-to ──
-function _dateInRange(dateStr, from, to) {
-  if (!from && !to) return true;
-  var d = dateStr ? dateStr.substring(0, 10) : '';
-  if (!d) return true;
-  if (from && d < from) return false;
-  if (to   && d > to)   return false;
-  return true;
-}
-
-// ── Patch renderObTable untuk apply filter ──
-var _origRenderObTable = renderObTable;
-renderObTable = function(filter) {
-  var s   = _fpState.ob;
-  var raw = obData.slice();
-
-  if (s.from || s.to || s.incharge || s.service || s.tujuan || s.status) {
-    raw = raw.filter(function(d) {
-      if (s.incharge && d.incharge !== s.incharge) return false;
-      if (s.service  && d.service  !== s.service)  return false;
-      if (s.tujuan   && d.tujuan   !== s.tujuan)   return false;
-      if (s.status   && d.status   !== s.status)    return false;
-      if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-      return true;
-    });
-  }
-
-  // Simpan sementara, render, restore
-  var _orig = obData; obData = raw;
-  _origRenderObTable(filter);
-  obData = _orig;
-};
-
-var _origRenderHvsTable = renderHvsTable;
-renderHvsTable = function(filter) {
-  var s   = _fpState.hvs;
-  var raw = hvsData.slice();
-
-  if (s.from || s.to || s.incharge || s.service || s.tujuan || s.status) {
-    raw = raw.filter(function(d) {
-      if (s.incharge && d.incharge !== s.incharge) return false;
-      if (s.service  && d.service  !== s.service)  return false;
-      if (s.tujuan   && d.tujuan   !== s.tujuan)   return false;
-      if (s.status   && d.status   !== s.status)    return false;
-      if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-      return true;
-    });
-  }
-
-  var _orig = hvsData; hvsData = raw;
-  _origRenderHvsTable(filter);
-  hvsData = _orig;
-};
-
-var _origRenderIbTable = renderIbTable;
-renderIbTable = function(filter) {
-  var s   = _fpState.ib;
-  var raw = ibData.slice();
-
-  if (s.from || s.to || s.incharge || s.service || s.tujuan || s.status || s.fromCity) {
-    raw = raw.filter(function(d) {
-      if (s.incharge && d.incharge !== s.incharge)  return false;
-      if (s.service  && d.service  !== s.service)   return false;
-      if (s.tujuan   && d.tujuan   !== s.tujuan)    return false;
-      if (s.status   && d.status   !== s.status)    return false;
-      if (s.fromCity && (d.from || '') !== s.fromCity) return false;
-      if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-      return true;
-    });
-  }
-
-  var _orig = ibData; ibData = raw;
-  _origRenderIbTable(filter);
-  ibData = _orig;
-};
-
-// ── Patch renderManifestSheet untuk apply filter manifest ──
-var _origRenderManifestSheet = renderManifestSheet;
-renderManifestSheet = function() {
-  var s = _fpState.mf;
-  if (!_mfData) { _origRenderManifestSheet(); return; }
-
-  if (s.incharge || s.service || s.tujuan) {
-    // Filter colDefs — sembunyikan kolom yang tidak sesuai
-    var origDefs   = _mfData.colDefs;
-    var origHRows  = _mfData.headerRows;
-    var allowedIdx = {};
-    origDefs.forEach(function(c, i) {
-      if (c.isDate) { allowedIdx[i] = true; return; } // date selalu ikut
-      if (s.incharge && c.incharge !== s.incharge) return;
-      if (s.service  && c.service  !== s.service)  return;
-      if (s.tujuan   && c.tujuan   !== s.tujuan)   return;
-      allowedIdx[i] = true;
-    });
-    _mfData.colDefs = origDefs.filter(function(_, i) { return allowedIdx[i]; });
-    _origRenderManifestSheet();
-    _mfData.colDefs = origDefs;
-  } else {
-    _origRenderManifestSheet();
-  }
-};
-
-// ── Patch doSearchAwb untuk apply filter search ──
-var _origDoSearchAwb = doSearchAwb;
-doSearchAwb = function(q) {
-  _origDoSearchAwb(q);
-  var s = _fpState.search;
-  if (!s.from && !s.to && !s.incharge && !s.service && !s.tujuan && !s.type) return;
-
-  // Re-filter hasil yang sudah tampil
-  setTimeout(function() {
-    var body = document.getElementById('searchAwbResultBody');
-    if (!body) return;
-    var items = body.querySelectorAll('.search-awb-item');
-    items.forEach(function(el) {
-      var data = el._filterData;
-      if (!data) return;
-      var show = true;
-      if (s.incharge && data.incharge !== s.incharge) show = false;
-      if (s.service  && data.service  !== s.service)  show = false;
-      if (s.tujuan   && data.tujuan   !== s.tujuan)   show = false;
-      if (s.type     && data.type     !== s.type)      show = false;
-      if (!_dateInRange(data.date, s.from, s.to)) show = false;
-      el.style.display = show ? '' : 'none';
-    });
-  }, 100);
-};
-
-// ── Patch _searchItem untuk simpan data di DOM ──
-var _origSearchItem = _searchItem;
-_searchItem = function(r, q) {
-  var html = _origSearchItem(r, q);
-  // Inject data attribute lewat wrapper
-  return html.replace('class="search-awb-item"',
-    'class="search-awb-item" data-inc="' + escH(r.incharge||'') +
-    '" data-svc="' + escH(r.service||'') +
-    '" data-tuj="' + escH(r.tujuan||'') +
-    '" data-type="' + escH(r.type||'') +
-    '" data-date="' + escH((r.date||'').substring(0,10)) + '"');
-};
-
-// Attach data ke DOM element setelah render
-var _origDoSearchAwbBase = _origDoSearchAwb;
-
-// ── Patch _buildObibTable untuk filter OB&IB ──
-var _origBuildObibTable = _buildObibTable;
-_buildObibTable = function(data) {
-  var s = _fpState.obib;
-  if (s.incharge || s.service || s.tujuan) {
-    // Filter colDefs
-    var orig = data.colDefs;
-    data.colDefs = orig.filter(function(def) {
-      if ((def.colType||'').toUpperCase() === 'DATE') return true;
-      if (s.incharge && def.r1 !== s.incharge) return false;
-      if (s.service  && def.r2 !== s.service)  return false;
-      if (s.tujuan   && def.r3 !== s.tujuan)   return false;
-      return true;
-    });
-    _origBuildObibTable(data);
-    data.colDefs = orig;
-  } else {
-    _origBuildObibTable(data);
-  }
-};
-
-// ── OB&IB filter: populate service/tujuan berdasarkan incharge ──
-document.addEventListener('change', function(e) {
-  if (e.target && e.target.id === 'fpobibIncharge') {
-    var inc  = e.target.value;
-    var svcs = [], tujs = [];
-    if (_obibData) {
-      (_obibData.colDefs || []).forEach(function(def) {
-        if (inc && def.r1 !== inc) return;
-        if (def.r2 && svcs.indexOf(def.r2) === -1) svcs.push(def.r2);
-        if (def.r3 && tujs.indexOf(def.r3) === -1 && (def.colType||'').toUpperCase() !== 'DATE') tujs.push(def.r3);
-      });
-    }
-    _fillSelect('fpobibService', svcs.sort());
-    _fillSelect('fpobibTujuan',  tujs.sort());
-  }
-});
-
-// ═══════════════════════════════════════════════════════════════════
-// EXPORT EXCEL — pakai SheetJS (sudah tersedia di browser via CDN)
-// ═══════════════════════════════════════════════════════════════════
-
-function _loadXLSX(cb) {
-  if (window.XLSX) { cb(); return; }
-  var s = document.createElement('script');
-  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-  s.onload = cb;
-  s.onerror = function() { toast('Gagal muat library Excel', 'error'); };
-  document.head.appendChild(s);
-}
-
-function _downloadXLSX(wsData, sheetName, filename) {
-  _loadXLSX(function() {
-    var wb = XLSX.utils.book_new();
-    var ws = XLSX.utils.aoa_to_sheet(wsData);
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
-    XLSX.writeFile(wb, filename);
-    toast('Excel diunduh: ' + filename, 'success');
-  });
-}
-
-function exportObExcel() {
-  var s = _fpState.ob;
-  var data = filteredData(obData).filter(function(d) {
-    if (s.incharge && d.incharge !== s.incharge) return false;
-    if (s.service  && d.service  !== s.service)  return false;
-    if (s.tujuan   && d.tujuan   !== s.tujuan)   return false;
-    if (s.status   && d.status   !== s.status)    return false;
-    if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-    return true;
-  });
-  var rows = [['No','NO TRACK','INCHARGE','SERVICE','TUJUAN','CREATED DATE','TOTAL AWB','STATUS']];
-  data.forEach(function(d, i) { rows.push([i+1, d.no_track, d.incharge, d.service, d.tujuan, d.created_date, d.total_awb, d.status]); });
-  _downloadXLSX(rows, 'Outbound BDO', 'outbound_bdo_' + _dateStr() + '.xlsx');
-}
-
-function exportHvsExcel() {
-  var s = _fpState.hvs;
-  var data = filteredData(hvsData).filter(function(d) {
-    if (s.incharge && d.incharge !== s.incharge) return false;
-    if (s.service  && d.service  !== s.service)  return false;
-    if (s.tujuan   && d.tujuan   !== s.tujuan)   return false;
-    if (s.status   && d.status   !== s.status)    return false;
-    if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-    return true;
-  });
-  var rows = [['No','NO TRACK','INCHARGE','SERVICE','TUJUAN','CREATED DATE','TOTAL AWB','STATUS']];
-  data.forEach(function(d, i) { rows.push([i+1, d.no_track, d.incharge, d.service, d.tujuan, d.created_date, d.total_awb, d.status]); });
-  _downloadXLSX(rows, 'Outbound HVS', 'outbound_hvs_' + _dateStr() + '.xlsx');
-}
-
-function exportIbExcel() {
-  var s = _fpState.ib;
-  var data = filteredData(ibData).filter(function(d) {
-    if (s.incharge && d.incharge !== s.incharge) return false;
-    if (s.service  && d.service  !== s.service)  return false;
-    if (s.tujuan   && d.tujuan   !== s.tujuan)   return false;
-    if (s.status   && d.status   !== s.status)    return false;
-    if (s.fromCity && (d.from||'') !== s.fromCity) return false;
-    if (!_dateInRange(d.created_date, s.from, s.to)) return false;
-    return true;
-  });
-  var rows = [['No','NO TRACK','INCHARGE','SERVICE','FROM','TUJUAN','CREATED DATE','TOTAL AWB','STATUS']];
-  data.forEach(function(d, i) { rows.push([i+1, d.no_track, d.incharge, d.service, d.from||'', d.tujuan, d.created_date, d.total_awb, d.status]); });
-  _downloadXLSX(rows, 'Inbound HVS', 'inbound_hvs_' + _dateStr() + '.xlsx');
-}
-
-function exportManifestExcel() {
-  if (!_mfData) { toast('Manifest belum dimuat', 'error'); return; }
-  var colDefs = _mfData.colDefs || [];
-  var awbRows = _mfData.awbRows || [];
-  var hRows   = _mfData.headerRows || [];
-  if (!colDefs.length) { toast('Tidak ada data', 'error'); return; }
-  var order = _buildMfRenderOrder(colDefs);
-  var rows  = [];
-  rows.push(['#'].concat(order.map(function(ci) { return (hRows[0]||[])[colDefs[ci].colIdx]||''; })));
-  rows.push([''].concat(order.map(function(ci)  { return (hRows[1]||[])[colDefs[ci].colIdx]||''; })));
-  rows.push([''].concat(order.map(function(ci)  { var c = colDefs[ci]; return c.isDate ? 'DATE' : (c.tujuan||''); })));
-  awbRows.forEach(function(row, i) {
-    rows.push([i+1].concat(order.map(function(ci) { return row[colDefs[ci].colIdx]||''; })));
-  });
-  _downloadXLSX(rows, 'Manifest', 'manifest_' + _dateStr() + '.xlsx');
-}
-
-function exportObibExcel() {
-  if (!_obibData) { toast('Muat data dulu', 'error'); return; }
-  var colDefs    = _obibData.colDefs    || [];
-  var ibSections = _obibData.ibSections || [];
-  var rows = [['TYPE','INCHARGE','SERVICE','KOTA','TUJUAN_IB','FROM','DATE','AWB']];
-  colDefs.forEach(function(def) {
-    var ct = (def.colType||'').toUpperCase();
-    if (ct === 'DATE') return;
-    if (ct === 'OUTBOUND' || ct === 'OUTBOUND_HVS') {
-      (def.entries||def.flatRows||[]).forEach(function(e) {
-        var awb = e.awb||e.text||''; if (!awb) return;
-        rows.push([ct, def.r1, def.r2, def.r3, def.r3, '', e.date||'', awb]);
-      });
-    } else if (ct === 'INBOUND_HVS') {
-      var k = (def.r1||'').toUpperCase()+'|'+(def.r2||'').toUpperCase()+'|'+(def.r3||'').toUpperCase();
-      ibSections.filter(function(sec) {
-        return ((sec.incharge||'').toUpperCase()+'|'+(sec.service||'').toUpperCase()+'|'+(sec.from||'').toUpperCase()) === k;
-      }).forEach(function(sec) {
-        (sec.awbs||[]).forEach(function(a) {
-          rows.push([ct, def.r1, def.r2, def.r3, a.tujuan||sec.tujuan||'', sec.from||'', a.date||sec.date||'', a.awb||'']);
-        });
-      });
-    }
-  });
-  _downloadXLSX(rows, 'OB-IB', 'obib_' + _dateStr() + '.xlsx');
 }
