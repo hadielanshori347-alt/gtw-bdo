@@ -3,10 +3,50 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OUTBOUND GTW BDO — v4.2</title>
+<title>OUTBOUND GTW BDO — v4.10</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <link rel="stylesheet" href="main.css">
+<style>
+/* ── Manifest DATE di kiri: compact, warm yellow ── */
+.mf-cell-date {
+  background: #FFF8E1;
+  color: var(--gray6);
+  font-size: 10px;
+  font-family: var(--mono);
+  padding: 4px 6px;
+  text-align: center;
+  min-width: 82px;
+  max-width: 92px;
+  white-space: nowrap;
+  border-right: 2px solid #FFE082 !important;
+  cursor: default;
+}
+.mf-hdr-date {
+  background: #FFF3CD;
+  color: #856404;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  padding: 5px 6px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  min-width: 82px;
+  border-right: 2px solid #FFE082 !important;
+}
+/* Toggle button group */
+.mf-mode-group {
+  display: flex;
+  gap: 3px;
+  background: var(--gray2);
+  border-radius: 8px;
+  padding: 3px;
+}
+.mf-mode-group .btn {
+  border-radius: 6px !important;
+  transition: all .15s ease;
+}
+</style>
 </head>
 <body>
 
@@ -34,7 +74,7 @@
       <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
     </div>
   </div>
-  <div class="sidebar-bottom"><div class="ver">v4.2 — GTW BDO</div></div>
+  <div class="sidebar-bottom"><div class="ver">v4.10 — GTW BDO</div></div>
 </div>
 
 <div class="main">
@@ -168,6 +208,19 @@
     <div id="page-manifest" style="display:none">
       <div class="mf-toolbar">
         <span style="font-weight:700;font-size:14px;color:var(--gray8);flex:1">Manifest AWB</span>
+
+        <!-- Toggle Hari Ini / Semua Data -->
+        <div class="mf-mode-group">
+          <button id="mfBtnToday" class="btn btn-primary btn-sm"
+            onclick="loadManifestPage('today')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">today</span> Hari Ini
+          </button>
+          <button id="mfBtnAll" class="btn btn-outline btn-sm"
+            onclick="loadManifestPage('all')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">calendar_month</span> Semua Data
+          </button>
+        </div>
+
         <div class="search-box"><span class="material-icons-round">search</span><input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:170px"></div>
         <button class="btn btn-outline btn-sm" onclick="reloadManifest()"><span class="material-icons-round">refresh</span> Refresh</button>
         <button class="export-btn" onclick="exportManifestCSV()"><span class="material-icons-round">file_download</span> Export CSV</button>
@@ -183,17 +236,24 @@
         <div class="stat-card" style="border-color:var(--gray3)"><div class="stat-label">Sel Aktif</div><div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--gray6);font-family:var(--mono)">—</div></div>
       </div>
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
-        <!-- Placeholder tombol besar — diganti dengan tabel setelah load -->
         <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">
           <span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>
-          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest Hari Ini</div>
-          <div style="font-size:13px;color:var(--gray5);max-width:300px;line-height:1.6">
-            Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.
+          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest AWB</div>
+          <div style="font-size:13px;color:var(--gray5);max-width:320px;line-height:1.6">
+            Pilih mode tampilan data manifest:
           </div>
-          <button class="btn btn-primary" style="padding:13px 32px;font-size:14px;border-radius:10px;gap:10px;margin-top:8px" onclick="loadManifestPage()">
-            <span class="material-icons-round" style="font-size:20px">grid_on</span>
-            Muat Manifest Hari Ini
-          </button>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
+              onclick="loadManifestPage('today')">
+              <span class="material-icons-round" style="font-size:18px">today</span>
+              Hari Ini
+            </button>
+            <button class="btn btn-outline" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
+              onclick="loadManifestPage('all')">
+              <span class="material-icons-round" style="font-size:18px">calendar_month</span>
+              Semua Data
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -257,7 +317,6 @@
         <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div>
         <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
       </div>
-      <!-- Tambah AWB section — hanya tampil jika belum SELESAI -->
       <div id="detailAddAwbSection" style="margin-top:10px;display:none">
         <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">TAMBAH AWB</div>
         <div style="display:flex;gap:8px;align-items:center">
