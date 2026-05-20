@@ -132,61 +132,6 @@
           </div>
         </div>
       </div>
-      <div class="filter-panel" id="obFilterPanel">
-  <!-- Header toggle -->
-  <div class="filter-toggle-hdr" onclick="toggleFilterPanel('ob')">
-    <div class="filter-toggle-label">
-      <span class="material-icons-round">filter_list</span>
-      Filter Data OB
-      <span class="filter-active-badge" id="obFilterActiveBadge">Filter aktif</span>
-      <span class="filter-summary" id="obFilterSummary"></span>
-    </div>
-    <span class="filter-archive-badge" id="obArchiveBadge">
-      <span class="material-icons-round">archive</span> Termasuk archive
-    </span>
-    <span class="material-icons-round filter-toggle-arrow">expand_more</span>
-  </div>
-  <!-- Body collapsible -->
-  <div class="filter-body">
-    <div class="filter-inner">
-      <div class="filter-fields">
-        <div class="filter-field">
-          <label>Dari Tanggal</label>
-          <input type="date" id="obFilterFrom" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Sampai Tanggal</label>
-          <input type="date" id="obFilterTo" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Status</label>
-          <select id="obFilterStatus" class="filter-select">
-            <option value="">Semua Status</option>
-            <option value="ON PROSES">On Proses</option>
-            <option value="SELESAI">Selesai</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label>Incharge</label>
-          <select id="obFilterIncharge" class="filter-select">
-            <option value="">Semua Incharge</option>
-          </select>
-        </div>
-      </div>
-      <div class="filter-actions">
-        <button class="btn btn-primary btn-sm" onclick="applyObFilter()">
-          <span class="material-icons-round">filter_alt</span> Filter
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="clearObFilter()">
-          <span class="material-icons-round">close</span> Clear
-        </button>
-        <button class="export-btn" onclick="exportObFilteredCSV()">
-          <span class="material-icons-round">file_download</span> Export CSV
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
       <div class="table-panel">
         <div class="table-toolbar"><div class="table-toolbar-title">Outbound BDO — <span style="color:var(--gray5);font-weight:400" id="obTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="obSearch" placeholder="Cari no track, tujuan..." oninput="filterObTable()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="obTbody"><tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Loading...</div></td></tr></tbody></table></div>
@@ -220,59 +165,6 @@
           <div class="form-actions" id="hvsFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetHvsForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveHvs" disabled onclick="saveHvs()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button></div>
         </div>
       </div>
-      <div class="filter-panel" id="hvsFilterPanel">
-  <div class="filter-toggle-hdr" onclick="toggleFilterPanel('hvs')">
-    <div class="filter-toggle-label">
-      <span class="material-icons-round">filter_list</span>
-      Filter Data HVS
-      <span class="filter-active-badge" id="hvsFilterActiveBadge">Filter aktif</span>
-      <span class="filter-summary" id="hvsFilterSummary"></span>
-    </div>
-    <span class="filter-archive-badge" id="hvsArchiveBadge">
-      <span class="material-icons-round">archive</span> Termasuk archive
-    </span>
-    <span class="material-icons-round filter-toggle-arrow">expand_more</span>
-  </div>
-  <div class="filter-body">
-    <div class="filter-inner">
-      <div class="filter-fields">
-        <div class="filter-field">
-          <label>Dari Tanggal</label>
-          <input type="date" id="hvsFilterFrom" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Sampai Tanggal</label>
-          <input type="date" id="hvsFilterTo" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Status</label>
-          <select id="hvsFilterStatus" class="filter-select">
-            <option value="">Semua Status</option>
-            <option value="ON PROSES">On Proses</option>
-            <option value="SELESAI">Selesai</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label>Incharge</label>
-          <select id="hvsFilterIncharge" class="filter-select">
-            <option value="">Semua Incharge</option>
-          </select>
-        </div>
-      </div>
-      <div class="filter-actions">
-        <button class="btn btn-primary btn-sm" onclick="applyHvsFilter()">
-          <span class="material-icons-round">filter_alt</span> Filter
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="clearHvsFilter()">
-          <span class="material-icons-round">close</span> Clear
-        </button>
-        <button class="export-btn" onclick="exportHvsFilteredCSV()">
-          <span class="material-icons-round">file_download</span> Export CSV
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
       <div class="table-panel">
         <div class="table-toolbar"><div class="table-toolbar-title">Outbound HVS — <span style="color:var(--gray5);font-weight:400" id="hvsTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="hvsSearch" placeholder="Cari..." oninput="filterHvsTable()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="hvsTbody"></tbody></table></div>
@@ -306,59 +198,6 @@
           <div class="form-actions" id="ibFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button></div>
         </div>
       </div>
-      <div class="filter-panel" id="ibFilterPanel">
-  <div class="filter-toggle-hdr" onclick="toggleFilterPanel('ib')">
-    <div class="filter-toggle-label">
-      <span class="material-icons-round">filter_list</span>
-      Filter Data IB
-      <span class="filter-active-badge" id="ibFilterActiveBadge">Filter aktif</span>
-      <span class="filter-summary" id="ibFilterSummary"></span>
-    </div>
-    <span class="filter-archive-badge" id="ibArchiveBadge">
-      <span class="material-icons-round">archive</span> Termasuk archive
-    </span>
-    <span class="material-icons-round filter-toggle-arrow">expand_more</span>
-  </div>
-  <div class="filter-body">
-    <div class="filter-inner">
-      <div class="filter-fields">
-        <div class="filter-field">
-          <label>Dari Tanggal</label>
-          <input type="date" id="ibFilterFrom" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Sampai Tanggal</label>
-          <input type="date" id="ibFilterTo" class="filter-input">
-        </div>
-        <div class="filter-field">
-          <label>Status</label>
-          <select id="ibFilterStatus" class="filter-select">
-            <option value="">Semua Status</option>
-            <option value="ON PROSES">On Proses</option>
-            <option value="SELESAI">Selesai</option>
-          </select>
-        </div>
-        <div class="filter-field">
-          <label>Incharge</label>
-          <select id="ibFilterIncharge" class="filter-select">
-            <option value="">Semua Incharge</option>
-          </select>
-        </div>
-      </div>
-      <div class="filter-actions">
-        <button class="btn btn-primary btn-sm" onclick="applyIbFilter()">
-          <span class="material-icons-round">filter_alt</span> Filter
-        </button>
-        <button class="btn btn-outline btn-sm" onclick="clearIbFilter()">
-          <span class="material-icons-round">close</span> Clear
-        </button>
-        <button class="export-btn" onclick="exportIbFilteredCSV()">
-          <span class="material-icons-round">file_download</span> Export CSV
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
       <div class="table-panel">
         <div class="table-toolbar"><div class="table-toolbar-title">Inbound HVS — <span style="color:var(--gray5);font-weight:400" id="ibTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="ibSearch" placeholder="Cari..." oninput="filterIbTable()"></div></div>
         <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>FROM</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="ibTbody"></tbody></table></div>
@@ -516,8 +355,6 @@
 <script src="incharge.js"></script>
 <script src="forms.js"></script>
 <script src="views.js"></script>
-<script src="filter.js"></script>      
-<script src="foto_viewer.js"></script> 
-  
+
 </body>
 </html>
