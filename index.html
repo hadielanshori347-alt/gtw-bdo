@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OUTBOUND GTW BDO — v4.2</title>
+<title>OUTBOUND GTW BDO — v4.5</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <link rel="stylesheet" href="main.css">
@@ -34,7 +34,7 @@
       <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
     </div>
   </div>
-  <div class="sidebar-bottom"><div class="ver">v4.2 — GTW BDO</div></div>
+  <div class="sidebar-bottom"><div class="ver">v4.5 — GTW BDO</div></div>
 </div>
 
 <div class="main">
@@ -102,36 +102,12 @@
         </div>
         <div class="fp-body" id="fpobBody" style="display:none">
           <div class="fp-grid">
-            
-            <div class="fp-field">
-              <label>From</label>
-              <input type="date" id="fpobFrom" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>To</label>
-              <input type="date" id="fpobTo" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fpobIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fpobService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fpobTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            
-            <div class="fp-field">
-              <label>Status</label>
-              <select id="fpobStatus" class="fp-input">
-                <option value="">— Semua —</option>
-                <option value="ON PROSES">On Proses</option>
-                <option value="SELESAI">Selesai</option>
-              </select>
-            </div>
+            <div class="fp-field"><label>From</label><input type="date" id="fpobFrom" class="fp-input"></div>
+            <div class="fp-field"><label>To</label><input type="date" id="fpobTo" class="fp-input"></div>
+            <div class="fp-field"><label>Incharge</label><select id="fpobIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Service</label><select id="fpobService" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tujuan</label><select id="fpobTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Status</label><select id="fpobStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
           </div>
           <div class="fp-actions">
             <button class="btn btn-primary btn-sm" onclick="applyFp('ob')"><span class="material-icons-round">filter_list</span> Filter</button>
@@ -184,36 +160,12 @@
         </div>
         <div class="fp-body" id="fphvsBody" style="display:none">
           <div class="fp-grid">
-            
-            <div class="fp-field">
-              <label>From</label>
-              <input type="date" id="fphvsFrom" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>To</label>
-              <input type="date" id="fphvsTo" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fphvsIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fphvsService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fphvsTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            
-            <div class="fp-field">
-              <label>Status</label>
-              <select id="fphvsStatus" class="fp-input">
-                <option value="">— Semua —</option>
-                <option value="ON PROSES">On Proses</option>
-                <option value="SELESAI">Selesai</option>
-              </select>
-            </div>
+            <div class="fp-field"><label>From</label><input type="date" id="fphvsFrom" class="fp-input"></div>
+            <div class="fp-field"><label>To</label><input type="date" id="fphvsTo" class="fp-input"></div>
+            <div class="fp-field"><label>Incharge</label><select id="fphvsIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Service</label><select id="fphvsService" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tujuan</label><select id="fphvsTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Status</label><select id="fphvsStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
           </div>
           <div class="fp-actions">
             <button class="btn btn-primary btn-sm" onclick="applyFp('hvs')"><span class="material-icons-round">filter_list</span> Filter</button>
@@ -266,40 +218,13 @@
         </div>
         <div class="fp-body" id="fpibBody" style="display:none">
           <div class="fp-grid">
-            
-            <div class="fp-field">
-              <label>From</label>
-              <input type="date" id="fpibFrom" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>To</label>
-              <input type="date" id="fpibTo" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>From (Kota)</label>
-              <select id="fpibFromCity" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fpibIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fpibService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fpibTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            
-            <div class="fp-field">
-              <label>Status</label>
-              <select id="fpibStatus" class="fp-input">
-                <option value="">— Semua —</option>
-                <option value="ON PROSES">On Proses</option>
-                <option value="SELESAI">Selesai</option>
-              </select>
-            </div>
+            <div class="fp-field"><label>From</label><input type="date" id="fpibFrom" class="fp-input"></div>
+            <div class="fp-field"><label>To</label><input type="date" id="fpibTo" class="fp-input"></div>
+            <div class="fp-field"><label>From (Kota)</label><select id="fpibFromCity" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Incharge</label><select id="fpibIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Service</label><select id="fpibService" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tujuan</label><select id="fpibTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Status</label><select id="fpibStatus" class="fp-input"><option value="">— Semua —</option><option value="ON PROSES">On Proses</option><option value="SELESAI">Selesai</option></select></div>
           </div>
           <div class="fp-actions">
             <button class="btn btn-primary btn-sm" onclick="applyFp('ib')"><span class="material-icons-round">filter_list</span> Filter</button>
@@ -317,7 +242,6 @@
 
     <!-- MANIFEST PAGE -->
     <div id="page-manifest" style="display:none">
-
       <div class="fp-panel" id="fpmfPanel">
         <div class="fp-hdr" onclick="toggleFp('mf')">
           <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
@@ -327,28 +251,11 @@
         </div>
         <div class="fp-body" id="fpmfBody" style="display:none">
           <div class="fp-grid">
-            
-            <div class="fp-field">
-              <label>From</label>
-              <input type="date" id="fpmfFrom" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>To</label>
-              <input type="date" id="fpmfTo" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fpmfIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fpmfService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fpmfTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            
+            <div class="fp-field"><label>From</label><input type="date" id="fpmfFrom" class="fp-input"></div>
+            <div class="fp-field"><label>To</label><input type="date" id="fpmfTo" class="fp-input"></div>
+            <div class="fp-field"><label>Incharge</label><select id="fpmfIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Service</label><select id="fpmfService" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tujuan</label><select id="fpmfTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
           </div>
           <div class="fp-actions">
             <button class="btn btn-primary btn-sm" onclick="applyFp('mf')"><span class="material-icons-round">filter_list</span> Filter</button>
@@ -375,13 +282,10 @@
         <div class="stat-card" style="border-color:var(--gray3)"><div class="stat-label">Sel Aktif</div><div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--gray6);font-family:var(--mono)">—</div></div>
       </div>
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
-        <!-- Placeholder tombol besar — diganti dengan tabel setelah load -->
         <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">
           <span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>
           <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest Hari Ini</div>
-          <div style="font-size:13px;color:var(--gray5);max-width:300px;line-height:1.6">
-            Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.
-          </div>
+          <div style="font-size:13px;color:var(--gray5);max-width:300px;line-height:1.6">Data manifest belum dimuat. Klik tombol di bawah untuk mengambil data manifest <strong>hari ini</strong>.</div>
           <button class="btn btn-primary" style="padding:13px 32px;font-size:14px;border-radius:10px;gap:10px;margin-top:8px" onclick="loadManifestPage()">
             <span class="material-icons-round" style="font-size:20px">grid_on</span>
             Muat Manifest Hari Ini
@@ -393,39 +297,27 @@
     <!-- OB&IB PAGE -->
     <div id="page-obib" style="display:none">
       <div class="table-panel">
-
-      <div class="fp-panel" id="fpobibPanel">
-        <div class="fp-hdr" onclick="toggleFp('obib')">
-          <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
-          <span>Filter</span>
-          <span id="fpobibActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
-          <span class="material-icons-round fp-hdr-icon" id="fpobibIcon">expand_more</span>
-        </div>
-        <div class="fp-body" id="fpobibBody" style="display:none">
-          <div class="fp-grid">
-            
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fpobibIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fpobibService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fpobibTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            
+        <div class="fp-panel" id="fpobibPanel">
+          <div class="fp-hdr" onclick="toggleFp('obib')">
+            <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
+            <span>Filter</span>
+            <span id="fpobibActiveTag" class="fp-active-tag" style="display:none">Aktif</span>
+            <span class="material-icons-round fp-hdr-icon" id="fpobibIcon">expand_more</span>
           </div>
-          <div class="fp-actions">
-            <button class="btn btn-primary btn-sm" onclick="applyFp('obib')"><span class="material-icons-round">filter_list</span> Filter</button>
-            <button class="btn btn-outline btn-sm" onclick="clearFp('obib')"><span class="material-icons-round">close</span> Clear</button>
-            <button class="export-btn" onclick="exportObibCSV()"><span class="material-icons-round">file_download</span> CSV</button>
-            <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportObibExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
+          <div class="fp-body" id="fpobibBody" style="display:none">
+            <div class="fp-grid">
+              <div class="fp-field"><label>Incharge</label><select id="fpobibIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+              <div class="fp-field"><label>Service</label><select id="fpobibService" class="fp-input"><option value="">— Semua —</option></select></div>
+              <div class="fp-field"><label>Tujuan</label><select id="fpobibTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
+            </div>
+            <div class="fp-actions">
+              <button class="btn btn-primary btn-sm" onclick="applyFp('obib')"><span class="material-icons-round">filter_list</span> Filter</button>
+              <button class="btn btn-outline btn-sm" onclick="clearFp('obib')"><span class="material-icons-round">close</span> Clear</button>
+              <button class="export-btn" onclick="exportObibCSV()"><span class="material-icons-round">file_download</span> CSV</button>
+              <button class="export-btn" style="background:var(--green-light);color:var(--green);border-color:#A5D6A7" onclick="exportObibExcel()"><span class="material-icons-round">table_chart</span> Excel</button>
+            </div>
           </div>
         </div>
-      </div>
         <div class="table-toolbar">
           <div class="table-toolbar-title">OB &amp; IB — Combined View</div>
           <div class="search-box"><span class="material-icons-round">search</span><input id="obibSearch" placeholder="Cari AWB, tujuan, service..." oninput="filterObib()"></div>
@@ -440,7 +332,6 @@
 
     <!-- SEARCH AWB PAGE -->
     <div id="page-search" style="display:none">
-
       <div class="fp-panel" id="fpSearchPanel">
         <div class="fp-hdr" onclick="toggleFp('search')">
           <span class="material-icons-round" style="font-size:15px;color:var(--blue2)">filter_list</span>
@@ -450,35 +341,12 @@
         </div>
         <div class="fp-body" id="fpSearchBody" style="display:none">
           <div class="fp-grid">
-            <div class="fp-field">
-              <label>From</label>
-              <input type="date" id="fpSearchFrom" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>To</label>
-              <input type="date" id="fpSearchTo" class="fp-input">
-            </div>
-            <div class="fp-field">
-              <label>Incharge</label>
-              <select id="fpSearchIncharge" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Service</label>
-              <select id="fpSearchService" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tujuan</label>
-              <select id="fpSearchTujuan" class="fp-input"><option value="">— Semua —</option></select>
-            </div>
-            <div class="fp-field">
-              <label>Tipe</label>
-              <select id="fpSearchType" class="fp-input">
-                <option value="">— Semua —</option>
-                <option value="ob">Outbound BDO</option>
-                <option value="hvs">Outbound HVS</option>
-                <option value="ib">Inbound HVS</option>
-              </select>
-            </div>
+            <div class="fp-field"><label>From</label><input type="date" id="fpSearchFrom" class="fp-input"></div>
+            <div class="fp-field"><label>To</label><input type="date" id="fpSearchTo" class="fp-input"></div>
+            <div class="fp-field"><label>Incharge</label><select id="fpSearchIncharge" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Service</label><select id="fpSearchService" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tujuan</label><select id="fpSearchTujuan" class="fp-input"><option value="">— Semua —</option></select></div>
+            <div class="fp-field"><label>Tipe</label><select id="fpSearchType" class="fp-input"><option value="">— Semua —</option><option value="ob">Outbound BDO</option><option value="hvs">Outbound HVS</option><option value="ib">Inbound HVS</option></select></div>
           </div>
           <div class="fp-actions">
             <button class="btn btn-primary btn-sm" onclick="applyFp('search')"><span class="material-icons-round">filter_list</span> Filter</button>
@@ -501,10 +369,7 @@
       <div class="search-awb-result" id="searchAwbResult">
         <div class="search-awb-result-hdr"><span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari</div>
         <div class="search-awb-result-body" id="searchAwbResultBody">
-          <div class="search-awb-empty">
-            <span class="material-icons-round">search</span>
-            Ketik nomor AWB di atas untuk mencari di semua data
-          </div>
+          <div class="search-awb-empty"><span class="material-icons-round">search</span>Ketik nomor AWB di atas untuk mencari di semua data</div>
         </div>
       </div>
     </div>
@@ -518,16 +383,40 @@
 
 <!-- DETAIL MODAL -->
 <div class="modal-overlay" id="detailModal">
-  <div class="modal" style="width:540px">
-    <div class="modal-hdr"><div class="modal-title" id="detailModalTitle">Detail</div><button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button></div>
+  <div class="modal" style="width:560px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="detailModalTitle">Detail</div>
+      <button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button>
+    </div>
     <div class="modal-body">
-      <div class="photo-box" id="detailPhotoBox"><span class="no-img"><span class="material-icons-round">photo_camera</span>Klik untuk tambah foto</span></div>
-      <div id="detailFotoRow" style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <label class="foto-btn" style="cursor:pointer"><span class="material-icons-round" style="font-size:14px">photo_camera</span> Ganti Foto<input type="file" accept="image/*" style="display:none" onchange="onFotoChange(event)" id="fotoInput"></label>
+      <!-- FOTO BOX -->
+      <div class="photo-box" id="detailPhotoBox">
+        <span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>
       </div>
-      <div id="detailReadonlyBar" class="readonly-bar" style="display:none"><span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah</div>
+      <!-- FOTO ROW: tombol upload + multi foto info -->
+      <div id="detailFotoRow" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px">
+        <span id="detailFotoCount" style="font-size:11px;color:var(--gray5)"></span>
+        <label class="foto-btn" style="cursor:pointer">
+          <span class="material-icons-round" style="font-size:14px">photo_camera</span>
+          Tambah / Ganti Foto
+          <input type="file" accept="image/*" multiple style="display:none" onchange="onFotoChange(event)" id="fotoInput">
+        </label>
+      </div>
+      <!-- READONLY BAR -->
+      <div id="detailReadonlyBar" class="readonly-bar" style="display:none">
+        <span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah
+      </div>
+      <!-- DETAIL GRID -->
       <div class="detail-grid" id="detailGrid"></div>
-      <div style="margin-top:6px"><div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div><div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div></div>
+      <!-- AWB LIST -->
+      <div style="margin-top:6px">
+        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">
+          LIST AWB (<span id="awbCount">0</span>)
+        </div>
+        <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
+      </div>
+      <!-- TAMBAH AWB SECTION — di-inject oleh openDetailModal() saat ON PROSES -->
+      <div id="detailAddAwbSection" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray2);display:none"></div>
     </div>
     <div class="modal-footer" id="detailModalFooter"></div>
   </div>
