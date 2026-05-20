@@ -89,11 +89,14 @@ function buildAllScanAwbs() {
 
 function renderObibPage() {
   var wrap = document.getElementById('obibTableWrap');
-  wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat...</div>';
   if (_obibData) { _buildObibTable(_obibData); return; }
-  showLoading('Memuat OB & IB...');
+  // Spinner inline — tidak menutup layar
+  wrap.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--gray5)">' +
+      '<div style="width:32px;height:32px;border:3px solid var(--gray3);border-top:3px solid var(--blue2);border-radius:50%;animation:spin .65s linear infinite"></div>' +
+      '<div style="font-size:13px">Memuat OB &amp; IB...</div>' +
+    '</div>';
   gasGet('getOBIB').then(function (res) {
-    hideLoading();
     if (res.error) {
       wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(res.error) + '</div>';
       return;
@@ -101,7 +104,6 @@ function renderObibPage() {
     _obibData = res;
     _buildObibTable(_obibData);
   }).catch(function (e) {
-    hideLoading();
     wrap.innerHTML = '<div class="empty-state"><span class="material-icons-round">error</span>' + escH(e.message) + '</div>';
   });
 }
@@ -400,14 +402,19 @@ function loadManifestPage(forceMode) {
     return;
   }
 
-  showLoading('Memuat manifest...');
+  // Spinner inline di area manifest — tidak menutup layar
+  var outer = document.getElementById('mfSheetOuter');
+  outer.innerHTML =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:200px;gap:12px;color:var(--gray5)">' +
+      '<div style="width:32px;height:32px;border:3px solid var(--gray3);border-top:3px solid var(--blue2);border-radius:50%;animation:spin .65s linear infinite"></div>' +
+      '<div style="font-size:13px">Memuat manifest...</div>' +
+    '</div>';
 
   var apiCall = _mfDateMode === 'today'
     ? gasGet('getManifest', { dateFilter: 'today' })
     : gasGet('getManifestData');
 
   apiCall.then(function (res) {
-    hideLoading();
     if (res.error) { toast('Error manifest: ' + res.error, 'error'); return; }
 
     if (_mfDateMode === 'today' && res.columns !== undefined) {
@@ -423,7 +430,6 @@ function loadManifestPage(forceMode) {
     renderManifestSheet();
     setupMfKeyboard();
   }).catch(function (e) {
-    hideLoading();
     toast('Error: ' + e.message, 'error');
   });
 }
