@@ -711,3 +711,170 @@ tr:hover td{background:var(--gray0)}
   align-items: center;
   justify-content: center;
 }
+
+/* ============================================================
+   GTW BDO — filter_css.css v1.0
+   Filter bar collapsible — tambahkan ke bagian BAWAH main.css
+   ============================================================ */
+
+/* ─── FILTER PANEL WRAPPER ─── */
+.filter-panel {
+  background: var(--white);
+  border: 1.5px solid var(--blue-mid);
+  border-radius: var(--r);
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(21,101,192,.07);
+  overflow: hidden;
+}
+
+/* ─── HEADER TOGGLE ─── */
+.filter-toggle-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--blue-light);
+  transition: background .15s ease;
+}
+.filter-toggle-hdr:hover { background: #DBEAFE; }
+
+.filter-toggle-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue2);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-toggle-label .material-icons-round { font-size: 16px; color: var(--blue); }
+
+/* Badge "Filter aktif" — tampil di header saat panel tertutup */
+.filter-active-badge {
+  display: none;
+  align-items: center;
+  background: var(--blue2);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: .3px;
+}
+.filter-active-badge.show { display: inline-flex; }
+
+/* Ringkasan filter — tampil di sebelah badge */
+.filter-summary {
+  display: none;
+  font-size: 11px;
+  color: var(--blue2);
+  font-weight: 500;
+  background: rgba(21,101,192,.09);
+  border-radius: 5px;
+  padding: 2px 8px;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filter-summary.show { display: block; }
+
+/* Badge "Termasuk archive" */
+.filter-archive-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: #FFF8E1;
+  border: 1px solid #FFE082;
+  color: #856404;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.filter-archive-badge.show { display: inline-flex; }
+.filter-archive-badge .material-icons-round { font-size: 13px; }
+
+/* Panah toggle — berputar saat terbuka */
+.filter-toggle-arrow {
+  color: var(--blue2);
+  font-size: 18px;
+  transition: transform .22s cubic-bezier(.4,0,.2,1);
+  flex-shrink: 0;
+}
+.filter-panel.open .filter-toggle-arrow { transform: rotate(180deg); }
+
+/* ─── BODY COLLAPSIBLE ─── */
+.filter-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .28s cubic-bezier(.4,0,.2,1);
+}
+.filter-panel.open .filter-body { max-height: 260px; }
+
+/* ─── INNER KONTEN ─── */
+.filter-inner {
+  padding: 12px 14px 12px;
+  border-top: 1px solid var(--blue-mid);
+}
+
+/* ─── FIELDS ─── */
+.filter-fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 10px;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+}
+.filter-field label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gray5);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.filter-input,
+.filter-select {
+  padding: 7px 10px;
+  border: 1.5px solid var(--gray3);
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: var(--font);
+  color: var(--gray8);
+  background: var(--white);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  width: 100%;
+}
+.filter-input:focus,
+.filter-select:focus {
+  border-color: var(--blue2);
+  box-shadow: 0 0 0 2px var(--blue-light);
+}
+
+/* ─── ACTIONS ─── */
+.filter-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 600px) {
+  .filter-field { min-width: 100px; max-width: 100%; }
+  .filter-panel.open .filter-body { max-height: 400px; }
+  .filter-summary { max-width: 150px; }
+}
