@@ -1,0 +1,283 @@
+/* ============================================================
+   GTW BDO — filter.js v1.0
+   Filter tanggal + status + incharge di halaman OB, HVS, IB
+   ============================================================ */
+
+// ── State filter per tab ──
+var _filterState = {
+  ob : { from: '', to: '', status: '', incharge: '', isArchive: false },
+  hvs: { from: '', to: '', status: '', incharge: '', isArchive: false },
+  ib : { from: '', to: '', status: '', incharge: '', isArchive: false }
+};
+
+// ── Set default tanggal (from = awal bulan ini, to = hari ini) ──
+function initFilterDates() {
+  var today    = new Date();
+  var todayStr = today.toISOString().substring(0, 10);
+  var firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().substring(0, 10);
+
+  ['ob', 'hvs', 'ib'].forEach(function(t) {
+    var fromEl = document.getElementById(t + 'FilterFrom');
+    var toEl   = document.getElementById(t + 'FilterTo');
+    if (fromEl) fromEl.value = firstDay;
+    if (toEl)   toEl.value   = todayStr;
+  });
+}
+
+// ── Isi dropdown incharge ──
+function initFilterInchargeOptions() {
+  ['ob', 'hvs', 'ib'].forEach(function(t) {
+    var el = document.getElementById(t + 'FilterIncharge');
+    if (!el) return;
+    while (el.options.length > 1) el.remove(1);
+    (allIncharges || []).forEach(function(inc) {
+      var opt = document.createElement('option');
+      opt.value = inc; opt.textContent = inc;
+      el.appendChild(opt);
+    });
+  });
+}
+
+// ── Cek apakah range butuh data archive ──
+function _needsArchive(fromDate) {
+  if (!fromDate) return false;
+  var now   = new Date();
+  var thisMonthPrefix = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  return fromDate.substring(0, 7) < thisMonthPrefix;
+}
+
+// ── Tampilkan/sembunyikan badge archive ──
+function _updateArchiveBadge(type, show) {
+  var badge = document.getElementById(type + 'ArchiveBadge');
+  if (badge) badge.style.display = show ? '' : 'none';
+  _filterState[type].isArchive = show;
+}
+
+// ── Loading overlay di tabel ──
+function _showTableLoading(tbodyId, colspan) {
+  var el = document.getElementById(tbodyId);
+  if (el) el.innerHTML =
+    '<tr><td colspan="' + colspan + '">' +
+    '<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:32px;color:var(--gray5)">' +
+    '<div style="width:22px;height:22px;border:3px solid var(--gray3);border-top:3px solid var(--blue2);border-radius:50%;animation:spin .65s linear infinite"></div>' +
+    'Memuat data...' +
+    '</div></td></tr>';
+}
+
+// ────────────────────────────────────────────────────────────
+// APPLY FILTER
+// ────────────────────────────────────────────────────────────
+function applyObFilter() { _applyFilter('ob'); }
+function applyHvsFilter() { _applyFilter('hvs'); }
+function applyIbFilter()  { _applyFilter('ib'); }
+
+function _applyFilter(type) {
+  var from     = document.getElementById(type + 'FilterFrom').value;
+  var to       = document.getElementById(type + 'FilterTo').value;
+  var status   = document.getElementById(type + 'FilterStatus').value;
+  var incharge = document.getElementById(type + 'FilterIncharge').value;
+
+  _filterState[type] = { from: from, to: to, status: status, incharge: incharge };
+
+  var needsArchive = _needsArchive(from);
+  _updateArchiveBadge(type, needsArchive);
+
+  if (needsArchive) {
+    // Fetch dari server (aktif + archive)
+    var colspan = type === 'ib' ? 11 : 10;
+    _showTableLoading(type + 'Tbody', colspan);
+
+    var action = type === 'ob' ? 'getObListFiltered' : type === 'hvs' ? 'getHvsListFiltered' : 'getIbListFiltered';
+    gasGet(action, { dateFrom: from, dateTo: to, status: status, incharge: incharge })
+      .then(function(res) {
+        var data = res.list || [];
+        // Simpan ke variabel global sementara untuk render
+        _renderFilteredTable(type, data);
+      })
+      .catch(function(e) { toast('Gagal memuat data archive: ' + e.message, 'error'); });
+  } else {
+    // Filter lokal dari data yang sudah ada di memori
+    _renderFilteredTable(type, null);
+  }
+}
+
+function _renderFilteredTable(type, overrideData) {
+  var f    = _filterState[type];
+  var data = overrideData;
+
+  if (!data) {
+    // Filter lokal
+    var src = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
+    data = src.filter(function(item) {
+      var d = (item.created_date || '').substring(0, 10);
+      if (f.from     && d < f.from)             return false;
+      if (f.to       && d > f.to)               return false;
+      if (f.status   && item.status !== f.status)   return false;
+      if (f.incharge && item.incharge !== f.incharge) return false;
+      return true;
+    });
+  }
+
+  // Render ke tabel
+  if (type === 'ob')  { _renderObFiltered(data);  updateObStats();  }
+  if (type === 'hvs') { _renderHvsFiltered(data); updateHvsStats(); }
+  if (type === 'ib')  { _renderIbFiltered(data);  updateIbStats();  }
+}
+
+// ── Render tabel hasil filter (pakai fungsi render yang sudah ada) ──
+function _renderObFiltered(data) {
+  document.getElementById('obTableCount').innerText = data.length + ' record';
+  var tbody = document.getElementById('obTbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function(d, i) {
+    return _obRow(d, i);
+  }).join('');
+}
+function _renderHvsFiltered(data) {
+  document.getElementById('hvsTableCount').innerText = data.length + ' record';
+  var tbody = document.getElementById('hvsTbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function(d, i) { return _hvsRow(d, i); }).join('');
+}
+function _renderIbFiltered(data) {
+  document.getElementById('ibTableCount').innerText = data.length + ' record';
+  var tbody = document.getElementById('ibTbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><span class="material-icons-round">inbox</span>Tidak ada data</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(function(d, i) { return _ibRow(d, i); }).join('');
+}
+
+// ── Helper row builder (mirror dari forms.js renderObTable) ──
+function _obRow(d, i) {
+  var saving = !!d._saving;
+  return '<tr' + (saving ? ' style="opacity:.6"' : '') + '>' +
+    '<td style="color:var(--gray5);font-size:11px">' + (i+1) + '</td>' +
+    '<td class="mono">' + (saving
+      ? '<span style="color:var(--gray4)">' + escH(d.no_track) + '</span>'
+      : '<span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'ob\',\'' + escQ(d.no_track) + '\')">' + escH(d.no_track) + '</span>') + '</td>' +
+    '<td>' + escH(d.incharge) + '</td>' +
+    '<td><span class="badge badge-blue">' + escH(d.service) + '</span></td>' +
+    '<td>' + escH(d.tujuan) + '</td>' +
+    '<td style="font-size:11px;color:var(--gray6)">' + escH(d.created_date) + '</td>' +
+    '<td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td>' +
+    '<td>' + statusBadge(d.status) + '</td>' +
+    '<td>' + fotoThumb(d.foto_url) + '</td>' +
+    '<td>' + actionsBtns('ob', d.no_track, d.status, saving) + '</td>' +
+  '</tr>';
+}
+function _hvsRow(d, i) {
+  var saving = !!d._saving;
+  return '<tr' + (saving ? ' style="opacity:.6"' : '') + '>' +
+    '<td style="color:var(--gray5);font-size:11px">' + (i+1) + '</td>' +
+    '<td class="mono">' + (saving
+      ? '<span style="color:var(--gray4)">' + escH(d.no_track) + '</span>'
+      : '<span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'hvs\',\'' + escQ(d.no_track) + '\')">' + escH(d.no_track) + '</span>') + '</td>' +
+    '<td>' + escH(d.incharge) + '</td>' +
+    '<td><span class="badge badge-purple">' + escH(d.service) + '</span></td>' +
+    '<td>' + escH(d.tujuan) + '</td>' +
+    '<td style="font-size:11px;color:var(--gray6)">' + escH(d.created_date) + '</td>' +
+    '<td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td>' +
+    '<td>' + statusBadge(d.status) + '</td>' +
+    '<td>' + fotoThumb(d.foto_url) + '</td>' +
+    '<td>' + actionsBtns('hvs', d.no_track, d.status, saving) + '</td>' +
+  '</tr>';
+}
+function _ibRow(d, i) {
+  var saving = !!d._saving;
+  return '<tr' + (saving ? ' style="opacity:.6"' : '') + '>' +
+    '<td style="color:var(--gray5);font-size:11px">' + (i+1) + '</td>' +
+    '<td class="mono">' + (saving
+      ? '<span style="color:var(--gray4)">' + escH(d.no_track) + '</span>'
+      : '<span style="color:var(--blue2);cursor:pointer" onclick="openDetailModal(\'ib\',\'' + escQ(d.no_track) + '\')">' + escH(d.no_track) + '</span>') + '</td>' +
+    '<td>' + escH(d.incharge) + '</td>' +
+    '<td><span class="badge badge-blue">' + escH(d.service) + '</span></td>' +
+    '<td>' + escH(d.from || '-') + '</td>' +
+    '<td>' + escH(d.tujuan) + '</td>' +
+    '<td style="font-size:11px;color:var(--gray6)">' + escH(d.created_date) + '</td>' +
+    '<td style="text-align:center;font-weight:700;font-family:var(--mono)">' + d.total_awb + '</td>' +
+    '<td>' + statusBadge(d.status) + '</td>' +
+    '<td>' + fotoThumb(d.foto_url) + '</td>' +
+    '<td>' + actionsBtns('ib', d.no_track, d.status, saving) + '</td>' +
+  '</tr>';
+}
+
+// ────────────────────────────────────────────────────────────
+// CLEAR FILTER
+// ────────────────────────────────────────────────────────────
+function clearObFilter()  { _clearFilter('ob');  }
+function clearHvsFilter() { _clearFilter('hvs'); }
+function clearIbFilter()  { _clearFilter('ib');  }
+
+function _clearFilter(type) {
+  var today    = new Date();
+  var todayStr = today.toISOString().substring(0, 10);
+  var firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().substring(0, 10);
+
+  document.getElementById(type + 'FilterFrom').value     = firstDay;
+  document.getElementById(type + 'FilterTo').value       = todayStr;
+  document.getElementById(type + 'FilterStatus').value   = '';
+  document.getElementById(type + 'FilterIncharge').value = '';
+  _updateArchiveBadge(type, false);
+  _filterState[type] = { from: firstDay, to: todayStr, status: '', incharge: '' };
+
+  // Render ulang dari data lokal
+  if (type === 'ob')  renderObTable();
+  if (type === 'hvs') renderHvsTable();
+  if (type === 'ib')  renderIbTable();
+}
+
+// ────────────────────────────────────────────────────────────
+// EXPORT CSV HASIL FILTER
+// ────────────────────────────────────────────────────────────
+function exportObFilteredCSV()  { _exportFiltered('ob');  }
+function exportHvsFilteredCSV() { _exportFiltered('hvs'); }
+function exportIbFilteredCSV()  { _exportFiltered('ib');  }
+
+function _exportFiltered(type) {
+  var f    = _filterState[type];
+  var needsArchive = _needsArchive(f.from);
+
+  function doExport(data) {
+    var headers = type === 'ib'
+      ? ['no_track','incharge','service','from','tujuan','created_date','status','total_awb']
+      : ['no_track','incharge','service','tujuan','created_date','status','total_awb'];
+    var rows = [headers];
+    data.forEach(function(r) {
+      rows.push(headers.map(function(h) { return r[h] !== undefined ? r[h] : ''; }));
+    });
+    var d = new Date();
+    var dateStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    _downloadCSV(rows, type.toUpperCase() + '_filter_' + dateStr + '.csv');
+  }
+
+  if (needsArchive) {
+    var action = type === 'ob' ? 'getObListFiltered' : type === 'hvs' ? 'getHvsListFiltered' : 'getIbListFiltered';
+    gasGet(action, { dateFrom: f.from, dateTo: f.to, status: f.status, incharge: f.incharge })
+      .then(function(res) { doExport(res.list || []); })
+      .catch(function(e) { toast('Gagal export: ' + e.message, 'error'); });
+  } else {
+    var src = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
+    var data = src.filter(function(item) {
+      var d = (item.created_date || '').substring(0, 10);
+      if (f.from     && d < f.from)                return false;
+      if (f.to       && d > f.to)                  return false;
+      if (f.status   && item.status !== f.status)   return false;
+      if (f.incharge && item.incharge !== f.incharge) return false;
+      return true;
+    });
+    doExport(data);
+  }
+}
+
+// ── Init saat halaman dimuat ──
+// Panggil ini setelah allIncharges terisi (di views.js setelah getMasterData)
+// initFilterDates();
+// initFilterInchargeOptions();
