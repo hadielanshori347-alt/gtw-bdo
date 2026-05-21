@@ -22,7 +22,7 @@ const API = {
 
   // Upload foto ke Drive folder spesifik
   uploadFoto(noTrack, type, base64Data) {
-    return API.post('updateFotoToFolder', {
+    return API.post('uploadFoto', {
       noTrack,
       type,
       base64Data,
