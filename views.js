@@ -24,6 +24,10 @@ window.addEventListener('DOMContentLoaded', function () {
     buildCbOptions();
     initAllCbs();
 
+     // Init filter
+   initFilterDates();
+   initFilterInchargeOptions();
+
     // Render OB duluan — halaman default
     obData = results[1].list || [];
     renderObTable();
