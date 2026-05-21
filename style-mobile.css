@@ -221,10 +221,13 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .ic-name{color:#fff;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
 
 /* ── Loading / Toast ── */
-#gloading{position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue2);border-radius:50%;animation:spin .6s linear infinite}
+#gloading{position:fixed;top:0;left:0;right:0;z-index:9999;display:none;flex-direction:column;pointer-events:none}
+#gloading-bar{height:3px;background:var(--blue2);width:0%;animation:loadbar 1.4s ease-in-out infinite}
+@keyframes loadbar{0%{width:0%;opacity:1}70%{width:85%;opacity:1}100%{width:100%;opacity:0}}
+#gloading-pill{display:flex;align-items:center;gap:7px;background:rgba(18,81,163,.92);color:#fff;font-size:12px;font-weight:600;padding:7px 14px 7px 10px;border-radius:0 0 10px 10px;align-self:center;box-shadow:0 3px 12px rgba(18,81,163,.25);pointer-events:none}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-#gloading-txt{font-size:13px;color:var(--text2);font-weight:500}
+#gloading-txt{font-size:12px;font-weight:600;color:#fff;white-space:nowrap}
 #gtoast{position:fixed;bottom:calc(20px + var(--safe-bot));left:14px;right:14px;background:var(--text);color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.18);text-align:center}
 #gtoast.success{background:var(--green)}
 #gtoast.error{background:var(--red)}
