@@ -433,29 +433,55 @@ const DetailPage = {
 
   close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
 
-  // ── Tambah Foto — buka Photo.go() dalam konteks detail ──
-  tambahFoto() {
+  // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
+  async tambahFoto() {
     if (!STATE.currentDetailItem) return;
-    // Hitung berapa foto sudah ada agar photoIndex mulai dari sana
+    UI.Loading.show('Memeriksa foto...');
+    try {
+      const act = STATE.currentDetailType === 'ob' ? 'getObList'
+                : STATE.currentDetailType === 'hvs' ? 'getHvsList' : 'getIbList';
+      const r = await API.get(act);
+      const list = r.list || [];
+      const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
+      if (fresh) {
+        STATE.currentDetailItem = fresh;
+        // update state array juga
+        const arr = STATE.currentDetailType === 'ob' ? STATE.obData
+                  : STATE.currentDetailType === 'hvs' ? STATE.hvsData : STATE.ibData;
+        const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
+        if (idx !== -1) arr[idx] = fresh;
+      }
+    } catch(e) { /* gagal reload, pakai state lokal */ }
+    UI.Loading.hide();
+    // Hitung index foto berikutnya dari data fresh
     STATE.photoStartIndex = DetailPage._collectFotoUrls(STATE.currentDetailItem).length;
     Photo.go();
   },
 
-  // Kumpulkan semua URL foto dari item (foto_url, foto_url_2, foto_url_3, dst)
+  // Kumpulkan semua URL foto dari item
+  // Backend bisa mengembalikan: foto_url (kolom utama), lalu kolom berikutnya
+  // sebagai foto_url_2 / foto_url2 / foto_url_3 dst tergantung versi backend.
+  // Kita coba semua variant.
   _collectFotoUrls(item) {
     if (!item) return [];
     const urls = [];
-    // foto_url utama (kolom H/I di sheet)
-    if (item.foto_url)   urls.push(item.foto_url);
-    if (item.foto_url_2) urls.push(item.foto_url_2);
-    if (item.foto_url_3) urls.push(item.foto_url_3);
-    if (item.foto_url_4) urls.push(item.foto_url_4);
-    if (item.foto_url_5) urls.push(item.foto_url_5);
-    // Support array foto_urls dari multi-upload sesi
+    const add = u => { if (u && typeof u === 'string' && u.trim() && !urls.includes(u.trim())) urls.push(u.trim()); };
+
+    // Kolom utama
+    add(item.foto_url);
+
+    // Variant dengan underscore: foto_url_2 … foto_url_9
+    for (let i = 2; i <= 9; i++) add(item['foto_url_' + i]);
+
+    // Variant tanpa underscore: foto_url2 … foto_url9
+    for (let i = 2; i <= 9; i++) add(item['foto_url' + i]);
+
+    // Array foto_urls dari multi-upload sesi (state lokal)
     if (item.foto_urls && Array.isArray(item.foto_urls)) {
-      item.foto_urls.forEach(u => { if (u && !urls.includes(u)) urls.push(u); });
+      item.foto_urls.forEach(u => add(u));
     }
-    return urls.filter(Boolean);
+
+    return urls;
   },
 
   // Render slider foto — swipe kiri/kanan untuk pindah foto
