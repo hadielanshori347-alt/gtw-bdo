@@ -388,12 +388,12 @@ const DetailPage = {
     const fotoUrls = DetailPage._collectFotoUrls(item);
     if (fotoUrls.length > 0) {
       pb.innerHTML = DetailPage._renderSlider(fotoUrls);
-      pb.style.cursor = 'default';
-      pb.onclick = null;
+      pb.style.cursor = 'pointer';
+      pb.onclick = () => FotoFull.open(fotoUrls, 0);
     } else {
-      pb.innerHTML = `<div class="no-img">📷<br>${isSelesai ? 'Tidak ada foto' : 'Belum ada foto'}</div>`;
-      pb.style.cursor = 'default';
-      pb.onclick = null;
+      pb.innerHTML = `<div class="no-img">📷<br>${isSelesai ? 'Tidak ada foto' : 'Klik untuk tambah foto'}</div>`;
+      pb.style.cursor = isSelesai ? 'default' : 'pointer';
+      pb.onclick = isSelesai ? null : () => DetailPage.tambahFoto();
     }
     document.getElementById('roBbar').classList.toggle('hidden', !isSelesai);
 
@@ -423,7 +423,7 @@ const DetailPage = {
     let html = '';
     if (!isSelesai) {
       html += `<div class="dd-item" onclick="UI.Menu.close();Scanner.open('detail','${escQ(item.no_track)}','')">📷 Tambah AWB</div>`;
-      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.tambahFoto()">📷 Tambah Foto</div>`;
+      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.tambahFoto()">🖼️ Tambah Foto</div>`;
       html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.markSelesai()">✓ Tandai Selesai</div>`;
       html += `<div class="dd-item danger" onclick="UI.Menu.close();DetailPage.deleteItem()">🗑 Hapus</div>`;
     }
@@ -463,12 +463,15 @@ const DetailPage = {
     if (urls.length === 1) {
       return `<div class="foto-slider">
         <img class="foto-slide active" src="${DetailPage._thumb(urls[0])}"
+          onclick="FotoFull.open(${JSON.stringify(urls)},0)"
+          style="cursor:pointer"
           onerror="this.src='';this.alt='Foto gagal dimuat'">
       </div>`;
     }
     const dots  = urls.map((_, i) => `<span class="foto-dot${i===0?' active':''}" onclick="DetailPage._slideTo(${i})"></span>`).join('');
     const imgs  = urls.map((u, i) =>
       `<img class="foto-slide${i===0?' active':''}" src="${DetailPage._thumb(u)}" data-idx="${i}"
+        onclick="FotoFull.open(${JSON.stringify(urls)},${i})"
         onerror="this.src='';this.alt='Foto ${i+1} gagal dimuat'">`
     ).join('');
     return `
