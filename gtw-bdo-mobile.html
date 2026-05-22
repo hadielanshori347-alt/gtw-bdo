@@ -355,6 +355,16 @@
   </div>
 </div>
 
+<!-- ═══ FOTO FULLSCREEN MODAL ═══ -->
+<div id="fotoFullModal">
+  <button id="fotoFullClose" onclick="FotoFull.close()">✕</button>
+  <div id="fotoFullCounter" style="display:none"></div>
+  <img class="foto-full-img" id="fotoFullImg" alt=""
+    ontouchstart="FotoFull._touchStart(event)"
+    ontouchend="FotoFull._touchEnd(event)">
+  <div class="foto-full-dots" id="fotoFullDots"></div>
+</div>
+
 <!-- Scripts — load in order -->
 <script src="config-mobile.js"></script>
 <script src="api-mobile.js"></script>
