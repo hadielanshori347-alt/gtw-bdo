@@ -191,7 +191,8 @@ const Photo = {
 
       for (let i = 0; i < STATE.photoQueue.length; i++) {
         document.getElementById('gloading-txt').innerText = `Upload foto ${i + 1}/${total}...`;
-        const res = await API.uploadFoto(STATE.currentNoTrack, type, STATE.photoQueue[i], i);
+        const colIndex = (STATE.photoStartIndex || 0) + i;
+        const res = await API.uploadFoto(STATE.currentNoTrack, type, STATE.photoQueue[i], colIndex);
         if (res.success && res.url) {
           urls.push(res.url);
         } else {
