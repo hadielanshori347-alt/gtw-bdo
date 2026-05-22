@@ -203,11 +203,34 @@ const Photo = {
       UI.Loading.hide();
 
       if (urls.length) {
-        // Update state lokal — simpan semua url sebagai array
-        const arr  = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
-        const item = arr.find(d => d.no_track === STATE.currentNoTrack);
-        if (item) item.foto_urls = urls;
-        if (STATE.currentDetailItem) STATE.currentDetailItem.foto_urls = urls;
+        // Reload item dari server agar foto_url field ter-update akurat
+        try {
+          const act = (STATE.currentDetailType || STATE.createType || 'ob') === 'ob' ? 'getObList'
+                    : (STATE.currentDetailType || STATE.createType) === 'hvs' ? 'getHvsList' : 'getIbList';
+          const r = await API.get(act);
+          const list = r.list || [];
+          const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
+          if (fresh) {
+            const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
+            const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
+            if (idx !== -1) arr[idx] = fresh;
+            if (STATE.currentDetailItem) STATE.currentDetailItem = fresh;
+            // Simpan juga foto_urls dari sesi ini agar slider langsung update
+            fresh.foto_urls = urls;
+            if (STATE.currentDetailItem) STATE.currentDetailItem.foto_urls = urls;
+          }
+        } catch(e) {
+          // Fallback: tulis manual ke state lokal
+          const baseIdx = STATE.photoStartIndex || 0;
+          const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
+          const item = arr.find(d => d.no_track === STATE.currentNoTrack);
+          urls.forEach((url, i) => {
+            const colIdx = baseIdx + i;
+            const fn = colIdx === 0 ? 'foto_url' : 'foto_url_' + (colIdx + 1);
+            if (item) item[fn] = url;
+            if (STATE.currentDetailItem) STATE.currentDetailItem[fn] = url;
+          });
+        }
 
         UI.Toast.success(`✅ ${urls.length} foto berhasil diupload`);
       }
