@@ -20,13 +20,14 @@ const API = {
     }).then(r => r.json());
   },
 
-  // Upload foto ke Drive folder spesifik
-  uploadFoto(noTrack, type, base64Data) {
+  // Upload foto ke Drive — photoIndex menentukan kolom tujuan (0=kolom pertama, 1=berikutnya, dst)
+  uploadFoto(noTrack, type, base64Data, photoIndex = 0) {
     return API.post('uploadFoto', {
       noTrack,
       type,
       base64Data,
-      folderId: CONFIG.DRIVE_FOLDER_ID
+      folderId: CONFIG.DRIVE_FOLDER_ID,
+      photoIndex   // dikirim ke backend agar tahu kolom mana yang diisi
     });
   }
 };
