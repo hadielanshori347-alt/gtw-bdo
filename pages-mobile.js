@@ -384,12 +384,17 @@ const DetailPage = {
     document.getElementById('detailTitle').innerText = item.no_track;
     const isSelesai = item.status === 'SELESAI';
     const pb = document.getElementById('detailPhotoBox');
-    if (item.foto_url) {
-      pb.innerHTML = `<img src="${DetailPage._thumb(item.foto_url)}" onerror="this.parentElement.innerHTML='<div class=no-img>📷<br>Foto gagal dimuat</div>'">${!isSelesai ? '<div class="photo-overlay">📷</div>' : ''}`;
+    // Kumpulkan semua URL foto (support multi-kolom: foto_url, foto_url2, foto_url3, dst)
+    const fotoUrls = DetailPage._collectFotoUrls(item);
+    if (fotoUrls.length > 0) {
+      pb.innerHTML = DetailPage._renderSlider(fotoUrls);
+      pb.style.cursor = 'default';
+      pb.onclick = null;
     } else {
-      pb.innerHTML = `<div class="no-img">📷<br>${isSelesai ? 'Tidak ada foto' : 'Klik untuk tambah foto'}</div>${!isSelesai ? '<div class="photo-overlay">📷</div>' : ''}`;
+      pb.innerHTML = `<div class="no-img">📷<br>${isSelesai ? 'Tidak ada foto' : 'Belum ada foto'}</div>`;
+      pb.style.cursor = 'default';
+      pb.onclick = null;
     }
-    pb.style.cursor = isSelesai ? 'default' : 'pointer';
     document.getElementById('roBbar').classList.toggle('hidden', !isSelesai);
 
     const fields = type === 'ib'
@@ -418,7 +423,7 @@ const DetailPage = {
     let html = '';
     if (!isSelesai) {
       html += `<div class="dd-item" onclick="UI.Menu.close();Scanner.open('detail','${escQ(item.no_track)}','')">📷 Tambah AWB</div>`;
-      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.photoClick()">🖼 Upload Foto</div>`;
+      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.tambahFoto()">📷 Tambah Foto</div>`;
       html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.markSelesai()">✓ Tandai Selesai</div>`;
       html += `<div class="dd-item danger" onclick="UI.Menu.close();DetailPage.deleteItem()">🗑 Hapus</div>`;
     }
@@ -428,10 +433,79 @@ const DetailPage = {
 
   close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
 
-  photoClick() {
-    if (!STATE.currentDetailItem || STATE.currentDetailItem.status === 'SELESAI') return;
-    document.getElementById('fotoFileInput').click();
+  // ── Tambah Foto — buka Photo.go() dalam konteks detail ──
+  tambahFoto() {
+    if (!STATE.currentDetailItem) return;
+    // Hitung berapa foto sudah ada agar photoIndex mulai dari sana
+    STATE.photoStartIndex = DetailPage._collectFotoUrls(STATE.currentDetailItem).length;
+    Photo.go();
   },
+
+  // Kumpulkan semua URL foto dari item (foto_url, foto_url_2, foto_url_3, dst)
+  _collectFotoUrls(item) {
+    if (!item) return [];
+    const urls = [];
+    // foto_url utama (kolom H/I di sheet)
+    if (item.foto_url)   urls.push(item.foto_url);
+    if (item.foto_url_2) urls.push(item.foto_url_2);
+    if (item.foto_url_3) urls.push(item.foto_url_3);
+    if (item.foto_url_4) urls.push(item.foto_url_4);
+    if (item.foto_url_5) urls.push(item.foto_url_5);
+    // Support array foto_urls dari multi-upload sesi
+    if (item.foto_urls && Array.isArray(item.foto_urls)) {
+      item.foto_urls.forEach(u => { if (u && !urls.includes(u)) urls.push(u); });
+    }
+    return urls.filter(Boolean);
+  },
+
+  // Render slider foto — swipe kiri/kanan untuk pindah foto
+  _renderSlider(urls) {
+    if (urls.length === 1) {
+      return `<div class="foto-slider">
+        <img class="foto-slide active" src="${DetailPage._thumb(urls[0])}"
+          onerror="this.src='';this.alt='Foto gagal dimuat'">
+      </div>`;
+    }
+    const dots  = urls.map((_, i) => `<span class="foto-dot${i===0?' active':''}" onclick="DetailPage._slideTo(${i})"></span>`).join('');
+    const imgs  = urls.map((u, i) =>
+      `<img class="foto-slide${i===0?' active':''}" src="${DetailPage._thumb(u)}" data-idx="${i}"
+        onerror="this.src='';this.alt='Foto ${i+1} gagal dimuat'">`
+    ).join('');
+    return `
+      <div class="foto-slider" id="fotoSlider"
+        ontouchstart="DetailPage._touchStart(event)"
+        ontouchend="DetailPage._touchEnd(event)">
+        ${imgs}
+        <div class="foto-counter" id="fotoCounter">1 / ${urls.length}</div>
+      </div>
+      <div class="foto-dots" id="fotoDots">${dots}</div>`;
+  },
+
+  _slideIdx: 0,
+  _touchX: 0,
+
+  _touchStart(e) { DetailPage._touchX = e.touches[0].clientX; },
+  _touchEnd(e) {
+    const dx = e.changedTouches[0].clientX - DetailPage._touchX;
+    if (Math.abs(dx) < 40) return;
+    const slides = document.querySelectorAll('#fotoSlider .foto-slide');
+    if (!slides.length) return;
+    const n = slides.length;
+    if (dx < 0) DetailPage._slideTo((DetailPage._slideIdx + 1) % n);
+    else         DetailPage._slideTo((DetailPage._slideIdx - 1 + n) % n);
+  },
+
+  _slideTo(idx) {
+    const slides = document.querySelectorAll('#fotoSlider .foto-slide');
+    const dots   = document.querySelectorAll('#fotoDots .foto-dot');
+    const counter = document.getElementById('fotoCounter');
+    slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    dots.forEach((d, i)   => d.classList.toggle('active', i === idx));
+    if (counter) counter.innerText = `${idx + 1} / ${slides.length}`;
+    DetailPage._slideIdx = idx;
+  },
+
+  photoClick() { /* deprecated — diganti tambahFoto() */ },
 
   async onFileChange(e) {
     const file = e.target.files[0];
@@ -475,7 +549,7 @@ const DetailPage = {
       else if (STATE.currentDetailType === 'hvs') STATE.hvsData = list;
       else STATE.ibData = list;
       const item = list.find(d => d.no_track === STATE.currentNoTrack);
-      if (item) { STATE.currentDetailItem = item; DetailPage._render(item, STATE.currentDetailType); }
+      if (item) { STATE.currentDetailItem = item; DetailPage._render(item, STATE.currentDetailType); DetailPage._slideIdx = 0; }
     }).catch(() => {});
   },
 
