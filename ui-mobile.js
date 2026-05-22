@@ -151,3 +151,65 @@ const UI = {
 function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escQ(s) { return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function escRx(s){ return (s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ════════════════════════════════════════════
+// FOTO FULL — Fullscreen photo viewer
+// ════════════════════════════════════════════
+const FotoFull = {
+  _urls: [],
+  _idx: 0,
+  _touchX: 0,
+
+  open(urls, startIdx = 0) {
+    FotoFull._urls = urls || [];
+    FotoFull._idx  = startIdx;
+    FotoFull._render();
+    document.getElementById('fotoFullModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    document.getElementById('fotoFullModal').classList.remove('open');
+    document.body.style.overflow = '';
+  },
+
+  _render() {
+    const urls = FotoFull._urls;
+    const idx  = FotoFull._idx;
+    const img  = document.getElementById('fotoFullImg');
+    const ctr  = document.getElementById('fotoFullCounter');
+    const dots = document.getElementById('fotoFullDots');
+
+    // Resolve thumbnail url
+    const url = urls[idx] || '';
+    img.src = url.includes('thumbnail') ? url : (() => {
+      const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000` : url;
+    })();
+
+    if (urls.length > 1) {
+      ctr.style.display = '';
+      ctr.innerText = `${idx + 1} / ${urls.length}`;
+      dots.innerHTML = urls.map((_, i) =>
+        `<div class="foto-full-dot${i === idx ? ' active' : ''}" onclick="FotoFull._go(${i})"></div>`
+      ).join('');
+    } else {
+      ctr.style.display = 'none';
+      dots.innerHTML = '';
+    }
+  },
+
+  _go(idx) {
+    FotoFull._idx = Math.max(0, Math.min(idx, FotoFull._urls.length - 1));
+    FotoFull._render();
+  },
+
+  _touchStart(e) { FotoFull._touchX = e.touches[0].clientX; },
+  _touchEnd(e) {
+    const dx = e.changedTouches[0].clientX - FotoFull._touchX;
+    if (Math.abs(dx) < 40) return;
+    const n = FotoFull._urls.length;
+    if (dx < 0) FotoFull._go((FotoFull._idx + 1) % n);
+    else         FotoFull._go((FotoFull._idx - 1 + n) % n);
+  }
+};
