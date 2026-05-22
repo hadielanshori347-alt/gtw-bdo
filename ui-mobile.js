@@ -9,7 +9,12 @@ const UI = {
       document.getElementById('gloading-txt').innerText = txt;
       document.getElementById('gloading').style.display = 'flex';
     },
-    hide() { document.getElementById('gloading').style.display = 'none'; }
+    hide() {
+      const el = document.getElementById('gloading');
+      el.style.opacity = '0';
+      el.style.transition = 'opacity .25s';
+      setTimeout(() => { el.style.display = 'none'; el.style.opacity = ''; el.style.transition = ''; }, 260);
+    }
   },
 
   // ── Toast ──
