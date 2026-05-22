@@ -2,11 +2,12 @@
 // PHOTO — Camera capture & upload (multi-foto)
 //
 // FLOW:
-//   go() → kamera aktif → [Ambil Foto]
-//   → preview → [Ulangi] atau [Tambah ke Antrian]
-//   → kamera aktif lagi → bisa ambil foto ke-2, dst
-//   → bar bawah selalu tampil: jumlah antrian + [Simpan Semua]
-//   → Simpan → upload semua → tiap foto kolom berbeda → balik home/detail
+//   go() → kamera aktif → [📷 Ambil Foto]
+//   → preview → [↺ Ulangi] atau [➕ Tambah Foto]
+//   → kamera aktif lagi, bar antrian muncul di bawah
+//   → bisa ambil foto ke-2, dst
+//   → bar antrian: "📸 N foto" + [✅ Simpan Semua & Selesai]
+//   → upload semua → tiap foto index berbeda → balik home/detail
 // ════════════════════════════════════════════
 
 const Photo = {
@@ -15,35 +16,43 @@ const Photo = {
   go() {
     STATE.capturedDataUrl = null;
     STATE.gpsCoords       = null;
-    STATE.photoQueue      = [];   // antrian foto (array of base64 string tanpa prefix)
+    STATE.photoQueue      = [];
 
-    Photo._resetUI();
+    Photo._showCameraBar();
     Photo._updateQueueBar();
     UI.Page.show('pgPhoto');
     Photo._startCamera();
     Photo._getGps();
   },
 
-  // ── Reset tampilan ke state "siap ambil foto" ──
-  _resetUI() {
+  // ── Tampilkan bar kamera (hanya tombol Ambil Foto) ──
+  _showCameraBar() {
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('photoVideo').style.display   = 'block';
     document.getElementById('barAmbil').classList.remove('hidden');
     document.getElementById('barResult').classList.add('hidden');
-    document.getElementById('barAfterSave').classList.add('hidden');
     document.getElementById('gpsBar').innerText = STATE.gpsCoords
       ? '📍 ' + STATE.gpsCoords
       : '📍 Mendapatkan lokasi...';
   },
 
-  // ── Update bar antrian — tampilkan/sembunyikan barAfterSave ──
+  // ── Tampilkan bar preview (Ulangi + Tambah Foto) ──
+  _showPreviewBar() {
+    document.getElementById('photoVideo').style.display   = 'none';
+    document.getElementById('photoPreview').style.display = 'block';
+    document.getElementById('barAmbil').classList.add('hidden');
+    document.getElementById('barResult').classList.remove('hidden');
+  },
+
+  // ── Update bar antrian bawah ──
   _updateQueueBar() {
-    const n      = (STATE.photoQueue || []).length;
-    const bar    = document.getElementById('barAfterSave');
-    const btn    = document.getElementById('btnSimpanSemua');
-    const lbl    = document.getElementById('queueLabel');
+    const n   = (STATE.photoQueue || []).length;
+    const bar = document.getElementById('barAfterSave');
+    const btn = document.getElementById('btnSimpanSemua');
+    const lbl = document.getElementById('queueLabel');
     if (lbl) lbl.innerText = n > 0 ? `📸 ${n} foto di antrian` : '';
     if (btn) btn.disabled  = n === 0;
+    // Tampil jika ada antrian (bisa berdampingan dengan bar lain)
     if (bar) bar.classList.toggle('hidden', n === 0);
   },
 
@@ -111,8 +120,8 @@ const Photo = {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Watermark
-    const now  = new Date();
-    const pad  = n => n < 10 ? '0' + n : n;
+    const now   = new Date();
+    const pad   = n => n < 10 ? '0' + n : n;
     const waktu = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const lines = [
       waktu,
@@ -140,37 +149,33 @@ const Photo = {
     tmp.getContext('2d').drawImage(canvas, 0, 0, w2, h2);
     STATE.capturedDataUrl = tmp.toDataURL('image/jpeg', 0.72);
 
-    // Tampilkan preview
-    document.getElementById('photoPreview').src           = STATE.capturedDataUrl;
-    document.getElementById('photoPreview').style.display = 'block';
-    document.getElementById('photoVideo').style.display   = 'none';
-    document.getElementById('barAmbil').classList.add('hidden');
-    document.getElementById('barResult').classList.remove('hidden');
+    // Tampilkan preview, ganti bar
+    document.getElementById('photoPreview').src = STATE.capturedDataUrl;
+    Photo._showPreviewBar();
+    Photo._updateQueueBar(); // antrian bar tetap tampil jika sudah ada foto sebelumnya
   },
 
   // ── Ulangi — kembali ke kamera, foto ini dibuang ──
   ulangi() {
     STATE.capturedDataUrl = null;
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('photoVideo').style.display   = 'block';
-    document.getElementById('barAmbil').classList.remove('hidden');
-    document.getElementById('barResult').classList.add('hidden');
+    Photo._showCameraBar();
+    Photo._updateQueueBar();
   },
 
-  // ── Tambah ke Antrian — masuk queue, kamera aktif lagi untuk foto berikutnya ──
+  // ── Tambah ke Antrian — masuk queue, kamera aktif lagi ──
   tambahKeAntrian() {
     if (!STATE.capturedDataUrl) return;
     const b64 = STATE.capturedDataUrl.split(',')[1];
     STATE.photoQueue.push(b64);
     STATE.capturedDataUrl = null;
     UI.Toast.success(`✓ Foto ${STATE.photoQueue.length} ditambahkan`);
+    // Balik ke kamera untuk foto berikutnya
+    Photo._showCameraBar();
     Photo._updateQueueBar();
-    // Kembali ke kamera untuk foto berikutnya
-    Photo._resetUI();
-    // Kamera masih aktif (stream belum distop), langsung bisa ambil lagi
+    // Stream masih aktif, langsung bisa ambil lagi
   },
 
-  // ── Simpan Semua — upload antrian satu per satu → tiap foto kolom berbeda → balik ──
+  // ── Simpan Semua — upload antrian → tiap foto kolom berbeda → balik ──
   async simpanSemua() {
     if (!STATE.photoQueue || !STATE.photoQueue.length) return;
 
@@ -203,7 +208,6 @@ const Photo = {
       UI.Loading.hide();
 
       if (urls.length) {
-        // Reload item dari server agar foto_url field ter-update akurat
         try {
           const act = (STATE.currentDetailType || STATE.createType || 'ob') === 'ob' ? 'getObList'
                     : (STATE.currentDetailType || STATE.createType) === 'hvs' ? 'getHvsList' : 'getIbList';
@@ -215,12 +219,10 @@ const Photo = {
             const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
             if (idx !== -1) arr[idx] = fresh;
             if (STATE.currentDetailItem) STATE.currentDetailItem = fresh;
-            // Simpan juga foto_urls dari sesi ini agar slider langsung update
             fresh.foto_urls = urls;
             if (STATE.currentDetailItem) STATE.currentDetailItem.foto_urls = urls;
           }
         } catch(e) {
-          // Fallback: tulis manual ke state lokal
           const baseIdx = STATE.photoStartIndex || 0;
           const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
           const item = arr.find(d => d.no_track === STATE.currentNoTrack);
@@ -251,7 +253,7 @@ const Photo = {
   // ── Setelah selesai — balik ke home atau detail ──
   _afterPhoto() {
     Photo._stopStream();
-    STATE.photoQueue     = [];
+    STATE.photoQueue      = [];
     STATE.capturedDataUrl = null;
     HomePage.render();
     HomePage.updateStats();
