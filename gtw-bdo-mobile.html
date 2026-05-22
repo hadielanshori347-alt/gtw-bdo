@@ -256,19 +256,22 @@
     <img id="photoPreview" alt="Preview">
   </div>
   <div class="gps-bar" id="gpsBar">📍 Mendapatkan lokasi...</div>
-  <!-- Bar 1: Ambil Foto -->
+
+  <!-- Bar 1: Ambil Foto (kamera aktif) -->
   <div class="photo-bar" id="barAmbil">
     <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
   </div>
-  <!-- Bar 2: Ulangi & Simpan -->
+
+  <!-- Bar 2: Preview — Ulangi atau Tambah ke Antrian -->
   <div class="photo-bar hidden" id="barResult">
     <button class="btn-cam btn-ulangi" onclick="Photo.ulangi()">↺ Ulangi</button>
-    <button class="btn-cam btn-simpan-foto" onclick="Photo.simpan()">✅ Simpan</button>
+    <button class="btn-cam btn-simpan-foto" onclick="Photo.tambahKeAntrian()">➕ Tambah Foto</button>
   </div>
-  <!-- Bar 3: Setelah simpan — Tambah Foto & Selesai -->
-  <div class="photo-bar hidden" id="barAfterSave">
-    <button class="btn-cam btn-ulangi" onclick="Photo.tambahFoto()">📷 Tambah Foto</button>
-    <button class="btn-cam btn-simpan-foto" onclick="Photo.selesai()">✅ Selesai</button>
+
+  <!-- Bar 3: Antrian info + Simpan Semua (selalu visible saat ada antrian) -->
+  <div class="photo-bar hidden" id="barAfterSave" style="flex-direction:column;gap:8px;padding:10px 16px">
+    <div id="queueLabel" style="font-size:13px;font-weight:600;color:var(--blue2);text-align:center"></div>
+    <button id="btnSimpanSemua" class="btn-cam btn-simpan-foto" disabled onclick="Photo.simpanSemua()">✅ Simpan Semua & Selesai</button>
   </div>
 </div>
 
