@@ -244,34 +244,40 @@
 </div>
 
 <!-- ═══ PHOTO PAGE ═══ -->
-<div class="page hidden" id="pgPhoto">
+<div class="page hidden" id="pgPhoto" style="display:flex;flex-direction:column">
   <div class="appbar">
     <button class="back-icon" onclick="Photo.close()">←</button>
     <div class="appbar-title">Ambil Foto</div>
     <button class="appbar-icon" onclick="Photo.skip()" style="font-size:13px;font-weight:700">SKIP</button>
   </div>
-  <div class="photo-container" id="photoContainer">
+  <div class="photo-container" id="photoContainer" style="flex:1;min-height:0">
     <video id="photoVideo" autoplay playsinline muted></video>
     <canvas id="photoCanvas"></canvas>
     <img id="photoPreview" alt="Preview">
   </div>
   <div class="gps-bar" id="gpsBar">📍 Mendapatkan lokasi...</div>
 
-  <!-- Bar 1: Ambil Foto (kamera aktif) -->
-  <div class="photo-bar" id="barAmbil">
-    <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
-  </div>
+  <!-- Wrapper semua bar bawah — stack vertikal -->
+  <div id="photoBarWrap" style="flex-shrink:0;background:var(--surface);border-top:1px solid var(--border)">
 
-  <!-- Bar 2: Preview — Ulangi atau Tambah ke Antrian -->
-  <div class="photo-bar hidden" id="barResult">
-    <button class="btn-cam btn-ulangi" onclick="Photo.ulangi()">↺ Ulangi</button>
-    <button class="btn-cam btn-simpan-foto" onclick="Photo.tambahKeAntrian()">➕ Tambah Foto</button>
-  </div>
+    <!-- Bar 1: kamera aktif → HANYA tombol Ambil Foto -->
+    <div class="photo-bar" id="barAmbil" style="padding:14px 16px;padding-bottom:calc(14px + var(--safe-bot))">
+      <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
+    </div>
 
-  <!-- Bar 3: Antrian info + Simpan Semua (selalu visible saat ada antrian) -->
-  <div class="photo-bar hidden" id="barAfterSave" style="flex-direction:column;gap:8px;padding:10px 16px">
-    <div id="queueLabel" style="font-size:13px;font-weight:600;color:var(--blue2);text-align:center"></div>
-    <button id="btnSimpanSemua" class="btn-cam btn-simpan-foto" disabled onclick="Photo.simpanSemua()">✅ Simpan Semua & Selesai</button>
+    <!-- Bar 2: preview → Ulangi | Tambah Foto -->
+    <div class="photo-bar hidden" id="barResult" style="padding:12px 16px 10px">
+      <button class="btn-cam btn-ulangi" onclick="Photo.ulangi()">↺ Ulangi</button>
+      <button class="btn-cam btn-simpan-foto" onclick="Photo.tambahKeAntrian()">➕ Tambah Foto</button>
+    </div>
+
+    <!-- Bar 3: antrian — muncul di bawah bar lain saat ada foto di antrian -->
+    <div class="photo-bar hidden" id="barAfterSave"
+         style="flex-direction:column;gap:6px;padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));border-top:1px solid var(--border)">
+      <div id="queueLabel" style="font-size:13px;font-weight:600;color:var(--blue2);text-align:center"></div>
+      <button id="btnSimpanSemua" class="btn-cam btn-simpan-foto" disabled onclick="Photo.simpanSemua()">✅ Simpan Semua & Selesai</button>
+    </div>
+
   </div>
 </div>
 
