@@ -1,30 +1,53 @@
 // ════════════════════════════════════════════
-// PHOTO — Camera capture & upload
+// PHOTO — Camera capture & upload (multi-foto)
+//
+// FLOW:
+//   go() → kamera aktif → [Ambil Foto]
+//   → preview → [Ulangi] atau [Tambah ke Antrian]
+//   → kamera aktif lagi → bisa ambil foto ke-2, dst
+//   → bar bawah selalu tampil: jumlah antrian + [Simpan Semua]
+//   → Simpan → upload semua → tiap foto kolom berbeda → balik home/detail
 // ════════════════════════════════════════════
 
 const Photo = {
+
+  // ── Buka halaman foto, reset semua state ──
   go() {
     STATE.capturedDataUrl = null;
-    STATE.gpsCoords = null;
+    STATE.gpsCoords       = null;
+    STATE.photoQueue      = [];   // antrian foto (array of base64 string tanpa prefix)
 
-    const preview   = document.getElementById('photoPreview');
-    const video     = document.getElementById('photoVideo');
-    const barAmbil  = document.getElementById('barAmbil');
-    const barResult = document.getElementById('barResult');
-    const barAfter  = document.getElementById('barAfterSave');
-
-    preview.style.display  = 'none';
-    video.style.display    = 'block';
-    barAmbil.classList.remove('hidden');
-    barResult.classList.add('hidden');
-    barAfter.classList.add('hidden');
-    document.getElementById('gpsBar').innerText = '📍 Mendapatkan lokasi...';
-
+    Photo._resetUI();
+    Photo._updateQueueBar();
     UI.Page.show('pgPhoto');
     Photo._startCamera();
     Photo._getGps();
   },
 
+  // ── Reset tampilan ke state "siap ambil foto" ──
+  _resetUI() {
+    document.getElementById('photoPreview').style.display = 'none';
+    document.getElementById('photoVideo').style.display   = 'block';
+    document.getElementById('barAmbil').classList.remove('hidden');
+    document.getElementById('barResult').classList.add('hidden');
+    document.getElementById('barAfterSave').classList.add('hidden');
+    document.getElementById('gpsBar').innerText = STATE.gpsCoords
+      ? '📍 ' + STATE.gpsCoords
+      : '📍 Mendapatkan lokasi...';
+  },
+
+  // ── Update bar antrian — tampilkan/sembunyikan barAfterSave ──
+  _updateQueueBar() {
+    const n      = (STATE.photoQueue || []).length;
+    const bar    = document.getElementById('barAfterSave');
+    const btn    = document.getElementById('btnSimpanSemua');
+    const lbl    = document.getElementById('queueLabel');
+    if (lbl) lbl.innerText = n > 0 ? `📸 ${n} foto di antrian` : '';
+    if (btn) btn.disabled  = n === 0;
+    if (bar) bar.classList.toggle('hidden', n === 0);
+  },
+
+  // ── GPS ──
   _getGps() {
     if (!navigator.geolocation) {
       STATE.gpsCoords = 'GPS tidak tersedia';
@@ -35,8 +58,6 @@ const Photo = {
       const lat = pos.coords.latitude, lon = pos.coords.longitude;
       STATE.gpsCoords = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
       document.getElementById('gpsBar').innerText = '📍 ' + STATE.gpsCoords;
-
-      // Reverse geocode (non-blocking)
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=id`)
         .then(r => r.json())
         .then(geo => {
@@ -53,6 +74,7 @@ const Photo = {
     }, { enableHighAccuracy: true, timeout: 6000 });
   },
 
+  // ── Start kamera ──
   _startCamera() {
     const tries = [
       { video: { facingMode: { exact: 'environment' }, width: { ideal: 1280 } }, audio: false },
@@ -63,7 +85,10 @@ const Photo = {
     const next = i => {
       if (i >= tries.length) return;
       navigator.mediaDevices.getUserMedia(tries[i])
-        .then(s => { STATE.photoStream = s; document.getElementById('photoVideo').srcObject = s; })
+        .then(s => {
+          STATE.photoStream = s;
+          document.getElementById('photoVideo').srcObject = s;
+        })
         .catch(() => next(i + 1));
     };
     next(0);
@@ -76,6 +101,7 @@ const Photo = {
     }
   },
 
+  // ── Ambil Foto → tampilkan preview ──
   ambil() {
     const video  = document.getElementById('photoVideo');
     const canvas = document.getElementById('photoCanvas');
@@ -85,12 +111,17 @@ const Photo = {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     // Watermark
-    const now = new Date();
-    const pad = n => n < 10 ? '0' + n : n;
+    const now  = new Date();
+    const pad  = n => n < 10 ? '0' + n : n;
     const waktu = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-    const lines = [waktu, `Service: ${STATE.currentSvc}`, `Tujuan: ${STATE.currentTuj}`, `Lokasi: ${STATE.gpsCoords || '—'}`];
-    const fs    = Math.max(14, Math.floor(canvas.width / 40));
-    const lh    = fs + 8, p = 12;
+    const lines = [
+      waktu,
+      `Service: ${STATE.currentSvc}`,
+      `Tujuan: ${STATE.currentTuj}`,
+      `Lokasi: ${STATE.gpsCoords || '—'}`
+    ];
+    const fs = Math.max(14, Math.floor(canvas.width / 40));
+    const lh = fs + 8, p = 12;
     ctx.font = `bold ${fs}px Arial`;
     let maxW = 0;
     lines.forEach(l => { const w = ctx.measureText(l).width; if (w > maxW) maxW = w; });
@@ -109,13 +140,15 @@ const Photo = {
     tmp.getContext('2d').drawImage(canvas, 0, 0, w2, h2);
     STATE.capturedDataUrl = tmp.toDataURL('image/jpeg', 0.72);
 
-    document.getElementById('photoPreview').src = STATE.capturedDataUrl;
+    // Tampilkan preview
+    document.getElementById('photoPreview').src           = STATE.capturedDataUrl;
     document.getElementById('photoPreview').style.display = 'block';
     document.getElementById('photoVideo').style.display   = 'none';
     document.getElementById('barAmbil').classList.add('hidden');
     document.getElementById('barResult').classList.remove('hidden');
   },
 
+  // ── Ulangi — kembali ke kamera, foto ini dibuang ──
   ulangi() {
     STATE.capturedDataUrl = null;
     document.getElementById('photoPreview').style.display = 'none';
@@ -124,53 +157,80 @@ const Photo = {
     document.getElementById('barResult').classList.add('hidden');
   },
 
-  async simpan() {
+  // ── Tambah ke Antrian — masuk queue, kamera aktif lagi untuk foto berikutnya ──
+  tambahKeAntrian() {
     if (!STATE.capturedDataUrl) return;
-    UI.Loading.show('Upload foto...');
+    const b64 = STATE.capturedDataUrl.split(',')[1];
+    STATE.photoQueue.push(b64);
+    STATE.capturedDataUrl = null;
+    UI.Toast.success(`✓ Foto ${STATE.photoQueue.length} ditambahkan`);
+    Photo._updateQueueBar();
+    // Kembali ke kamera untuk foto berikutnya
+    Photo._resetUI();
+    // Kamera masih aktif (stream belum distop), langsung bisa ambil lagi
+  },
+
+  // ── Simpan Semua — upload antrian satu per satu → tiap foto kolom berbeda → balik ──
+  async simpanSemua() {
+    if (!STATE.photoQueue || !STATE.photoQueue.length) return;
+
+    // Kalau masih ada foto di preview yang belum masuk antrian, masukkan dulu
+    if (STATE.capturedDataUrl) {
+      const b64 = STATE.capturedDataUrl.split(',')[1];
+      STATE.photoQueue.push(b64);
+      STATE.capturedDataUrl = null;
+    }
+
+    const total = STATE.photoQueue.length;
+    UI.Loading.show(`Upload foto 1/${total}...`);
+    Photo._stopStream();
+
     try {
       const type = (STATE.currentDetailType || STATE.createType || 'ob').toUpperCase();
-      const b64  = STATE.capturedDataUrl.split(',')[1];
-      const res  = await API.uploadFoto(STATE.currentNoTrack, type, b64);
-      UI.Loading.hide();
-      if (res.success && res.url) {
-        if (STATE.currentDetailItem) STATE.currentDetailItem.foto_url = res.url;
-        const arr = STATE.currentDetailType === 'ob' ? STATE.obData : STATE.currentDetailType === 'hvs' ? STATE.hvsData : STATE.ibData;
-        const item = arr.find(d => d.no_track === STATE.currentNoTrack);
-        if (item) item.foto_url = res.url;
-        UI.Toast.success('Foto berhasil diupload');
-        // Tampilkan tombol Tambah Foto setelah simpan
-        document.getElementById('barResult').classList.add('hidden');
-        document.getElementById('barAfterSave').classList.remove('hidden');
-      } else {
-        UI.Toast.error('Gagal upload: ' + (res.error || ''));
+      const urls = [];
+
+      for (let i = 0; i < STATE.photoQueue.length; i++) {
+        document.getElementById('gloading-txt').innerText = `Upload foto ${i + 1}/${total}...`;
+        const res = await API.uploadFoto(STATE.currentNoTrack, type, STATE.photoQueue[i], i);
+        if (res.success && res.url) {
+          urls.push(res.url);
+        } else {
+          UI.Toast.error(`Foto ${i + 1} gagal: ` + (res.error || ''));
+        }
       }
+
+      UI.Loading.hide();
+
+      if (urls.length) {
+        // Update state lokal — simpan semua url sebagai array
+        const arr  = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
+        const item = arr.find(d => d.no_track === STATE.currentNoTrack);
+        if (item) item.foto_urls = urls;
+        if (STATE.currentDetailItem) STATE.currentDetailItem.foto_urls = urls;
+
+        UI.Toast.success(`✅ ${urls.length} foto berhasil diupload`);
+      }
+
+      STATE.photoQueue = [];
+      Photo._afterPhoto();
+
     } catch(e) {
       UI.Loading.hide();
       UI.Toast.error('Error: ' + e.message);
     }
   },
 
-  tambahFoto() {
-    // Reset state dan buka kamera lagi untuk foto tambahan
-    STATE.capturedDataUrl = null;
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('photoVideo').style.display   = 'block';
-    document.getElementById('barAmbil').classList.remove('hidden');
-    document.getElementById('barResult').classList.add('hidden');
-    document.getElementById('barAfterSave').classList.add('hidden');
-    Photo._startCamera();
-  },
-
-  selesai() {
-    Photo._afterPhoto();
-  },
-
-  skip() { Photo._stopStream(); Photo._afterPhoto(); },
+  // ── Skip / Close tanpa simpan ──
+  skip()  { Photo._stopStream(); Photo._afterPhoto(); },
   close() { Photo._stopStream(); Photo._afterPhoto(); },
 
+  // ── Setelah selesai — balik ke home atau detail ──
   _afterPhoto() {
     Photo._stopStream();
-    HomePage.render(); HomePage.updateStats();
+    STATE.photoQueue     = [];
+    STATE.capturedDataUrl = null;
+    HomePage.render();
+    HomePage.updateStats();
     if (STATE.currentDetailItem && STATE.scanContext === 'detail') {
       UI.Page.show('pgDetail');
       DetailPage.reloadData();
