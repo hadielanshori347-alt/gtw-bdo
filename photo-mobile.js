@@ -208,36 +208,40 @@ const Photo = {
       UI.Loading.hide();
 
       if (urls.length) {
-        try {
-          const act = (STATE.currentDetailType || STATE.createType || 'ob') === 'ob' ? 'getObList'
-                    : (STATE.currentDetailType || STATE.createType) === 'hvs' ? 'getHvsList' : 'getIbList';
-          const r = await API.get(act);
-          const list = r.list || [];
-          const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
-          if (fresh) {
-            const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
-            const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
-            if (idx !== -1) arr[idx] = fresh;
-            if (STATE.currentDetailItem) STATE.currentDetailItem = fresh;
-            fresh.foto_urls = urls;
-            if (STATE.currentDetailItem) STATE.currentDetailItem.foto_urls = urls;
-          }
-        } catch(e) {
-          const baseIdx = STATE.photoStartIndex || 0;
-          const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
-          const item = arr.find(d => d.no_track === STATE.currentNoTrack);
-          urls.forEach((url, i) => {
-            const colIdx = baseIdx + i;
-            const fn = colIdx === 0 ? 'foto_url' : 'foto_url_' + (colIdx + 1);
-            if (item) item[fn] = url;
-            if (STATE.currentDetailItem) STATE.currentDetailItem[fn] = url;
-          });
-        }
+        // Update state lokal sementara (fallback jika reload server gagal)
+        const baseIdx = STATE.photoStartIndex || 0;
+        const arr = type === 'OB' ? STATE.obData : type === 'HVS' ? STATE.hvsData : STATE.ibData;
+        const item = arr.find(d => d.no_track === STATE.currentNoTrack);
+        urls.forEach((url, i) => {
+          const colIdx = baseIdx + i;
+          const fn = colIdx === 0 ? 'foto_url' : 'foto_url_' + (colIdx + 1);
+          if (item) item[fn] = url;
+          if (STATE.currentDetailItem) STATE.currentDetailItem[fn] = url;
+        });
 
         UI.Toast.success(`✅ ${urls.length} foto berhasil diupload`);
       }
 
       STATE.photoQueue = [];
+
+      // Reload data fresh dari server sebelum balik ke detail,
+      // agar semua kolom foto (foto_url, foto_url_2, dst.) ter-render dengan benar
+      if (STATE.currentDetailItem || STATE.currentNoTrack) {
+        try {
+          const act = (STATE.currentDetailType || STATE.createType || 'ob') === 'ob' ? 'getObList'
+                    : (STATE.currentDetailType || STATE.createType) === 'hvs' ? 'getHvsList' : 'getIbList';
+          const r2 = await API.get(act);
+          const list2 = r2.list || [];
+          if (STATE.currentDetailType === 'ob') STATE.obData = list2;
+          else if (STATE.currentDetailType === 'hvs') STATE.hvsData = list2;
+          else STATE.ibData = list2;
+          const freshItem = list2.find(d => d.no_track === STATE.currentNoTrack);
+          if (freshItem) {
+            STATE.currentDetailItem = freshItem;
+          }
+        } catch(e2) { /* pakai state yang sudah ada */ }
+      }
+
       Photo._afterPhoto();
 
     } catch(e) {
@@ -257,9 +261,10 @@ const Photo = {
     STATE.capturedDataUrl = null;
     HomePage.render();
     HomePage.updateStats();
-    if (STATE.currentDetailItem && STATE.scanContext === 'detail') {
+    if (STATE.currentDetailItem && STATE.currentNoTrack) {
+      // Render ulang detail dengan data fresh yang sudah di-reload di simpanSemua()
+      DetailPage._render(STATE.currentDetailItem, STATE.currentDetailType);
       UI.Page.show('pgDetail');
-      DetailPage.reloadData();
     } else {
       UI.Page.show('pgHome');
     }
