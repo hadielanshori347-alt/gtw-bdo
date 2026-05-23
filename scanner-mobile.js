@@ -184,7 +184,7 @@ const Scanner = {
       STATE.scanItems = [];
       Scanner._stop();
       DetailPage.reloadData();
-      Photo.go();
+      UI.Page.show('pgDetail');
     } catch(e) {
       UI.Loading.hide();
       UI.Toast.error('Error: ' + e.message);
