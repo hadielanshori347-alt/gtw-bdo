@@ -1,6 +1,12 @@
 /* ============================================================
-   GTW BDO - forms.js v4.4
-   CHANGES dari v4.3:
+   GTW BDO - forms.js v4.5
+   CHANGES dari v4.4:
+   - Photo gallery di detail modal (slide/swipe seperti mobile)
+     * Navigasi panah kiri/kanan
+     * Thumbnail strip
+     * Counter foto (1/3, dll)
+     * Tombol buka foto penuh
+     * Support multi foto (foto_url, foto_url_2, foto_url_3, dst)
    - Detail modal: AWB staging list (antrian) sebelum disimpan
      * Setiap AWB punya icon hapus
      * Tombol "Simpan AWB" untuk commit ke server
@@ -235,7 +241,6 @@ function saveOb() {
   var tujuanKeys = Object.keys(obScanMap);
   if (!tujuanKeys.length) { toast('Tambahkan minimal 1 tujuan', 'error'); return; }
 
-  // Disable tombol supaya tidak double-submit
   var btn = document.getElementById('btnSaveOb');
   btn.disabled = true;
   btn.innerHTML = '<span class="material-icons-round" style="animation:spin .6s linear infinite;font-size:15px">sync</span> Menyimpan...';
@@ -243,7 +248,6 @@ function saveOb() {
   var now = _nowDisplayStr();
   var optimisticItems = [];
 
-  // Optimistic: langsung render ke tabel sebelum server balas
   tujuanKeys.forEach(function(tuj) {
     var fakeId = 'OB_' + service.substring(0,3).toUpperCase() + '_' + tuj.substring(0,8).toUpperCase() + '_SAVING';
     var item = {
@@ -263,12 +267,10 @@ function saveOb() {
   renderObTable(); updateObStats();
   toast('... Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
 
-  // Reset form segera agar user bisa input lagi
   var savedMap = {};
   tujuanKeys.forEach(function(t) { savedMap[t] = (obScanMap[t] || []).slice(); });
   resetObForm();
 
-  // Background save
   Promise.all(tujuanKeys.map(function(tuj) {
     return gasPost('saveOb', {
       incharge: globalIncharge,
@@ -278,7 +280,6 @@ function saveOb() {
     });
   })).then(function(results) {
     var errors = results.filter(function(r) { return r.error; });
-    // Hapus optimistic items
     optimisticItems.forEach(function(opt) {
       var idx = obData.indexOf(opt);
       if (idx !== -1) obData.splice(idx, 1);
@@ -288,7 +289,6 @@ function saveOb() {
       renderObTable(); updateObStats();
       return;
     }
-    // Refresh dari server (background, tidak blocking)
     toast(results.length + ' NO TRACK dibuat', 'success');
     _mfLoaded = false; _obibData = null;
     gasGet('getObList').then(function(r) {
@@ -297,7 +297,6 @@ function saveOb() {
     }).catch(function() {});
     _debouncedBuildAllScanAwbs();
   }).catch(function(e) {
-    // Rollback optimistic
     optimisticItems.forEach(function(opt) {
       var idx = obData.indexOf(opt);
       if (idx !== -1) obData.splice(idx, 1);
@@ -645,7 +644,6 @@ function markSelesai(type, noTrack) {
   var action = type === 'ob' ? 'updateObStatus' : type === 'hvs' ? 'updateHvsStatus' : 'updateIbStatus';
   if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
 
-  // Optimistic: langsung ubah status di UI
   var arr = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
   var item = arr.find(function(d) { return d.no_track === noTrack; });
   if (item) item.status = 'SELESAI';
@@ -655,10 +653,8 @@ function markSelesai(type, noTrack) {
   closeModal('detailModal');
   toast('Status diubah ke SELESAI', 'success');
 
-  // Background sync
   gasPost(action, { noTrack: noTrack, newStatus: 'SELESAI' }).then(function(res) {
     if (!res.success) {
-      // Rollback jika gagal
       if (item) item.status = 'ON PROSES';
       if (type === 'ob') { renderObTable(); updateObStats(); }
       else if (type === 'hvs') { renderHvsTable(); updateHvsStats(); }
@@ -689,7 +685,6 @@ function confirmDelete(type, noTrack) {
     closeModal('confirmModal');
     closeModal('detailModal');
 
-    // Optimistic: hapus dari UI duluan
     var arr2 = type === 'ob' ? obData : type === 'hvs' ? hvsData : ibData;
     var idx = arr2.findIndex(function(d) { return d.no_track === noTrack; });
     var removed = idx !== -1 ? arr2.splice(idx, 1)[0] : null;
@@ -700,10 +695,8 @@ function confirmDelete(type, noTrack) {
     _mfLoaded = false; _obibData = null;
     _debouncedBuildAllScanAwbs();
 
-    // Background delete
     gasPost(action, { noTrack: noTrack }).then(function(res) {
       if (!res.success) {
-        // Rollback
         if (removed) {
           arr2.splice(idx === -1 ? 0 : idx, 0, removed);
           if (type === 'ob') { renderObTable(); updateObStats(); }
@@ -725,8 +718,144 @@ function confirmDelete(type, noTrack) {
   openModal('confirmModal');
 }
 
-// --- DETAIL MODAL ---
-// State staging AWB
+// ============================================================
+// PHOTO GALLERY — Detail Modal
+// ============================================================
+var _galUrls = [];
+var _galIdx  = 0;
+var _galTouchStartX = 0;
+
+// Kumpulkan semua URL foto dari item
+function _collectFotoUrls(item) {
+  var urls = [];
+  if (item.foto_url) urls.push(item.foto_url);
+  for (var fi = 2; fi <= 10; fi++) {
+    var fk = 'foto_url_' + fi;
+    if (item[fk]) urls.push(item[fk]);
+    else break;
+  }
+  return urls;
+}
+
+// Render gallery ke #detailPhotoBox
+function _renderDetailGallery(urls) {
+  _galUrls = urls || [];
+  _galIdx  = 0;
+  var pb = document.getElementById('detailPhotoBox');
+  pb.onclick = null;
+  pb.style.cursor = 'default';
+  pb.innerHTML = _buildGalleryHtml();
+  _bindGallerySwipe();
+}
+
+// Bangun HTML gallery lengkap
+function _buildGalleryHtml() {
+  var urls = _galUrls;
+  var idx  = _galIdx;
+  var n    = urls.length;
+
+  if (!n) {
+    return '<span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>';
+  }
+
+  // Gambar utama
+  var mainImg =
+    '<img src="' + escH(urls[idx]) + '" ' +
+    'style="width:100%;height:100%;object-fit:contain;display:block;" ' +
+    'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">' +
+    '<span class="no-img" style="display:none"><span class="material-icons-round">broken_image</span>Foto gagal dimuat</span>';
+
+  // Tombol navigasi
+  var prevBtn = n > 1
+    ? '<button class="gal-nav gal-prev" onclick="_galMove(-1)" title="Foto sebelumnya">' +
+      '<span class="material-icons-round">chevron_left</span></button>'
+    : '';
+  var nextBtn = n > 1
+    ? '<button class="gal-nav gal-next" onclick="_galMove(1)" title="Foto berikutnya">' +
+      '<span class="material-icons-round">chevron_right</span></button>'
+    : '';
+
+  // Counter "1 / 3"
+  var counter = n > 1
+    ? '<div class="gal-counter">' + (idx + 1) + ' / ' + n + '</div>'
+    : '';
+
+  // Tombol buka penuh
+  var openBtn =
+    '<a class="gal-open-btn" href="' + escH(urls[idx]) + '" target="_blank" title="Buka foto penuh">' +
+    '<span class="material-icons-round">open_in_new</span></a>';
+
+  // Area gambar utama
+  var mainArea =
+    '<div class="gal-main" id="_galMainArea">' +
+      mainImg + prevBtn + nextBtn + counter + openBtn +
+    '</div>';
+
+  // Thumbnail strip (hanya kalau > 1 foto)
+  var thumbs = '';
+  if (n > 1) {
+    thumbs = '<div class="gal-thumbs">' +
+      urls.map(function(u, i) {
+        var activeClass = i === idx ? ' active' : '';
+        return '<div class="gal-thumb' + activeClass + '" onclick="_galJump(' + i + ')" title="Foto ' + (i + 1) + '">' +
+          '<img src="' + escH(u) + '" ' +
+          'onerror="this.parentElement.classList.add(\'err\');this.style.display=\'none\'">' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  return mainArea + thumbs;
+}
+
+// Navigasi prev/next
+function _galMove(dir) {
+  var n = _galUrls.length;
+  if (n <= 1) return;
+  _galIdx = (_galIdx + dir + n) % n;
+  _updateGallery();
+}
+
+// Lompat ke indeks tertentu (klik thumbnail)
+function _galJump(i) {
+  if (i === _galIdx) return;
+  _galIdx = i;
+  _updateGallery();
+}
+
+// Update HTML gallery tanpa re-render seluruh modal
+function _updateGallery() {
+  var pb = document.getElementById('detailPhotoBox');
+  if (!pb) return;
+  pb.innerHTML = _buildGalleryHtml();
+  _bindGallerySwipe();
+}
+
+// Touch swipe support
+function _bindGallerySwipe() {
+  var area = document.getElementById('_galMainArea');
+  if (!area || _galUrls.length <= 1) return;
+  area.addEventListener('touchstart', function(e) {
+    _galTouchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  area.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].screenX - _galTouchStartX;
+    if (Math.abs(dx) > 40) _galMove(dx < 0 ? 1 : -1);
+  }, { passive: true });
+}
+
+// Keyboard arrow support saat modal terbuka
+document.addEventListener('keydown', function(e) {
+  var modal = document.getElementById('detailModal');
+  if (!modal || !modal.classList.contains('open')) return;
+  if (_galUrls.length <= 1) return;
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); _galMove(-1); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); _galMove(1); }
+});
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
 var _detailStagingAwbs  = [];
 var _detailExistingAwbs = [];
 
@@ -742,7 +871,6 @@ function openDetailModal(type, noTrack) {
     else if (noTrack.indexOf('IB_') === 0)  type = 'ib';
   }
 
-  // Reset staging setiap buka modal
   _detailStagingAwbs  = [];
   _detailExistingAwbs = [];
 
@@ -750,17 +878,11 @@ function openDetailModal(type, noTrack) {
   currentDetailType = type;
   document.getElementById('detailModalTitle').innerText = noTrack;
 
-  // Photo box - view only
-  var pb = document.getElementById('detailPhotoBox');
-  pb.onclick = null;
-  pb.style.cursor = 'default';
-  if (item.foto_url) {
-    pb.innerHTML = '<img src="' + item.foto_url +
-      '" onerror="this.parentElement.innerHTML=\'<span class=no-img><span class=material-icons-round>broken_image</span>Foto gagal dimuat</span>\'">';
-  } else {
-    pb.innerHTML = '<span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>';
-  }
+  // ── Photo Gallery ──
+  var fotoUrls = _collectFotoUrls(item);
+  _renderDetailGallery(fotoUrls);
 
+  // ── Info fields ──
   var fields = type === 'ib'
     ? [['NO TRACK', item.no_track], ['INCHARGE', item.incharge], ['SERVICE', item.service],
        ['FROM', item.from || '-'], ['TUJUAN', item.tujuan], ['DATE', item.created_date],
@@ -776,7 +898,7 @@ function openDetailModal(type, noTrack) {
   var isSelesai  = item.status === 'SELESAI';
   if (readonlyEl) readonlyEl.style.display = isSelesai ? '' : 'none';
 
-  // AWB list - muat dari server
+  // ── AWB List ──
   document.getElementById('detailAwbList').innerHTML =
     '<div class="awb-row" style="color:var(--gray5)">Memuat AWB...</div>';
   document.getElementById('awbCount').innerText = '...';
@@ -795,7 +917,7 @@ function openDetailModal(type, noTrack) {
         }).join('');
   }).catch(function() {});
 
-  // Inject section tambah AWB
+  // ── Tambah AWB Section ──
   var addAwbEl = document.getElementById('detailAddAwbSection');
   if (addAwbEl) {
     if (isSelesai) {
@@ -831,7 +953,7 @@ function openDetailModal(type, noTrack) {
     }
   }
 
-  // Footer
+  // ── Footer ──
   var footer = '<button class="btn btn-outline btn-sm" onclick="closeModal(\'detailModal\')">Tutup</button>';
   if (!isSelesai) {
     footer += '<button class="btn btn-success btn-sm" onclick="markSelesai(\'' + type + '\',\'' + escQ(noTrack) + '\')">' +
@@ -870,21 +992,19 @@ function removeDetailStaging(i) {
   _renderDetailStaging();
 }
 
-// --- TAMBAH AWB KE STAGING (dari detail modal) ---
+// --- TAMBAH AWB KE STAGING ---
 function handleDetailAddAwb(e) {
   if (e.key !== 'Enter') return;
   var input = document.getElementById('detailAddAwbInput');
   var val = input.value.trim();
   if (!val || !currentDetailItem) return;
 
-  // Cek duplikat di staging
   if (_detailStagingAwbs.indexOf(val) !== -1) {
     playBeepError();
     toast('AWB sudah ada di antrean', 'error');
     input.value = '';
     return;
   }
-  // Cek duplikat di existing
   if (_detailExistingAwbs.indexOf(val) !== -1) {
     playBeepError();
     toast('AWB sudah ada di list ini', 'error');
@@ -892,7 +1012,6 @@ function handleDetailAddAwb(e) {
     return;
   }
 
-  // Masuk staging
   _detailStagingAwbs.unshift(val);
   playBeep();
   input.value = '';
@@ -922,13 +1041,11 @@ function saveDetailStagingAwbs() {
     }
     if (res.success) {
       var added = toSave.length;
-      // Pindahkan dari staging ke existing
       _detailExistingAwbs = _detailExistingAwbs.concat(toSave);
       _detailStagingAwbs  = [];
       _renderDetailStaging();
       toast(added + ' AWB disimpan', 'success');
 
-      // Reload AWB list di modal
       gasGet('getAwbList', {
         noTrack: currentDetailItem.no_track,
         type   : currentDetailType.toUpperCase()
@@ -944,7 +1061,6 @@ function saveDetailStagingAwbs() {
                 (rr.tujuan ? '<span style="color:var(--gray5);font-size:11px">' + escH(rr.tujuan) + '</span>' : '') +
               '</div>';
             }).join('');
-        // Sync ke array utama
         var arr = currentDetailType === 'ob' ? obData : currentDetailType === 'hvs' ? hvsData : ibData;
         var itm = arr.find(function(d) { return d.no_track === currentDetailItem.no_track; });
         if (itm) itm.total_awb = list.length;
@@ -987,12 +1103,13 @@ function _nowDisplayStr() {
     ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 
-// --- CSS untuk staging list (inject sekali) ---
-(function injectStagingCSS() {
-  if (document.getElementById('_stagingCSS')) return;
+// --- CSS: staging list & gallery inject sekali ---
+(function injectFormsCSS() {
+  if (document.getElementById('_formsCSSv45')) return;
   var style = document.createElement('style');
-  style.id = '_stagingCSS';
+  style.id = '_formsCSSv45';
   style.textContent = [
+    /* ── Staging list ── */
     '.staging-list{background:var(--blue-light);border:1.5px solid var(--blue-mid);border-radius:8px;',
     'min-height:42px;max-height:160px;overflow-y:auto}',
 
@@ -1014,10 +1131,17 @@ function _nowDisplayStr() {
     'justify-content:center;gap:5px}',
     '.staging-empty .material-icons-round{font-size:15px}',
 
-    '@keyframes _stagingIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}'
+    '@keyframes _stagingIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}',
+
+    /* ── Gallery ── */
+    /* gal-main sudah ada di main.css; tambah ini supaya photo-box jadi container gallery */
+    '#detailPhotoBox{display:flex;flex-direction:column;gap:6px;',
+    'background:transparent;border-radius:9px;overflow:visible;',
+    'min-height:auto;cursor:default}',
+
+    /* animasi fade saat ganti foto */
+    '.gal-main img{animation:_galFadeIn .18s ease}',
+    '@keyframes _galFadeIn{from{opacity:0}to{opacity:1}}'
   ].join('');
   document.head.appendChild(style);
 })();
-
-// --- FOTO (tidak digunakan di web - dari web Android) ---
-// Fungsi onFotoChange dihapus di v4.3 - upload foto hanya dari web Android
