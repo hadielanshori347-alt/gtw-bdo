@@ -6,6 +6,12 @@ const Scanner = {
   // Beep sound menggunakan Web Audio API
   _beepCtx: null,
 
+  // Freeze flag — true selama 300ms setelah scan berhasil
+  _paused: false,
+
+  // Cache camera ID agar kamera langsung nyala tanpa getCameras() lagi
+  _preferredCamId: null,
+
   beep() {
     try {
       if (!Scanner._beepCtx) Scanner._beepCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -51,15 +57,34 @@ const Scanner = {
   _start() {
     document.getElementById('reader').innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
+    Scanner._paused = false;
     const h5 = new Html5Qrcode("reader");
     STATE.html5QrCode = h5;
     const cfg = { fps: 15, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
 
+    // Jika sudah punya camera ID dari sesi sebelumnya, langsung pakai — kamera nyala instan
+    if (Scanner._preferredCamId) {
+      h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
+        .then(() => STATE.isScannerRunning = true)
+        .catch(() => {
+          // Kalau ID lama gagal (misalnya cabut kamera), reset dan coba ulang
+          Scanner._preferredCamId = null;
+          Scanner._startViaEnumerate(h5, cfg);
+        });
+      return;
+    }
+
+    Scanner._startViaEnumerate(h5, cfg);
+  },
+
+  _startViaEnumerate(h5, cfg) {
     Html5Qrcode.getCameras()
       .then(cams => {
         if (!cams?.length) return Scanner._startFacing('environment');
         const back = cams.find(c => /back|rear|env/i.test(c.label));
-        h5.start(back ? back.id : cams[cams.length - 1].id, cfg, Scanner._onSuccess, () => {})
+        const camId = back ? back.id : cams[cams.length - 1].id;
+        Scanner._preferredCamId = camId; // simpan untuk sesi berikutnya
+        h5.start(camId, cfg, Scanner._onSuccess, () => {})
           .then(() => STATE.isScannerRunning = true)
           .catch(() => Scanner._startFacing('environment'));
       })
@@ -77,6 +102,7 @@ const Scanner = {
   },
 
   async _stop() {
+    Scanner._paused = false;
     if (STATE.html5QrCode && STATE.isScannerRunning) {
       try { await STATE.html5QrCode.stop(); } catch(e) {}
     }
@@ -92,6 +118,13 @@ const Scanner = {
   },
 
   _onSuccess(text) {
+    // Abaikan scan selama freeze berlangsung
+    if (Scanner._paused) return;
+
+    // Freeze 300ms — cegah baca barcode yang sama berulang
+    Scanner._paused = true;
+    setTimeout(() => { Scanner._paused = false; }, 300);
+
     Scanner.addItem(text);
     Scanner.beep();
   },
