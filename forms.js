@@ -193,9 +193,9 @@ function renderIbTabs() {
   var keys = Object.keys(ibScanMap);
   document.getElementById('ibTujuanTabs').innerHTML = keys.map(function(t) {
     return '<span class="scan-tujuan-tab' + (t === ibActiveTuj ? ' active' : '') +
-      '" onclick="switchIbTuj('' + escQ(t) + '')">' + escH(t) +
+      '" onclick="switchIbTuj(\'' + escQ(t) + '\')">' + escH(t) +
       ' <span class="cnt">' + ibScanMap[t].length + '</span>' +
-      '<span class="rm-tuj material-icons-round" onclick="event.stopPropagation();removeIbTuj('' + escQ(t) + '')">cancel</span></span>';
+      '<span class="rm-tuj material-icons-round" onclick="event.stopPropagation();removeIbTuj(\'' + escQ(t) + '\')">cancel</span></span>';
   }).join('');
   updateIbTotalLabel();
 }
