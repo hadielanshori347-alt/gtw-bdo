@@ -186,14 +186,15 @@
           <div id="ibFormGrid" class="form-grid" style="display:none">
             <div class="fg"><label>SERVICE *</label><div class="form-smart-cb" id="ibServiceCb"><input class="form-smart-cb-input" id="ibService" placeholder="Pilih service dulu..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibServiceCb')">expand_more</span><div class="form-smart-cb-dropdown" id="ibServiceDrop"></div></div></div>
             <div class="fg"><label>FROM *</label><div class="form-smart-cb" id="ibFromCb"><input class="form-smart-cb-input" id="ibFrom" placeholder="Pilih service dulu..." autocomplete="off" disabled><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibFromCb')">expand_more</span><div class="form-smart-cb-dropdown" id="ibFromDrop"></div></div></div>
-            <div class="fg"><label>TUJUAN *</label><div class="form-smart-cb" id="ibTujuanCb"><input class="form-smart-cb-input" id="ibTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="ibTujuanDrop"></div></div></div>
           </div>
-          <div id="ibServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info</span>Pilih <strong>SERVICE</strong> dulu sebelum mengisi FROM, TUJUAN, dan scan AWB.</div>
-          <div id="ibScanHint" class="ib-scan-hint" style="display:none"><span class="material-icons-round">warning_amber</span>Wajib isi <strong>FROM</strong> dan <strong>TUJUAN</strong> terlebih dahulu sebelum scan AWB.</div>
+          <div id="ibServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info</span>Pilih <strong>SERVICE</strong> dulu sebelum mengisi FROM dan scan AWB.</div>
+          <div id="ibMultiTujInfo" class="multi-tuj-info" style="display:none"><span class="material-icons-round">info</span>Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol &quot;+ Tujuan Baru&quot;.</div>
+          <div id="ibScanHint" class="ib-scan-hint" style="display:none"><span class="material-icons-round">warning_amber</span>Wajib isi <strong>FROM</strong> dan pilih/tambah <strong>TUJUAN</strong> terlebih dahulu sebelum scan AWB.</div>
           <div class="scan-section" id="ibScanSection" style="display:none">
             <div class="scan-header"><span class="scan-header-label">Scan AWB</span><span style="font-size:11px;color:var(--gray5)" id="ibTotalScanLabel">0 AWB total</span></div>
-            <div class="scan-row"><input class="scan-inp" id="ibScanInput" placeholder="Isi FROM & TUJUAN dulu..." disabled onkeydown="handleScan(event,'ib')"></div>
-            <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi FROM dan TUJUAN terlebih dahulu</div></div>
+            <div class="scan-row"><input class="scan-inp" id="ibScanInput" placeholder="Pilih service &amp; FROM dulu..." disabled onkeydown="handleScan(event,'ib')"><button class="btn btn-sm" id="ibAddTujBtn" style="background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-mid)" disabled onclick="addMultiTujuan('ib')"><span class="material-icons-round">add_location</span> Tujuan Baru</button></div>
+            <div class="scan-tujuan-tabs" id="ibTujuanTabs"></div>
+            <div class="scan-list" id="ibScanList"><div class="scan-empty">Pilih atau tambah tujuan terlebih dahulu</div></div>
           </div>
           <div class="form-actions" id="ibFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button></div>
         </div>
