@@ -1,8 +1,30 @@
-import { useState, useEffect, useRef } from "react";
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monitor Outbound GTW BDO</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', 'Segoe UI', sans-serif; background: #F8FAFC; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+  select, input, button { font-family: 'DM Sans', 'Segoe UI', sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
 
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzdurVlRVkqQ6l39DNKYV4gJUj2RM7tv5gX1E984uTdQukJWjw87Elbsx7YiocByLjsGQ/exec";
 
-// ── Warna & Konstanta ──
 const COLORS = {
   blue:    "#1565C0",
   blue2:   "#1976D2",
@@ -22,7 +44,6 @@ const COLORS = {
   white:   "#FFFFFF",
 };
 
-// ── API ──
 async function gasGet(action, params = {}) {
   const url = new URL(GAS_URL);
   url.searchParams.set("action", action);
@@ -35,7 +56,6 @@ async function gasGet(action, params = {}) {
   }
 }
 
-// ── Utilitas ──
 function fmtDate(s) {
   if (!s) return "—";
   const d = new Date(s.replace(" ", "T"));
@@ -43,16 +63,7 @@ function fmtDate(s) {
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" }) +
     " " + d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
-function fmtShort(s) {
-  if (!s) return "—";
-  const d = new Date(s.replace(" ", "T"));
-  if (isNaN(d)) return s;
-  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
-}
 
-// ════════════════════════════════════════
-// KOMPONEN KECIL
-// ════════════════════════════════════════
 function StatusBadge({ status }) {
   const ok = status === "SELESAI";
   return (
@@ -70,7 +81,6 @@ function StatusBadge({ status }) {
 }
 
 function StatCard({ label, value, color, icon, sub }) {
-  const bg = color === "blue" ? COLORS.blueL : color === "green" ? COLORS.greenL : COLORS.orangeL;
   const fg = color === "blue" ? COLORS.blue : color === "green" ? COLORS.green : COLORS.orange;
   return (
     <div style={{
@@ -79,7 +89,7 @@ function StatCard({ label, value, color, icon, sub }) {
       borderLeft: `4px solid ${fg}`, display: "flex", flexDirection: "column", gap: 4,
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 20, color: fg }}>{icon}</span>
+        <span style={{ fontSize: 20 }}>{icon}</span>
         <span style={{ fontSize: 12, color: COLORS.gray5, fontWeight: 600, textTransform: "uppercase", letterSpacing: .6 }}>{label}</span>
       </div>
       <div style={{ fontSize: 32, fontWeight: 800, color: fg, lineHeight: 1.1 }}>{value}</div>
@@ -96,6 +106,7 @@ function Spinner({ size = 28 }) {
       borderTop: `3px solid ${COLORS.blue2}`,
       borderRadius: "50%",
       animation: "spin .65s linear infinite",
+      display: "inline-block",
     }} />
   );
 }
@@ -110,8 +121,7 @@ function Tag({ label, color = COLORS.blueL, textColor = COLORS.blue }) {
   );
 }
 
-// ── Tabel generik ──
-function DataTable({ cols, rows, emptyText = "Tidak ada data", loading, type }) {
+function DataTable({ cols, rows, emptyText = "Tidak ada data", loading }) {
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
       <Spinner size={36} />
@@ -120,10 +130,6 @@ function DataTable({ cols, rows, emptyText = "Tidak ada data", loading, type }) 
   if (!rows.length) return (
     <div style={{ textAlign: "center", padding: 48, color: COLORS.gray5, fontSize: 14 }}>{emptyText}</div>
   );
-
-  const typeColor = type === "ob" ? COLORS.blue : type === "hvs" ? "#6A1B9A" : "#00695C";
-  const typeBg = type === "ob" ? COLORS.blueL : type === "hvs" ? "#F3E5F5" : "#E0F2F1";
-
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
@@ -131,12 +137,9 @@ function DataTable({ cols, rows, emptyText = "Tidak ada data", loading, type }) 
           <tr style={{ background: COLORS.gray1 }}>
             {cols.map((c, i) => (
               <th key={i} style={{
-                padding: "9px 12px", textAlign: "left",
-                fontSize: 11, fontWeight: 700,
-                color: COLORS.gray5, letterSpacing: .6,
-                textTransform: "uppercase",
-                borderBottom: `2px solid ${COLORS.gray3}`,
-                whiteSpace: "nowrap",
+                padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700,
+                color: COLORS.gray5, letterSpacing: .6, textTransform: "uppercase",
+                borderBottom: `2px solid ${COLORS.gray3}`, whiteSpace: "nowrap",
               }}>{c.label}</th>
             ))}
           </tr>
@@ -145,8 +148,7 @@ function DataTable({ cols, rows, emptyText = "Tidak ada data", loading, type }) 
           {rows.map((row, ri) => (
             <tr key={ri} style={{ borderBottom: `1px solid ${COLORS.gray2}` }}
               onMouseEnter={e => e.currentTarget.style.background = COLORS.gray1}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-            >
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
               {cols.map((c, ci) => (
                 <td key={ci} style={{ padding: "9px 12px", color: COLORS.gray7, verticalAlign: "middle" }}>
                   {c.render ? c.render(row[c.key], row) : (row[c.key] || "—")}
@@ -160,9 +162,6 @@ function DataTable({ cols, rows, emptyText = "Tidak ada data", loading, type }) 
   );
 }
 
-// ════════════════════════════════════════
-// HALAMAN: RINGKASAN
-// ════════════════════════════════════════
 function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loadingIb }) {
   const obTotal = obData.reduce((s, x) => s + (+x.total_awb || 0), 0);
   const hvsTotal = hvsData.reduce((s, x) => s + (+x.total_awb || 0), 0);
@@ -171,23 +170,18 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
   const hvsSelesai = hvsData.filter(x => x.status === "SELESAI").length;
   const ibSelesai = ibData.filter(x => x.status === "SELESAI").length;
 
-  // Aktivitas terbaru — gabungkan semua
   const allRecent = [
     ...obData.map(x => ({ ...x, _type: "OB" })),
     ...hvsData.map(x => ({ ...x, _type: "HVS" })),
     ...ibData.map(x => ({ ...x, _type: "IB" })),
-  ]
-    .sort((a, b) => (b.created_date || "").localeCompare(a.created_date || ""))
-    .slice(0, 12);
+  ].sort((a, b) => (b.created_date || "").localeCompare(a.created_date || "")).slice(0, 12);
 
   const typeColor = { OB: COLORS.blue, HVS: "#6A1B9A", IB: "#00695C" };
-  const typeBg = { OB: COLORS.blueL, HVS: "#F3E5F5", IB: "#E0F2F1" };
-
+  const typeBg   = { OB: COLORS.blueL, HVS: "#F3E5F5", IB: "#E0F2F1" };
   const isLoading = loadingOb || loadingHvs || loadingIb;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* ── Summary Cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
         <StatCard label="OB Total AWB" value={obTotal} color="blue" icon="🚚" sub={`${obSelesai} selesai / ${obData.length - obSelesai} proses`} />
         <StatCard label="HVS Total AWB" value={hvsTotal} color="blue" icon="📦" sub={`${hvsSelesai} selesai / ${hvsData.length - hvsSelesai} proses`} />
@@ -195,7 +189,6 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
         <StatCard label="Total Track" value={obData.length + hvsData.length + ibData.length} color="orange" icon="📋" sub={`OB: ${obData.length} | HVS: ${hvsData.length} | IB: ${ibData.length}`} />
       </div>
 
-      {/* ── Progres bar ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
           { label: "OB Selesai", done: obSelesai, total: obData.length, color: COLORS.blue },
@@ -218,7 +211,6 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
         })}
       </div>
 
-      {/* ── Aktivitas Terbaru ── */}
       <div style={{ background: COLORS.white, borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,.06)", overflow: "hidden" }}>
         <div style={{ padding: "14px 18px", borderBottom: `1px solid ${COLORS.gray3}`, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>🕒</span>
@@ -234,7 +226,7 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr style={{ background: COLORS.gray1 }}>
-                  {["Tipe", "No Track", "Incharge", "Service", "Tujuan", "AWB", "Waktu", "Status"].map((h, i) => (
+                  {["Tipe","No Track","Incharge","Service","Tujuan","AWB","Waktu","Status"].map((h,i) => (
                     <th key={i} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: COLORS.gray5, letterSpacing: .6, textTransform: "uppercase", borderBottom: `2px solid ${COLORS.gray3}`, whiteSpace: "nowrap" }}>{h}</th>
                   ))}
                 </tr>
@@ -244,9 +236,7 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
                   <tr key={ri} style={{ borderBottom: `1px solid ${COLORS.gray2}` }}
                     onMouseEnter={e => e.currentTarget.style.background = COLORS.gray1}
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                    <td style={{ padding: "9px 12px" }}>
-                      <Tag label={row._type} color={typeBg[row._type]} textColor={typeColor[row._type]} />
-                    </td>
+                    <td style={{ padding: "9px 12px" }}><Tag label={row._type} color={typeBg[row._type]} textColor={typeColor[row._type]} /></td>
                     <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 12, color: COLORS.gray7, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.no_track || "—"}</td>
                     <td style={{ padding: "9px 12px", color: COLORS.gray7 }}>{row.incharge || "—"}</td>
                     <td style={{ padding: "9px 12px", color: COLORS.gray7 }}>{row.service || "—"}</td>
@@ -265,16 +255,13 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
   );
 }
 
-// ════════════════════════════════════════
-// HALAMAN: OB / HVS / IB TABLE
-// ════════════════════════════════════════
 function PageTable({ data, loading, type, inchargeFilter }) {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("");
+  const [search, setSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("");
+  const [serviceFilter, setServiceFilter] = React.useState("");
 
   const typeColor = { ob: COLORS.blue, hvs: "#6A1B9A", ib: "#00695C" };
-  const typeBg = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
+  const typeBg   = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
   const fg = typeColor[type];
 
   const filtered = data.filter(row => {
@@ -311,53 +298,42 @@ function PageTable({ data, loading, type, inchargeFilter }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* Stats row */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <StatCard label="Total AWB" value={totalAwb} color="blue" icon="📦" />
         <StatCard label="Selesai" value={selesai} color="green" icon="✅" />
         <StatCard label="On Proses" value={filtered.length - selesai} color="orange" icon="⏳" />
       </div>
-
-      {/* Toolbar */}
       <div style={{ background: COLORS.white, borderRadius: 12, padding: "12px 16px", boxShadow: "0 2px 8px rgba(0,0,0,.05)", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-        <input
-          value={search} onChange={e => setSearch(e.target.value)}
+        <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Cari no track, incharge, tujuan..."
-          style={{ flex: 1, minWidth: 200, padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, outline: "none", fontFamily: "inherit" }}
-        />
+          style={{ flex: 1, minWidth: 200, padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, outline: "none" }} />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          style={{ padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, background: COLORS.white, outline: "none", fontFamily: "inherit" }}>
+          style={{ padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, background: COLORS.white, outline: "none" }}>
           <option value="">Semua Status</option>
           <option value="ON PROSES">ON PROSES</option>
           <option value="SELESAI">SELESAI</option>
         </select>
         {services.length > 0 && (
           <select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)}
-            style={{ padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, background: COLORS.white, outline: "none", fontFamily: "inherit" }}>
+            style={{ padding: "8px 12px", border: `1.5px solid ${COLORS.gray3}`, borderRadius: 8, fontSize: 13, background: COLORS.white, outline: "none" }}>
             <option value="">Semua Service</option>
             {services.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         )}
         <span style={{ fontSize: 12, color: COLORS.gray5, marginLeft: "auto" }}>{filtered.length} data</span>
       </div>
-
-      {/* Table */}
       <div style={{ background: COLORS.white, borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,.06)", overflow: "hidden" }}>
-        <DataTable cols={cols} rows={filtered} loading={loading} emptyText="Tidak ada data yang cocok" type={type} />
+        <DataTable cols={cols} rows={filtered} loading={loading} emptyText="Tidak ada data yang cocok" />
       </div>
     </div>
   );
 }
 
-// ════════════════════════════════════════
-// HALAMAN: CARI AWB
-// ════════════════════════════════════════
 function PageSearch() {
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(false);
-  const inputRef = useRef();
+  const [q, setQ] = React.useState("");
+  const [results, setResults] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [searched, setSearched] = React.useState(false);
 
   async function doSearch() {
     if (!q.trim()) return;
@@ -368,29 +344,24 @@ function PageSearch() {
   }
 
   const typeColor = { ob: COLORS.blue, hvs: "#6A1B9A", ib: "#00695C" };
-  const typeBg = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
+  const typeBg   = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={{ background: COLORS.white, borderRadius: 14, padding: "24px", boxShadow: "0 2px 12px rgba(0,0,0,.06)" }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.gray8, marginBottom: 14 }}>🔍 Cari Nomor AWB</div>
         <div style={{ display: "flex", gap: 10 }}>
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={e => setQ(e.target.value)}
+          <input value={q} onChange={e => setQ(e.target.value)}
             onKeyDown={e => e.key === "Enter" && doSearch()}
             placeholder="Masukkan nomor AWB atau sebagian nomor..."
             style={{ flex: 1, padding: "11px 16px", border: `2px solid ${COLORS.gray3}`, borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "monospace" }}
-            autoFocus
-          />
+            autoFocus />
           <button onClick={doSearch} disabled={loading}
             style={{ padding: "0 22px", background: COLORS.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
             {loading ? <Spinner size={18} /> : "Cari"}
           </button>
         </div>
       </div>
-
       {searched && !loading && (
         <div style={{ background: COLORS.white, borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,.06)", overflow: "hidden" }}>
           <div style={{ padding: "12px 18px", borderBottom: `1px solid ${COLORS.gray3}`, fontSize: 13, color: COLORS.gray5 }}>
@@ -403,7 +374,7 @@ function PageSearch() {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: COLORS.gray1 }}>
-                    {["Tipe", "AWB", "No Track", "Incharge", "Service", "Tujuan", "Tanggal", "Status"].map((h, i) => (
+                    {["Tipe","AWB","No Track","Incharge","Service","Tujuan","Tanggal","Status"].map((h,i) => (
                       <th key={i} style={{ padding: "9px 12px", textAlign: "left", fontSize: 11, fontWeight: 700, color: COLORS.gray5, letterSpacing: .6, textTransform: "uppercase", borderBottom: `2px solid ${COLORS.gray3}` }}>{h}</th>
                     ))}
                   </tr>
@@ -413,7 +384,7 @@ function PageSearch() {
                     <tr key={ri} style={{ borderBottom: `1px solid ${COLORS.gray2}` }}
                       onMouseEnter={e => e.currentTarget.style.background = COLORS.gray1}
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                      <td style={{ padding: "9px 12px" }}><Tag label={(row.type || "").toUpperCase()} color={typeBg[row.type]} textColor={typeColor[row.type]} /></td>
+                      <td style={{ padding: "9px 12px" }}><Tag label={(row.type||"").toUpperCase()} color={typeBg[row.type]} textColor={typeColor[row.type]} /></td>
                       <td style={{ padding: "9px 12px", fontFamily: "monospace", fontWeight: 700, color: COLORS.gray8 }}>{row.awb}</td>
                       <td style={{ padding: "9px 12px", fontFamily: "monospace", fontSize: 11, color: COLORS.gray5 }}>{row.noTrack || "—"}</td>
                       <td style={{ padding: "9px 12px" }}>{row.incharge || "—"}</td>
@@ -433,24 +404,20 @@ function PageSearch() {
   );
 }
 
-// ════════════════════════════════════════
-// KOMPONEN UTAMA
-// ════════════════════════════════════════
-export default function App() {
-  const [page, setPage] = useState("ringkasan");
-  const [obData, setObData] = useState([]);
-  const [hvsData, setHvsData] = useState([]);
-  const [ibData, setIbData] = useState([]);
-  const [masterData, setMasterData] = useState({});
-  const [globalIncharge, setGlobalIncharge] = useState("");
-  const [allIncharges, setAllIncharges] = useState([]);
-  const [loadingOb, setLoadingOb] = useState(true);
-  const [loadingHvs, setLoadingHvs] = useState(true);
-  const [loadingIb, setLoadingIb] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showInchargeDrop, setShowInchargeDrop] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [toast, setToast] = useState(null);
+function App() {
+  const [page, setPage] = React.useState("ringkasan");
+  const [obData, setObData] = React.useState([]);
+  const [hvsData, setHvsData] = React.useState([]);
+  const [ibData, setIbData] = React.useState([]);
+  const [globalIncharge, setGlobalIncharge] = React.useState("");
+  const [allIncharges, setAllIncharges] = React.useState([]);
+  const [loadingOb, setLoadingOb] = React.useState(true);
+  const [loadingHvs, setLoadingHvs] = React.useState(true);
+  const [loadingIb, setLoadingIb] = React.useState(true);
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [showInchargeDrop, setShowInchargeDrop] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
@@ -460,7 +427,6 @@ export default function App() {
   async function loadAll() {
     setLoadingOb(true); setLoadingHvs(true); setLoadingIb(true);
     const [md, ob] = await Promise.all([gasGet("getMasterData"), gasGet("getObList")]);
-    setMasterData(md || {});
     const combined = [...(md.obIncharges || []), ...(md.ibIncharges || [])].filter((v, i, a) => a.indexOf(v) === i).sort();
     setAllIncharges(combined);
     setObData(ob.list || []);
@@ -476,49 +442,25 @@ export default function App() {
     showToast("Data diperbarui ✓");
   }
 
-  useEffect(() => { loadAll(); }, []);
+  React.useEffect(() => { loadAll(); }, []);
 
   const navItems = [
     { id: "ringkasan", label: "Ringkasan", icon: "📊" },
-    { id: "ob", label: "Outbound BDO", icon: "🚚" },
-    { id: "hvs", label: "Outbound HVS", icon: "📦" },
-    { id: "ib", label: "Inbound HVS", icon: "📥" },
-    { id: "search", label: "Cari AWB", icon: "🔍" },
+    { id: "ob",        label: "Outbound BDO", icon: "🚚" },
+    { id: "hvs",       label: "Outbound HVS", icon: "📦" },
+    { id: "ib",        label: "Inbound HVS",  icon: "📥" },
+    { id: "search",    label: "Cari AWB",      icon: "🔍" },
   ];
 
-  const pageTitles = {
-    ringkasan: "Dashboard Ringkasan",
-    ob: "Outbound BDO",
-    hvs: "Outbound HVS",
-    ib: "Inbound HVS",
-    search: "Cari AWB",
-  };
-
-  const pageSubs = {
-    ringkasan: "Overview semua aktivitas pengiriman",
-    ob: "Log pengiriman keluar dari hub",
-    hvs: "High Value Shipment keluar",
-    ib: "High Value Shipment masuk",
-    search: "Pencarian AWB di semua data",
-  };
+  const pageTitles = { ringkasan: "Dashboard Ringkasan", ob: "Outbound BDO", hvs: "Outbound HVS", ib: "Inbound HVS", search: "Cari AWB" };
+  const pageSubs   = { ringkasan: "Overview semua aktivitas pengiriman", ob: "Log pengiriman keluar dari hub", hvs: "High Value Shipment keluar", ib: "High Value Shipment masuk", search: "Pencarian AWB di semua data" };
 
   const sideW = sidebarOpen ? 220 : 64;
 
   return (
-    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: COLORS.gray1, minHeight: "100vh", display: "flex" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
-        select, input { font-family: inherit; }
-        button { font-family: inherit; }
-      `}</style>
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", background: COLORS.gray1, minHeight: "100vh", display: "flex" }}>
 
-      {/* ── SIDEBAR ── */}
+      {/* SIDEBAR */}
       <div style={{
         width: sideW, minHeight: "100vh", background: "#0F172A",
         display: "flex", flexDirection: "column",
@@ -528,7 +470,6 @@ export default function App() {
       }}>
         {/* Brand */}
         <div style={{ padding: "20px 16px 16px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-          {/* Monitor icon (SVG) */}
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <rect x="2" y="3" width="20" height="14" rx="2" />
             <line x1="8" y1="21" x2="16" y2="21" />
@@ -583,7 +524,7 @@ export default function App() {
         )}
       </div>
 
-      {/* ── MAIN ── */}
+      {/* MAIN */}
       <div style={{ marginLeft: sideW, flex: 1, display: "flex", flexDirection: "column", transition: "margin-left .25s ease", minWidth: 0 }}>
         {/* Topbar */}
         <div style={{
@@ -600,8 +541,7 @@ export default function App() {
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowInchargeDrop(!showInchargeDrop)}
               style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "8px 14px", borderRadius: 10,
+                display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 10,
                 background: globalIncharge ? COLORS.blueL : COLORS.gray2,
                 border: `1.5px solid ${globalIncharge ? COLORS.blue2 : COLORS.gray3}`,
                 cursor: "pointer", fontSize: 13, fontWeight: 600,
@@ -614,8 +554,7 @@ export default function App() {
               <div style={{
                 position: "absolute", top: "calc(100% + 8px)", right: 0,
                 background: COLORS.white, borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,.15)",
-                border: `1px solid ${COLORS.gray3}`, minWidth: 200, zIndex: 200,
-                maxHeight: 280, overflowY: "auto",
+                border: `1px solid ${COLORS.gray3}`, minWidth: 200, zIndex: 200, maxHeight: 280, overflowY: "auto",
               }}>
                 <div onClick={() => { setGlobalIncharge(""); setShowInchargeDrop(false); }}
                   style={{ padding: "10px 14px", cursor: "pointer", fontSize: 13, color: COLORS.gray5, borderBottom: `1px solid ${COLORS.gray2}` }}
@@ -638,10 +577,8 @@ export default function App() {
           {/* Refresh */}
           <button onClick={handleRefresh} disabled={refreshing}
             style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 14px", borderRadius: 10,
-              background: COLORS.blue, color: "#fff",
-              border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
+              display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10,
+              background: COLORS.blue, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700,
               opacity: refreshing ? .7 : 1,
             }}>
             {refreshing ? <><Spinner size={14} /> Memuat...</> : <>🔄 Refresh</>}
@@ -650,23 +587,16 @@ export default function App() {
 
         {/* Content */}
         <div style={{ flex: 1, padding: "24px", animation: "fadeIn .3s ease" }} key={page}>
-          {page === "ringkasan" && (
-            <PageRingkasan
-              obData={obData} hvsData={hvsData} ibData={ibData}
-              loadingOb={loadingOb} loadingHvs={loadingHvs} loadingIb={loadingIb}
-            />
-          )}
-          {page === "ob" && <PageTable data={obData} loading={loadingOb} type="ob" inchargeFilter={globalIncharge} />}
-          {page === "hvs" && <PageTable data={hvsData} loading={loadingHvs} type="hvs" inchargeFilter={globalIncharge} />}
-          {page === "ib" && <PageTable data={ibData} loading={loadingIb} type="ib" inchargeFilter={globalIncharge} />}
-          {page === "search" && <PageSearch />}
+          {page === "ringkasan" && <PageRingkasan obData={obData} hvsData={hvsData} ibData={ibData} loadingOb={loadingOb} loadingHvs={loadingHvs} loadingIb={loadingIb} />}
+          {page === "ob"        && <PageTable data={obData}  loading={loadingOb}  type="ob"  inchargeFilter={globalIncharge} />}
+          {page === "hvs"       && <PageTable data={hvsData} loading={loadingHvs} type="hvs" inchargeFilter={globalIncharge} />}
+          {page === "ib"        && <PageTable data={ibData}  loading={loadingIb}  type="ib"  inchargeFilter={globalIncharge} />}
+          {page === "search"    && <PageSearch />}
         </div>
       </div>
 
-      {/* Click-away untuk incharge dropdown */}
-      {showInchargeDrop && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setShowInchargeDrop(false)} />
-      )}
+      {/* Click-away dropdown */}
+      {showInchargeDrop && <div style={{ position: "fixed", inset: 0, zIndex: 49 }} onClick={() => setShowInchargeDrop(false)} />}
 
       {/* Toast */}
       {toast && (
@@ -683,3 +613,9 @@ export default function App() {
     </div>
   );
 }
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+</script>
+</body>
+</html>
