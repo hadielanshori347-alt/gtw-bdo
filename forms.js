@@ -60,10 +60,21 @@ function initHvsTujuan(tuj) {
   document.getElementById('hvsScanInput').disabled = false;
   renderHvsTabs(); renderHvsScanList();
 }
+function initIbTujuan(tuj) {
+  if (!ibScanMap[tuj]) ibScanMap[tuj] = [];
+  ibActiveTuj = tuj;
+  document.getElementById('ibScanInput').disabled = false;
+  renderIbTabs(); renderIbScanList();
+}
 
 function addMultiTujuan(type) {
-  var hasService = (type === 'ob' ? document.getElementById('obService') : document.getElementById('hvsService')).value;
+  var svcId = type === 'ib' ? 'ibService' : (type === 'ob' ? 'obService' : 'hvsService');
+  var hasService = document.getElementById(svcId).value;
   if (!hasService) { toast('Pilih service dahulu', 'error'); return; }
+  if (type === 'ib') {
+    var hasFrom = document.getElementById('ibFrom').value;
+    if (!hasFrom) { toast('Pilih FROM dahulu', 'error'); return; }
+  }
   pendingTujuanType = type;
   document.getElementById('newTujuanInput').value = '';
   if (cbRegistry['newTujuanCb']) {
@@ -92,6 +103,9 @@ function confirmAddTujuan() {
     document.getElementById('hvsTujuan').value = tuj;
     if (cbRegistry['hvsTujuanCb']) cbRegistry['hvsTujuanCb'].value = tuj;
     checkHvsForm();
+  } else if (pendingTujuanType === 'ib') {
+    initIbTujuan(tuj);
+    checkIbForm();
   }
 }
 
@@ -175,18 +189,46 @@ function updateHvsTotalLabel() {
     Object.values(hvsScanMap).reduce(function(s, a) { return s + a.length; }, 0) + ' AWB total';
 }
 
+function renderIbTabs() {
+  var keys = Object.keys(ibScanMap);
+  document.getElementById('ibTujuanTabs').innerHTML = keys.map(function(t) {
+    return '<span class="scan-tujuan-tab' + (t === ibActiveTuj ? ' active' : '') +
+      '" onclick="switchIbTuj('' + escQ(t) + '')">' + escH(t) +
+      ' <span class="cnt">' + ibScanMap[t].length + '</span>' +
+      '<span class="rm-tuj material-icons-round" onclick="event.stopPropagation();removeIbTuj('' + escQ(t) + '')">cancel</span></span>';
+  }).join('');
+  updateIbTotalLabel();
+}
+function switchIbTuj(t) { ibActiveTuj = t; renderIbTabs(); renderIbScanList(); }
+function removeIbTuj(t) {
+  delete ibScanMap[t];
+  var k = Object.keys(ibScanMap);
+  ibActiveTuj = k.length ? k[0] : '';
+  if (!ibActiveTuj) document.getElementById('ibScanInput').disabled = true;
+  renderIbTabs(); renderIbScanList(); checkIbForm();
+}
 function renderIbScanList() {
   var list = document.getElementById('ibScanList');
-  var total = ibScanned.length;
-  document.getElementById('ibTotalScanLabel').innerText = total + ' AWB total';
-  list.innerHTML = !total
-    ? '<div class="scan-empty">Belum ada AWB di-scan</div>'
-    : ibScanned.map(function(awb, i) {
+  if (!ibActiveTuj || !ibScanMap[ibActiveTuj]) {
+    list.innerHTML = '<div class="scan-empty">Pilih atau tambah tujuan</div>';
+    updateIbTotalLabel(); return;
+  }
+  var arr = ibScanMap[ibActiveTuj];
+  list.innerHTML = arr.length
+    ? arr.map(function(awb, i) {
         return '<div class="scan-item">' +
           '<span class="scan-item-awb">' + escH(awb) + '</span>' +
-          '<span class="material-icons-round scan-item-del" onclick="ibScanned.splice(' + i + ',1);renderIbScanList()">delete</span>' +
+          '<span class="scan-item-tuj">' + escH(ibActiveTuj) + '</span>' +
+          '<span class="material-icons-round scan-item-del" onclick="removeIbAwb(' + i + ')">delete</span>' +
         '</div>';
-      }).join('');
+      }).join('')
+    : '<div class="scan-empty">Belum ada AWB untuk tujuan <strong>' + escH(ibActiveTuj) + '</strong></div>';
+  updateIbTotalLabel();
+}
+function removeIbAwb(i) { ibScanMap[ibActiveTuj].splice(i, 1); renderIbTabs(); renderIbScanList(); }
+function updateIbTotalLabel() {
+  document.getElementById('ibTotalScanLabel').innerText =
+    Object.values(ibScanMap).reduce(function(s, a) { return s + a.length; }, 0) + ' AWB total';
 }
 
 // --- SCAN INPUT ---
@@ -221,15 +263,16 @@ function handleScan(e, type) {
 
   } else {
     var from = document.getElementById('ibFrom').value;
-    var tuj  = document.getElementById('ibTujuan').value;
-    if (!from || !tuj) {
-      playBeepError(); toast('Isi FROM & TUJUAN dulu', 'error'); input.value = ''; return;
+    if (!from) {
+      playBeepError(); toast('Isi FROM dulu', 'error'); input.value = ''; return;
     }
-    if (ibScanned.indexOf(val) !== -1) {
+    if (!ibActiveTuj) { playBeepError(); toast('Pilih tujuan dahulu', 'error'); return; }
+    if (!ibScanMap[ibActiveTuj]) ibScanMap[ibActiveTuj] = [];
+    if (ibScanMap[ibActiveTuj].indexOf(val) !== -1) {
       playBeepError(); toast('AWB sudah ada', 'error'); input.value = ''; return;
     }
-    ibScanned.unshift(val); playBeep();
-    renderIbScanList();
+    ibScanMap[ibActiveTuj].unshift(val); playBeep();
+    renderIbTabs(); renderIbScanList();
   }
   input.value = '';
 }
@@ -413,54 +456,66 @@ function resetHvsForm() {
   document.getElementById('hvsFormIcon').innerText = 'expand_more';
 }
 
-// --- SAVE IB - OPTIMISTIC UPDATE ---
+// --- SAVE IB - OPTIMISTIC UPDATE (MULTI TUJUAN) ---
 function saveIb() {
   var service = document.getElementById('ibService').value;
   var from    = document.getElementById('ibFrom').value;
-  var tujuan  = document.getElementById('ibTujuan').value;
-  if (!globalIncharge || !service || !from || !tujuan) {
-    toast('Lengkapi semua field', 'error'); return;
+  if (!globalIncharge || !service || !from) {
+    toast('Lengkapi SERVICE dan FROM', 'error'); return;
   }
+  var tujuanKeys = Object.keys(ibScanMap);
+  if (!tujuanKeys.length) { toast('Tambahkan minimal 1 tujuan', 'error'); return; }
 
   var btn = document.getElementById('btnSaveIb');
   btn.disabled = true;
   btn.innerHTML = '<span class="material-icons-round" style="animation:spin .6s linear infinite;font-size:15px">sync</span> Menyimpan...';
 
   var now = _nowDisplayStr();
-  var optimisticItem = {
-    no_track    : 'IB_' + service.substring(0,3).toUpperCase() + '_' + tujuan.substring(0,8).toUpperCase() + '_SAVING',
-    incharge    : globalIncharge,
-    service     : service,
-    from        : from,
-    tujuan      : tujuan,
-    created_date: now,
-    status      : 'ON PROSES',
-    total_awb   : ibScanned.length,
-    foto_url    : '',
-    _saving     : true
-  };
-  ibData.unshift(optimisticItem);
-  renderIbTable(); updateIbStats();
-  toast('... Menyimpan...', '');
+  var optimisticItems = [];
 
-  var savedAwbs = ibScanned.slice();
+  tujuanKeys.forEach(function(tuj) {
+    var item = {
+      no_track    : 'IB_' + service.substring(0,3).toUpperCase() + '_' + tuj.substring(0,8).toUpperCase() + '_SAVING',
+      incharge    : globalIncharge,
+      service     : service,
+      from        : from,
+      tujuan      : tuj,
+      created_date: now,
+      status      : 'ON PROSES',
+      total_awb   : (ibScanMap[tuj] || []).length,
+      foto_url    : '',
+      _saving     : true
+    };
+    optimisticItems.push(item);
+    ibData.unshift(item);
+  });
+  renderIbTable(); updateIbStats();
+  toast('... Menyimpan ' + tujuanKeys.length + ' tujuan...', '');
+
+  var savedMap = {};
+  tujuanKeys.forEach(function(t) { savedMap[t] = (ibScanMap[t] || []).slice(); });
   resetIbForm();
 
-  gasPost('saveIb', {
-    incharge: globalIncharge,
-    service : service,
-    from    : from,
-    tujuan  : tujuan,
-    awbList : savedAwbs
-  }).then(function(res) {
-    var idx = ibData.indexOf(optimisticItem);
-    if (idx !== -1) ibData.splice(idx, 1);
-    if (res.error) {
-      toast('Gagal: ' + res.error, 'error');
+  Promise.all(tujuanKeys.map(function(tuj) {
+    return gasPost('saveIb', {
+      incharge: globalIncharge,
+      service : service,
+      from    : from,
+      tujuan  : tuj,
+      awbList : savedMap[tuj] || []
+    });
+  })).then(function(results) {
+    var errors = results.filter(function(r) { return r.error; });
+    optimisticItems.forEach(function(opt) {
+      var idx = ibData.indexOf(opt);
+      if (idx !== -1) ibData.splice(idx, 1);
+    });
+    if (errors.length) {
+      toast('Ada error: ' + errors[0].error, 'error');
       renderIbTable(); updateIbStats();
       return;
     }
-    toast('IB disimpan! NO TRACK: ' + res.noTrack, 'success');
+    toast(results.length + ' NO TRACK IB dibuat', 'success');
     _obibData = null;
     gasGet('getIbList').then(function(r) {
       ibData = r.list || [];
@@ -468,27 +523,33 @@ function saveIb() {
     }).catch(function() {});
     _debouncedBuildAllScanAwbs();
   }).catch(function(e) {
-    var idx = ibData.indexOf(optimisticItem);
-    if (idx !== -1) ibData.splice(idx, 1);
+    optimisticItems.forEach(function(opt) {
+      var idx = ibData.indexOf(opt);
+      if (idx !== -1) ibData.splice(idx, 1);
+    });
     toast('Error: ' + e.message, 'error');
     renderIbTable(); updateIbStats();
   });
 }
 
 function resetIbForm() {
-  ['ibService', 'ibFrom', 'ibTujuan'].forEach(function(id) {
+  ['ibService', 'ibFrom'].forEach(function(id) {
     document.getElementById(id).value = '';
     if (cbRegistry[id + 'Cb']) cbRegistry[id + 'Cb'].value = '';
   });
   setCbDisabled('ibFromCb', true);
-  setCbDisabled('ibTujuanCb', true);
   document.getElementById('ibScanInput').disabled = true;
-  document.getElementById('ibScanInput').placeholder = 'Isi FROM & TUJUAN dulu...';
+  document.getElementById('ibScanInput').placeholder = 'Pilih service & FROM dulu...';
+  if (document.getElementById('ibAddTujBtn')) document.getElementById('ibAddTujBtn').disabled = true;
   document.getElementById('ibServiceHint').style.display = '';
+  var multiInfo = document.getElementById('ibMultiTujInfo');
+  if (multiInfo) multiInfo.style.display = 'none';
   var hint = document.getElementById('ibScanHint');
   if (hint) hint.style.display = 'none';
-  ibScanned = [];
-  renderIbScanList();
+  ibScanMap = {}; ibActiveTuj = '';
+  document.getElementById('ibTujuanTabs').innerHTML = '';
+  document.getElementById('ibScanList').innerHTML = '<div class="scan-empty">Pilih service dan FROM terlebih dahulu</div>';
+  document.getElementById('ibTotalScanLabel').innerText = '0 AWB total';
   checkIbForm();
   document.getElementById('ibFormBody').classList.remove('open');
   document.getElementById('ibFormIcon').innerText = 'expand_more';
