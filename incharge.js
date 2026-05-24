@@ -74,8 +74,7 @@ function initAllCbs() {
   registerCb('hvsServiceCb', 'hvsService', 'hvsServiceDrop', cbOptions.hvs.service, function(v) { onHvsServiceSelect(v); });
   registerCb('hvsTujuanCb', 'hvsTujuan', 'hvsTujuanDrop', cbOptions.hvs.tujuan, function(v) { if (v && !hvsScanMap[v]) initHvsTujuan(v); checkHvsForm(); });
   registerCb('ibServiceCb', 'ibService', 'ibServiceDrop', cbOptions.ib.service, function(v) { onIbServiceSelect(v); });
-  registerCb('ibFromCb', 'ibFrom', 'ibFromDrop', cbOptions.ib.from, function() { checkIbScanReady(); checkIbForm(); });
-  registerCb('ibTujuanCb', 'ibTujuan', 'ibTujuanDrop', cbOptions.ib.tujuan, function() { checkIbScanReady(); checkIbForm(); });
+  registerCb('ibFromCb', 'ibFrom', 'ibFromDrop', cbOptions.ib.from, function() { checkIbFromReady(); checkIbForm(); });
   registerCb('newTujuanCb', 'newTujuanInput', 'newTujuanDrop', [], function() { });
 }
 
@@ -110,25 +109,38 @@ function onHvsServiceSelect(v) {
 
 function onIbServiceSelect(v) {
   var has = !!v;
-  setCbDisabled('ibFromCb', !has); setCbDisabled('ibTujuanCb', !has);
+  setCbDisabled('ibFromCb', !has);
   document.getElementById('ibFrom').placeholder = has ? 'Ketik / pilih...' : 'Pilih service dulu...';
-  document.getElementById('ibTujuan').placeholder = has ? 'Ketik / pilih...' : 'Pilih service dulu...';
   document.getElementById('ibServiceHint').style.display = has ? 'none' : '';
+  var multiInfo = document.getElementById('ibMultiTujInfo');
+  if (multiInfo) multiInfo.style.display = 'none';
   if (cbRegistry['ibFromCb']) { cbRegistry['ibFromCb'].value = ''; document.getElementById('ibFrom').value = ''; }
-  if (cbRegistry['ibTujuanCb']) { cbRegistry['ibTujuanCb'].value = ''; document.getElementById('ibTujuan').value = ''; }
-  ibScanned = []; renderIbScanList(); checkIbScanReady(); checkIbForm();
+  if (document.getElementById('ibAddTujBtn')) document.getElementById('ibAddTujBtn').disabled = true;
+  ibScanMap = {}; ibActiveTuj = '';
+  if (document.getElementById('ibTujuanTabs')) document.getElementById('ibTujuanTabs').innerHTML = '';
+  if (document.getElementById('ibScanList')) document.getElementById('ibScanList').innerHTML = '<div class="scan-empty">Pilih atau tambah tujuan terlebih dahulu</div>';
+  if (document.getElementById('ibTotalScanLabel')) document.getElementById('ibTotalScanLabel').innerText = '0 AWB total';
+  document.getElementById('ibScanInput').disabled = true;
+  checkIbFromReady(); checkIbForm();
 }
 
-function checkIbScanReady() {
+function checkIbScanReady() { checkIbFromReady(); }
+function checkIbFromReady() {
   var svc = document.getElementById('ibService').value;
   var from = document.getElementById('ibFrom').value;
-  var tuj = document.getElementById('ibTujuan').value;
-  var ready = !!(svc && from && tuj);
-  var scanInp = document.getElementById('ibScanInput');
+  var fromReady = !!(svc && from);
+  var addTujBtn = document.getElementById('ibAddTujBtn');
+  var multiInfo = document.getElementById('ibMultiTujInfo');
   var hint = document.getElementById('ibScanHint');
-  scanInp.disabled = !ready;
-  if (svc && !ready) { scanInp.placeholder = 'Isi FROM & TUJUAN dulu...'; if (hint) hint.style.display = ''; }
-  else if (!svc) { scanInp.placeholder = 'Pilih service dulu...'; if (hint) hint.style.display = 'none'; }
+  if (addTujBtn) addTujBtn.disabled = !fromReady;
+  if (multiInfo) multiInfo.style.display = fromReady ? '' : 'none';
+  // scan input only enabled when there is an active tujuan tab
+  var hasTuj = ibActiveTuj && ibScanMap && ibScanMap[ibActiveTuj] !== undefined;
+  var scanInp = document.getElementById('ibScanInput');
+  scanInp.disabled = !(fromReady && hasTuj);
+  if (!svc) { scanInp.placeholder = 'Pilih service dulu...'; if (hint) hint.style.display = 'none'; }
+  else if (!from) { scanInp.placeholder = 'Isi FROM dulu...'; if (hint) hint.style.display = fromReady ? 'none' : ''; }
+  else if (!hasTuj) { scanInp.placeholder = 'Tambah tujuan dulu...'; if (hint) hint.style.display = ''; }
   else { scanInp.placeholder = 'Scan nomor AWB...'; if (hint) hint.style.display = 'none'; }
 }
 
@@ -150,8 +162,10 @@ function refreshFormIncharge(t) {
       document.getElementById(t + 'ScanInput').disabled = true;
       if (document.getElementById(t + 'AddTujBtn')) document.getElementById(t + 'AddTujBtn').disabled = true;
     } else {
-      setCbDisabled('ibFromCb', true); setCbDisabled('ibTujuanCb', true);
+      setCbDisabled('ibFromCb', true);
       document.getElementById('ibScanInput').disabled = true;
+      if (document.getElementById('ibAddTujBtn')) document.getElementById('ibAddTujBtn').disabled = true;
+      var multiInfo = document.getElementById('ibMultiTujInfo'); if (multiInfo) multiInfo.style.display = 'none';
       var hint = document.getElementById('ibScanHint'); if (hint) hint.style.display = 'none';
     }
   }
@@ -170,7 +184,7 @@ function toggleForm(type) {
 
 function checkObForm() { var hasService = !!(document.getElementById('obService') && document.getElementById('obService').value); var hasTuj = Object.keys(obScanMap).length > 0; document.getElementById('btnSaveOb').disabled = !(globalIncharge && hasService && hasTuj); }
 function checkHvsForm() { var hasService = !!(document.getElementById('hvsService') && document.getElementById('hvsService').value); var hasTuj = Object.keys(hvsScanMap).length > 0; document.getElementById('btnSaveHvs').disabled = !(globalIncharge && hasService && hasTuj); }
-function checkIbForm() { var svc = document.getElementById('ibService').value; var from = document.getElementById('ibFrom').value; var tuj = document.getElementById('ibTujuan').value; document.getElementById('btnSaveIb').disabled = !(globalIncharge && svc && from && tuj); }
+function checkIbForm() { var svc = document.getElementById('ibService').value; var from = document.getElementById('ibFrom').value; var hasTuj = Object.keys(ibScanMap).length > 0; document.getElementById('btnSaveIb').disabled = !(globalIncharge && svc && from && hasTuj); }
 
 // ─── STATS ───
 function filteredData(arr) { if (!globalIncharge) return arr; return arr.filter(function(d) { return d.incharge === globalIncharge; }); }
