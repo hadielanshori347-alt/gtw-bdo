@@ -34,14 +34,17 @@ const Photo = {
     document.getElementById('gpsBar').innerText = STATE.gpsCoords
       ? '📍 ' + STATE.gpsCoords
       : '📍 Mendapatkan lokasi...';
+    Photo._updateQueueBar();
   },
 
-  // ── Tampilkan bar preview (Ulangi + Tambah Foto) ──
+  // ── Tampilkan bar preview (Ulangi | Tambah Foto | Simpan Foto Ini) ──
   _showPreviewBar() {
     document.getElementById('photoVideo').style.display   = 'none';
     document.getElementById('photoPreview').style.display = 'block';
     document.getElementById('barAmbil').classList.add('hidden');
     document.getElementById('barResult').classList.remove('hidden');
+    // barAfterSave ikut muncul/sembunyi sesuai antrian
+    Photo._updateQueueBar();
   },
 
   // ── Update bar antrian bawah ──
@@ -175,16 +178,26 @@ const Photo = {
     // Stream masih aktif, langsung bisa ambil lagi
   },
 
+  // ── Simpan Langsung — foto tunggal (atau foto terakhir) langsung upload tanpa antrian ──
+  simpanLangsung() {
+    if (!STATE.capturedDataUrl) return;
+    // Masukkan foto ini ke antrian, lalu langsung simpanSemua
+    const b64 = STATE.capturedDataUrl.split(',')[1];
+    STATE.photoQueue.push(b64);
+    STATE.capturedDataUrl = null;
+    Photo.simpanSemua();
+  },
+
   // ── Simpan Semua — upload antrian → tiap foto kolom berbeda → balik ──
   async simpanSemua() {
-    if (!STATE.photoQueue || !STATE.photoQueue.length) return;
-
-    // Kalau masih ada foto di preview yang belum masuk antrian, masukkan dulu
+    // Kalau masih ada foto di preview (dipanggil dari bar antrian saat preview aktif), masukkan dulu
     if (STATE.capturedDataUrl) {
       const b64 = STATE.capturedDataUrl.split(',')[1];
       STATE.photoQueue.push(b64);
       STATE.capturedDataUrl = null;
     }
+
+    if (!STATE.photoQueue || !STATE.photoQueue.length) return;
 
     const total = STATE.photoQueue.length;
     UI.Loading.show(`Upload foto 1/${total}...`);
