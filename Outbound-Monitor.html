@@ -28,7 +28,7 @@
 <div id="root"></div>
 <script type="text/babel">
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyIsSTxjhxia3KJn9UxChqIrasN14eGBHlHmbGzd5-6yyBJtqDLSJ9XP4RuIOv9fodrKw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw9VlWPh1D_9Z2Se7PmwM9iGI9m18P9KpvVdqh7Lja_23xeiqRI32MF6-2iIq9M9ZjQfA/exec";
 
 const COLORS = {
   blue:    "#1565C0",
@@ -163,7 +163,6 @@ function PhotoSlider({ photos }) {
           style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
           onError={e => { e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120' viewBox='0 0 200 120'%3E%3Crect fill='%23374151' width='200' height='120'/%3E%3Ctext fill='%239CA3AF' font-size='13' font-family='sans-serif' x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle'%3EGagal memuat foto%3C/text%3E%3C/svg%3E"; }}
         />
-
         {photos.length > 1 && (
           <>
             <button onClick={() => go(-1)} style={{
@@ -197,8 +196,7 @@ function PhotoSlider({ photos }) {
               style={{
                 width: i === idx ? 20 : 8, height: 8, borderRadius: 4,
                 background: i === idx ? COLORS.blue : COLORS.gray3,
-                border: "none", cursor: "pointer", transition: "all .2s",
-                padding: 0,
+                border: "none", cursor: "pointer", transition: "all .2s", padding: 0,
               }} />
           ))}
         </div>
@@ -225,10 +223,7 @@ function PhotoSlider({ photos }) {
 }
 
 /* ─── AWB LIST ─── */
-function AwbList({ awbs, loading }) {
-  if (loading) return (
-    <div style={{ display: "flex", justifyContent: "center", padding: 32 }}><Spinner /></div>
-  );
+function AwbList({ awbs }) {
   if (!awbs || awbs.length === 0) return (
     <div style={{ textAlign: "center", padding: 32, color: COLORS.gray5, fontSize: 13 }}>
       <span style={{ fontSize: 32, display: "block", marginBottom: 8 }}>📭</span>
@@ -237,34 +232,43 @@ function AwbList({ awbs, loading }) {
   );
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 260, overflowY: "auto" }}>
-      {awbs.map((awb, i) => (
-        <div key={i} style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "10px 12px", background: COLORS.gray1, borderRadius: 8,
-          border: `1px solid ${COLORS.gray3}`,
-        }}>
-          <span style={{
-            width: 24, height: 24, borderRadius: "50%", background: COLORS.blueL,
-            color: COLORS.blue, fontSize: 11, fontWeight: 700,
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>{i + 1}</span>
-          <span style={{ fontFamily: "monospace", fontSize: 13, color: COLORS.gray8, fontWeight: 600, letterSpacing: .3, flex: 1 }}>
-            {typeof awb === "object" ? (awb.no_awb || awb.awb || JSON.stringify(awb)) : awb}
-          </span>
-          {typeof awb === "object" && awb.keterangan && (
-            <span style={{ fontSize: 11, color: COLORS.gray5 }}>{awb.keterangan}</span>
-          )}
-        </div>
-      ))}
+      {awbs.map((awb, i) => {
+        // support format string langsung maupun object {awb, tujuan, from}
+        const label = typeof awb === "object" ? (awb.awb || awb.no_awb || JSON.stringify(awb)) : awb;
+        const sub   = typeof awb === "object" ? (awb.tujuan || awb.keterangan || "") : "";
+        return (
+          <div key={i} style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "10px 12px", background: COLORS.gray1, borderRadius: 8,
+            border: `1px solid ${COLORS.gray3}`,
+          }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: "50%", background: COLORS.blueL,
+              color: COLORS.blue, fontSize: 11, fontWeight: 700,
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>{i + 1}</span>
+            <span style={{ fontFamily: "monospace", fontSize: 13, color: COLORS.gray8, fontWeight: 600, letterSpacing: .3, flex: 1 }}>
+              {label}
+            </span>
+            {sub && <span style={{ fontSize: 11, color: COLORS.gray5 }}>{sub}</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/* ─── DETAIL MODAL ─── */
+/* ─── DETAIL MODAL — v5.0 ─── */
+// Perubahan dari versi sebelumnya:
+//   1. Hapus useMemo photos — diganti state photos dari getDetail
+//   2. useEffect sekarang panggil getDetail (bukan getAwbList)
+//   3. getDetail return { awbs: string[], photos: string[] }
+//   4. Fallback ke row object (foto_url, foto_url_2, dst) kalau getDetail belum di-deploy
 function DetailModal({ row, type, onClose }) {
-  const [detail, setDetail] = React.useState(null);
+  const [awbs, setAwbs]       = React.useState([]);
+  const [photos, setPhotos]   = React.useState([]);
   const [loading, setLoading] = React.useState(true);
-  const [tab, setTab] = React.useState("awb");
+  const [tab, setTab]         = React.useState("awb");
 
   const typeColor = { ob: COLORS.blue, hvs: "#6A1B9A", ib: "#00695C" };
   const typeBg   = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
@@ -273,16 +277,38 @@ function DetailModal({ row, type, onClose }) {
   React.useEffect(() => {
     async function load() {
       setLoading(true);
-      // Panggil GAS dengan action getDetail, kirim no_track dan type
-      const r = await gasGet("getDetail", { no_track: row.no_track, type });
-      setDetail(r);
+
+      // Panggil getDetail — endpoint baru yang return { awbs, photos }
+      const r = await gasGet("getDetail", { noTrack: row.no_track, type: type.toUpperCase() });
+
+      // ── AWB ──
+      // Format baru: r.awbs = string[]
+      // Format lama (fallback): r.list = object[] dari getAwbList
+      if (Array.isArray(r.awbs)) {
+        setAwbs(r.awbs);
+      } else if (Array.isArray(r.list)) {
+        setAwbs(r.list);
+      } else {
+        setAwbs([]);
+      }
+
+      // ── Foto ──
+      // Format baru: r.photos = string[]
+      // Fallback: baca dari row object (foto_url, foto_url_2, ...) kalau getDetail belum di-deploy
+      if (Array.isArray(r.photos) && r.photos.length > 0) {
+        setPhotos(r.photos);
+      } else {
+        const urls = [];
+        if (row.foto_url) urls.push(row.foto_url);
+        let i = 2;
+        while (row[`foto_url_${i}`]) { urls.push(row[`foto_url_${i}`]); i++; }
+        setPhotos(urls);
+      }
+
       setLoading(false);
     }
     load();
   }, [row.no_track, type]);
-
-  const awbs   = detail?.awbs   || [];
-  const photos = detail?.photos || [];
 
   // Close on Escape
   React.useEffect(() => {
@@ -290,6 +316,9 @@ function DetailModal({ row, type, onClose }) {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
+
+  const totalAwb = Array.isArray(awbs) ? awbs.length : 0;
+  const totalFoto = Array.isArray(photos) ? photos.length : 0;
 
   return (
     <>
@@ -359,8 +388,8 @@ function DetailModal({ row, type, onClose }) {
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: `1px solid ${COLORS.gray3}`, padding: "0 24px" }}>
           {[
-            { id: "awb",   label: `📋 Daftar AWB${!loading ? ` (${awbs.length})` : ""}` },
-            { id: "foto",  label: `📷 Foto${!loading ? ` (${photos.length})` : ""}` },
+            { id: "awb",  label: `📋 Daftar AWB${!loading ? ` (${totalAwb})` : ""}` },
+            { id: "foto", label: `📷 Foto${!loading ? ` (${totalFoto})` : ""}` },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               background: "none", border: "none", cursor: "pointer",
@@ -374,19 +403,13 @@ function DetailModal({ row, type, onClose }) {
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          {tab === "awb" && (
-            loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 32 }}><Spinner /></div>
-            ) : (
-              <AwbList awbs={awbs} loading={false} />
-            )
-          )}
-          {tab === "foto" && (
-            loading ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: 32 }}><Spinner /></div>
-            ) : (
-              <PhotoSlider photos={photos} />
-            )
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 32 }}><Spinner /></div>
+          ) : (
+            <>
+              {tab === "awb"  && <AwbList awbs={awbs} />}
+              {tab === "foto" && <PhotoSlider photos={photos} />}
+            </>
           )}
         </div>
       </div>
@@ -438,12 +461,12 @@ function DataTable({ cols, rows, emptyText = "Tidak ada data", loading }) {
 
 /* ─── RINGKASAN PAGE ─── */
 function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loadingIb }) {
-  const obTotal = obData.reduce((s, x) => s + (+x.total_awb || 0), 0);
-  const hvsTotal = hvsData.reduce((s, x) => s + (+x.total_awb || 0), 0);
-  const ibTotal = ibData.reduce((s, x) => s + (+x.total_awb || 0), 0);
-  const obSelesai = obData.filter(x => x.status === "SELESAI").length;
+  const obTotal    = obData.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const hvsTotal   = hvsData.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const ibTotal    = ibData.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const obSelesai  = obData.filter(x => x.status === "SELESAI").length;
   const hvsSelesai = hvsData.filter(x => x.status === "SELESAI").length;
-  const ibSelesai = ibData.filter(x => x.status === "SELESAI").length;
+  const ibSelesai  = ibData.filter(x => x.status === "SELESAI").length;
 
   const allRecent = [
     ...obData.map(x => ({ ...x, _type: "OB" })),
@@ -466,9 +489,9 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
         {[
-          { label: "OB Selesai", done: obSelesai, total: obData.length, color: COLORS.blue },
+          { label: "OB Selesai",  done: obSelesai,  total: obData.length,  color: COLORS.blue },
           { label: "HVS Selesai", done: hvsSelesai, total: hvsData.length, color: "#6A1B9A" },
-          { label: "IB Selesai", done: ibSelesai, total: ibData.length, color: "#00695C" },
+          { label: "IB Selesai",  done: ibSelesai,  total: ibData.length,  color: "#00695C" },
         ].map((p, i) => {
           const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
           return (
@@ -532,10 +555,10 @@ function PageRingkasan({ obData, hvsData, ibData, loadingOb, loadingHvs, loading
 
 /* ─── PAGE TABLE ─── */
 function PageTable({ data, loading, type, inchargeFilter }) {
-  const [search, setSearch] = React.useState("");
+  const [search, setSearch]           = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("");
   const [serviceFilter, setServiceFilter] = React.useState("");
-  const [modalRow, setModalRow] = React.useState(null);
+  const [modalRow, setModalRow]       = React.useState(null);
 
   const typeColor = { ob: COLORS.blue, hvs: "#6A1B9A", ib: "#00695C" };
   const typeBg   = { ob: COLORS.blueL, hvs: "#F3E5F5", ib: "#E0F2F1" };
@@ -543,18 +566,17 @@ function PageTable({ data, loading, type, inchargeFilter }) {
 
   const filtered = data.filter(row => {
     const q = search.toLowerCase();
-    const matchSearch = !q || [row.no_track, row.incharge, row.service, row.tujuan, row.from].some(v => (v || "").toLowerCase().includes(q));
+    const matchSearch   = !q || [row.no_track, row.incharge, row.service, row.tujuan, row.from].some(v => (v || "").toLowerCase().includes(q));
     const matchIncharge = !inchargeFilter || row.incharge === inchargeFilter;
-    const matchStatus = !statusFilter || row.status === statusFilter;
-    const matchService = !serviceFilter || row.service === serviceFilter;
+    const matchStatus   = !statusFilter || row.status === statusFilter;
+    const matchService  = !serviceFilter || row.service === serviceFilter;
     return matchSearch && matchIncharge && matchStatus && matchService;
   });
 
   const services = [...new Set(data.map(r => r.service).filter(Boolean))].sort();
   const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
-  const selesai = filtered.filter(x => x.status === "SELESAI").length;
+  const selesai  = filtered.filter(x => x.status === "SELESAI").length;
 
-  // Detail button cell
   function DetailBtn({ row }) {
     return (
       <button onClick={() => setModalRow(row)} style={{
@@ -572,18 +594,18 @@ function PageTable({ data, loading, type, inchargeFilter }) {
   }
 
   const baseCols = [
-    { key: "no_track", label: "No Track", render: v => <span style={{ fontFamily: "monospace", fontSize: 11, color: COLORS.gray7 }}>{v || "—"}</span> },
-    { key: "incharge", label: "Incharge" },
-    { key: "service", label: "Service", render: v => v ? <Tag label={v} color={typeBg[type]} textColor={fg} /> : "—" },
-    { key: "total_awb", label: "AWB", render: v => <span style={{ fontWeight: 700, color: fg }}>{v || 0}</span> },
-    { key: "created_date", label: "Waktu", render: v => <span style={{ fontSize: 12, color: COLORS.gray5 }}>{fmtDate(v)}</span> },
-    { key: "status", label: "Status", render: v => <StatusBadge status={v} /> },
-    { key: "_action", label: "", render: (_, row) => <DetailBtn row={row} /> },
+    { key: "no_track",     label: "No Track",    render: v => <span style={{ fontFamily: "monospace", fontSize: 11, color: COLORS.gray7 }}>{v || "—"}</span> },
+    { key: "incharge",     label: "Incharge" },
+    { key: "service",      label: "Service",     render: v => v ? <Tag label={v} color={typeBg[type]} textColor={fg} /> : "—" },
+    { key: "total_awb",    label: "AWB",         render: v => <span style={{ fontWeight: 700, color: fg }}>{v || 0}</span> },
+    { key: "created_date", label: "Waktu",       render: v => <span style={{ fontSize: 12, color: COLORS.gray5 }}>{fmtDate(v)}</span> },
+    { key: "status",       label: "Status",      render: v => <StatusBadge status={v} /> },
+    { key: "_action",      label: "",            render: (_, row) => <DetailBtn row={row} /> },
   ];
 
   const cols = type === "ib" ? [
     baseCols[0], baseCols[1], baseCols[2],
-    { key: "from", label: "From (Kota)" },
+    { key: "from",   label: "From (Kota)" },
     { key: "tujuan", label: "Tujuan" },
     baseCols[3], baseCols[4], baseCols[5], baseCols[6],
   ] : [
@@ -596,7 +618,7 @@ function PageTable({ data, loading, type, inchargeFilter }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         <StatCard label="Total AWB" value={totalAwb} color="blue" icon="📦" />
-        <StatCard label="Selesai" value={selesai} color="green" icon="✅" />
+        <StatCard label="Selesai"   value={selesai}  color="green" icon="✅" />
         <StatCard label="On Proses" value={filtered.length - selesai} color="orange" icon="⏳" />
       </div>
       <div style={{ background: COLORS.white, borderRadius: 12, padding: "12px 16px", boxShadow: "0 2px 8px rgba(0,0,0,.05)", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
@@ -631,7 +653,7 @@ function PageTable({ data, loading, type, inchargeFilter }) {
 
 /* ─── SEARCH PAGE ─── */
 function PageSearch() {
-  const [q, setQ] = React.useState("");
+  const [q, setQ]           = React.useState("");
   const [results, setResults] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
   const [searched, setSearched] = React.useState(false);
@@ -664,6 +686,7 @@ function PageSearch() {
           </button>
         </div>
       </div>
+
       {searched && !loading && (
         <div style={{ background: COLORS.white, borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,.06)", overflow: "hidden" }}>
           <div style={{ padding: "12px 18px", borderBottom: `1px solid ${COLORS.gray3}`, fontSize: 13, color: COLORS.gray5 }}>
@@ -724,19 +747,19 @@ function PageSearch() {
 
 /* ─── APP ─── */
 function App() {
-  const [page, setPage] = React.useState("ringkasan");
-  const [obData, setObData] = React.useState([]);
-  const [hvsData, setHvsData] = React.useState([]);
-  const [ibData, setIbData] = React.useState([]);
+  const [page, setPage]                 = React.useState("ringkasan");
+  const [obData, setObData]             = React.useState([]);
+  const [hvsData, setHvsData]           = React.useState([]);
+  const [ibData, setIbData]             = React.useState([]);
   const [globalIncharge, setGlobalIncharge] = React.useState("");
   const [allIncharges, setAllIncharges] = React.useState([]);
-  const [loadingOb, setLoadingOb] = React.useState(true);
-  const [loadingHvs, setLoadingHvs] = React.useState(true);
-  const [loadingIb, setLoadingIb] = React.useState(true);
-  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [loadingOb, setLoadingOb]       = React.useState(true);
+  const [loadingHvs, setLoadingHvs]     = React.useState(true);
+  const [loadingIb, setLoadingIb]       = React.useState(true);
+  const [sidebarOpen, setSidebarOpen]   = React.useState(true);
   const [showInchargeDrop, setShowInchargeDrop] = React.useState(false);
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [toast, setToast] = React.useState(null);
+  const [refreshing, setRefreshing]     = React.useState(false);
+  const [toast, setToast]               = React.useState(null);
 
   function showToast(msg, type = "success") {
     setToast({ msg, type });
@@ -751,7 +774,7 @@ function App() {
     setObData(ob.list || []);
     setLoadingOb(false);
     gasGet("getHvsList").then(r => { setHvsData(r.list || []); setLoadingHvs(false); });
-    gasGet("getIbList").then(r => { setIbData(r.list || []); setLoadingIb(false); });
+    gasGet("getIbList").then(r  => { setIbData(r.list || []);  setLoadingIb(false);  });
   }
 
   async function handleRefresh() {
@@ -764,11 +787,11 @@ function App() {
   React.useEffect(() => { loadAll(); }, []);
 
   const navItems = [
-    { id: "ringkasan", label: "Ringkasan", icon: "📊" },
-    { id: "ob",        label: "Outbound BDO", icon: "🚚" },
-    { id: "hvs",       label: "Outbound HVS", icon: "📦" },
-    { id: "ib",        label: "Inbound HVS",  icon: "📥" },
-    { id: "search",    label: "Cari AWB",      icon: "🔍" },
+    { id: "ringkasan", label: "Ringkasan",     icon: "📊" },
+    { id: "ob",        label: "Outbound BDO",  icon: "🚚" },
+    { id: "hvs",       label: "Outbound HVS",  icon: "📦" },
+    { id: "ib",        label: "Inbound HVS",   icon: "📥" },
+    { id: "search",    label: "Cari AWB",       icon: "🔍" },
   ];
 
   const pageTitles = { ringkasan: "Dashboard Ringkasan", ob: "Outbound BDO", hvs: "Outbound HVS", ib: "Inbound HVS", search: "Cari AWB" };
@@ -831,7 +854,7 @@ function App() {
         </nav>
         {sidebarOpen && (
           <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,.08)", fontSize: 11, color: "rgba(255,255,255,.25)" }}>
-            v4.3 — GTW BDO Dashboard
+            v5.0 — GTW BDO Dashboard
           </div>
         )}
       </div>
@@ -848,6 +871,8 @@ function App() {
             <div style={{ fontSize: 16, fontWeight: 800, color: COLORS.gray8 }}>{pageTitles[page]}</div>
             <div style={{ fontSize: 11, color: COLORS.gray5 }}>{pageSubs[page]}</div>
           </div>
+
+          {/* Incharge Dropdown */}
           <div style={{ position: "relative" }}>
             <button onClick={() => setShowInchargeDrop(!showInchargeDrop)}
               style={{
@@ -883,6 +908,8 @@ function App() {
               </div>
             )}
           </div>
+
+          {/* Refresh */}
           <button onClick={handleRefresh} disabled={refreshing}
             style={{
               display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10,
