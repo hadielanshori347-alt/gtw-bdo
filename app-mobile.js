@@ -37,8 +37,8 @@ CreatePage.rescanOb = function() {
   Scanner.open('create-ob', 'Scan AWB', STATE.obActiveTuj);
 };
 CreatePage.rescanIb = function() {
-  const tuj = UI.Scb.getValue('scbIbTuj');
-  Scanner.open('create-ib', 'Scan AWB IB', tuj || 'IB');
+  if (!STATE.ibActiveTuj) { UI.Toast.error('Pilih tujuan IB dulu'); return; }
+  Scanner.open('create-ib', 'Scan AWB IB', STATE.ibActiveTuj);
 };
 
 // Patch selectType agar tombol rescan aktif setelah tujuan dipilih
@@ -50,18 +50,7 @@ CreatePage.onTujSelect = function(v) {
   if (document.getElementById('btnObRescan')) document.getElementById('btnObRescan').disabled = !hasTuj;
 };
 
-const _origOnIbSvcSelect = CreatePage.onIbSvcSelect.bind(CreatePage);
-CreatePage.onIbSvcSelect = function(v) {
-  _origOnIbSvcSelect(v);
-};
-
-// Update IB rescan button when FROM+TUJ filled
-const _origCheckIbReady = CreatePage._checkIbReady.bind(CreatePage);
-CreatePage._checkIbReady = function() {
-  const ready = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj'));
-  if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !ready;
-  if (ready) setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', UI.Scb.getValue('scbIbTuj')), 200);
-};
+// Update IB rescan button — dihandle langsung di pages-mobile.js (onIbTujSelect)
 
 // ── Scanner for detail ──
 // Override Scanner.open to handle 'detail' context (no label)
@@ -106,17 +95,16 @@ window.addEventListener('DOMContentLoaded', async function() {
     CreatePage.onIbSvcSelect(v);
   }, true);
 
-  UI.Scb.init('scbIbFrom', 'inpIbFrom', 'dropIbFrom', [], () => {
-    CreatePage._checkIbReady();
-    CreatePage._checkForm();
+  UI.Scb.init('scbIbFrom', 'inpIbFrom', 'dropIbFrom', [], v => {
+    CreatePage.onIbFromSelect(v);
   }, true);
 
   UI.Scb.init('scbIbTuj',  'inpIbTuj',  'dropIbTuj',  [], v => {
-    CreatePage._checkIbReady();
-    CreatePage._checkForm();
+    CreatePage.onIbTujSelect(v);
   }, true);
 
-  UI.Scb.init('scbNewTuj', 'inpNewTuj', 'dropNewTuj', [], () => {}, false);
+  UI.Scb.init('scbNewTuj',   'inpNewTuj',   'dropNewTuj',   [], () => {}, false);
+  UI.Scb.init('scbNewIbTuj', 'inpNewIbTuj', 'dropNewIbTuj', [], () => {}, false);
 
   // Close modals when clicking overlay
   document.querySelectorAll('.modal-ov').forEach(el => {
