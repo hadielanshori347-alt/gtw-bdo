@@ -192,13 +192,16 @@ const Scanner = {
     }
 
     if (STATE.scanContext === 'create-ib') {
+      if (!STATE.ibScanMap[STATE.ibActiveTuj]) STATE.ibScanMap[STATE.ibActiveTuj] = [];
       STATE.scanItems.forEach(awb => {
-        if (!STATE.ibScanned.includes(awb)) STATE.ibScanned.push(awb);
+        if (!STATE.ibScanMap[STATE.ibActiveTuj].includes(awb))
+          STATE.ibScanMap[STATE.ibActiveTuj].push(awb);
       });
       STATE.scanItems = [];
       await Scanner._stop();
+      CreatePage.renderIbTabs();
       CreatePage.renderIbScanList();
-      UI.Toast.success('AWB ditambahkan ke IB');
+      UI.Toast.success('AWB ditambahkan ke ' + STATE.ibActiveTuj);
       UI.Page.show('pgCreate');
       return;
     }
