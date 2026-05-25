@@ -188,16 +188,18 @@
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">TUJUAN *</label>
+        <label class="form-label">TUJUAN (utama)</label>
         <div class="scb" id="scbIbTuj">
-          <input class="scb-input" id="inpIbTuj" placeholder="Pilih service dulu..." readonly disabled>
+          <input class="scb-input" id="inpIbTuj" placeholder="Pilih FROM dulu..." readonly disabled>
           <span class="scb-arrow">▾</span>
           <div class="scb-drop" id="dropIbTuj"></div>
         </div>
       </div>
-      <div class="multi-info">💡 Scanner terbuka otomatis setelah FROM & TUJUAN dipilih.</div>
+      <div class="multi-info">💡 Setiap tujuan = 1 NO TRACK. Scanner terbuka otomatis setelah pilih tujuan.</div>
       <div class="scan-total" id="ibTotalLabel">0 AWB total</div>
-      <div style="margin-bottom:8px">
+      <div class="scan-tabs" id="ibTabs"></div>
+      <div class="scan-add-row">
+        <button class="btn-add-tuj" id="btnAddIbTuj" disabled onclick="CreatePage.openAddIbTujModal()">+ Tujuan Lain</button>
         <button class="btn btn-outline btn-sm" id="btnIbRescan" disabled onclick="CreatePage.rescanIb()">📷 Scan Lagi</button>
       </div>
       <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi form dulu</div></div>
@@ -324,6 +326,30 @@
     <div class="modal-body" style="padding:10px 14px">
       <input class="form-input" id="icSearch" placeholder="Cari incharge..." oninput="IcModal.render()" style="margin-bottom:10px">
       <div id="icList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD TUJUAN IB MODAL ═══ -->
+<div class="modal-ov" id="ibTujModal">
+  <div class="modal-sheet">
+    <div class="modal-hdr">
+      <div class="modal-title">Tambah Tujuan IB</div>
+      <button class="modal-close" onclick="CreatePage.closeIbTujModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">TUJUAN</label>
+        <div class="scb" id="scbNewIbTuj">
+          <input class="scb-input" id="inpNewIbTuj" placeholder="Ketik / pilih tujuan..." autocomplete="off">
+          <span class="scb-arrow">▾</span>
+          <div class="scb-drop" id="dropNewIbTuj"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="CreatePage.closeIbTujModal()">Batal</button>
+      <button class="btn btn-primary" style="flex:1" onclick="CreatePage.confirmAddIbTuj()">✔ Tambah</button>
     </div>
   </div>
 </div>
