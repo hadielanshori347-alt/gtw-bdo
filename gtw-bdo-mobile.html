@@ -265,8 +265,9 @@
       <button class="btn-cam btn-ambil" onclick="Photo.ambil()">📷 Ambil Foto</button>
     </div>
 
-    <!-- Bar 2: preview → Ulangi | Tambah Foto | Simpan Foto Ini -->
-    <div class="photo-bar hidden" id="barResult" style="flex-direction:column;gap:8px;padding:12px 16px 10px">
+    <!-- Bar 2: preview → 3 tombol: Ulangi | Tambah Foto | Simpan Foto Ini -->
+    <div class="photo-bar" id="barResult"
+         style="display:none;flex-direction:column;gap:8px;padding:12px 16px;padding-bottom:calc(12px + var(--safe-bot))">
       <div style="display:flex;gap:8px">
         <button class="btn-cam btn-ulangi" style="flex:1" onclick="Photo.ulangi()">↺ Ulangi</button>
         <button class="btn-cam btn-tambah" style="flex:1" onclick="Photo.tambahKeAntrian()">➕ Tambah Foto</button>
@@ -275,8 +276,8 @@
     </div>
 
     <!-- Bar 3: antrian — muncul di bawah bar lain saat ada foto di antrian -->
-    <div class="photo-bar hidden" id="barAfterSave"
-         style="flex-direction:column;gap:6px;padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));border-top:1px solid var(--border)">
+    <div class="photo-bar" id="barAfterSave"
+         style="display:none;flex-direction:column;gap:6px;padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));border-top:1px solid var(--border)">
       <div id="queueLabel" style="font-size:13px;font-weight:600;color:var(--blue2);text-align:center"></div>
       <button id="btnSimpanSemua" class="btn-cam btn-simpan-foto" disabled onclick="Photo.simpanSemua()">✅ Simpan Semua & Selesai</button>
     </div>
