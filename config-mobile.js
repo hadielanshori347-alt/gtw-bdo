@@ -23,7 +23,9 @@ const STATE = {
   createType: '',
   obScanMap: {},
   obActiveTuj: '',
-  ibScanned: [],
+  ibScanMap: {},      // { tujuan: [awb, ...] } — multi-tujuan IB
+  ibActiveTuj: '',    // tujuan aktif di tab IB
+  ibScanned: [],      // legacy — tidak dipakai lagi
 
   // Scanner state
   html5QrCode: null,
