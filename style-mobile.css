@@ -272,5 +272,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--font);background:var(--b
 .btn-add-tuj{background:var(--blue-l);color:var(--blue);padding:9px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:1px solid var(--blue-m)}
 .btn-add-tuj:disabled{opacity:.4;cursor:not-allowed}
 .scan-add-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+
+/* Photo page — tombol tambahan */
 .btn-tambah{background:#e65100;color:#fff}
 .btn-simpan-langsung{background:#1b6e2e;color:#fff;width:100%}
