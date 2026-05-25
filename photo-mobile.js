@@ -29,21 +29,20 @@ const Photo = {
   _showCameraBar() {
     document.getElementById('photoPreview').style.display = 'none';
     document.getElementById('photoVideo').style.display   = 'block';
-    document.getElementById('barAmbil').classList.remove('hidden');
-    document.getElementById('barResult').classList.add('hidden');
+    document.getElementById('barAmbil').style.display     = 'block';
+    document.getElementById('barResult').style.display    = 'none';
     document.getElementById('gpsBar').innerText = STATE.gpsCoords
       ? '📍 ' + STATE.gpsCoords
       : '📍 Mendapatkan lokasi...';
     Photo._updateQueueBar();
   },
 
-  // ── Tampilkan bar preview (Ulangi | Tambah Foto | Simpan Foto Ini) ──
+  // ── Tampilkan bar preview (3 tombol: Ulangi | Tambah Foto | Simpan Foto Ini) ──
   _showPreviewBar() {
     document.getElementById('photoVideo').style.display   = 'none';
     document.getElementById('photoPreview').style.display = 'block';
-    document.getElementById('barAmbil').classList.add('hidden');
-    document.getElementById('barResult').classList.remove('hidden');
-    // barAfterSave ikut muncul/sembunyi sesuai antrian
+    document.getElementById('barAmbil').style.display     = 'none';
+    document.getElementById('barResult').style.display    = 'flex';
     Photo._updateQueueBar();
   },
 
@@ -55,8 +54,8 @@ const Photo = {
     const lbl = document.getElementById('queueLabel');
     if (lbl) lbl.innerText = n > 0 ? `📸 ${n} foto di antrian` : '';
     if (btn) btn.disabled  = n === 0;
-    // Tampil jika ada antrian (bisa berdampingan dengan bar lain)
-    if (bar) bar.classList.toggle('hidden', n === 0);
+    // Pakai style.display agar tidak bentrok dengan class hidden
+    if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
   },
 
   // ── GPS ──
@@ -178,10 +177,9 @@ const Photo = {
     // Stream masih aktif, langsung bisa ambil lagi
   },
 
-  // ── Simpan Langsung — foto tunggal (atau foto terakhir) langsung upload tanpa antrian ──
+  // ── Simpan Langsung — foto tunggal, langsung upload tanpa antrian ──
   simpanLangsung() {
     if (!STATE.capturedDataUrl) return;
-    // Masukkan foto ini ke antrian, lalu langsung simpanSemua
     const b64 = STATE.capturedDataUrl.split(',')[1];
     STATE.photoQueue.push(b64);
     STATE.capturedDataUrl = null;
@@ -190,14 +188,14 @@ const Photo = {
 
   // ── Simpan Semua — upload antrian → tiap foto kolom berbeda → balik ──
   async simpanSemua() {
-    // Kalau masih ada foto di preview (dipanggil dari bar antrian saat preview aktif), masukkan dulu
+    if (!STATE.photoQueue || !STATE.photoQueue.length) return;
+
+    // Kalau masih ada foto di preview yang belum masuk antrian, masukkan dulu
     if (STATE.capturedDataUrl) {
       const b64 = STATE.capturedDataUrl.split(',')[1];
       STATE.photoQueue.push(b64);
       STATE.capturedDataUrl = null;
     }
-
-    if (!STATE.photoQueue || !STATE.photoQueue.length) return;
 
     const total = STATE.photoQueue.length;
     UI.Loading.show(`Upload foto 1/${total}...`);
