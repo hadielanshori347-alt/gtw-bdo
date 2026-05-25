@@ -132,8 +132,12 @@ const CreatePage = {
       }
     } else {
       CreatePage._checkIbReady();
+      CreatePage.renderIbTabs();
       CreatePage.renderIbScanList();
-      if (UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj')) {
+      // Buka scanner otomatis jika sudah ada tujuan aktif
+      if (STATE.ibActiveTuj) {
+        Scanner.open('create-ib', 'Scan AWB IB', STATE.ibActiveTuj);
+      } else if (UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj')) {
         Scanner.open('create-ib', 'Scan AWB IB', UI.Scb.getValue('scbIbTuj'));
       }
     }
@@ -219,39 +223,141 @@ const CreatePage = {
     document.getElementById('btnSave').disabled = !(STATE.globalIncharge && hasSvc && hasTuj);
   },
 
-  // ── IB Logic ──
+  // ── IB Logic — multi-tujuan (mirip OB) ──
   onIbSvcSelect(v) {
     const has = !!v;
     UI.Scb.setDisabled('scbIbFrom', !has);
     UI.Scb.setDisabled('scbIbTuj',  !has);
-    if (!has) { UI.Scb.reset('scbIbFrom'); UI.Scb.reset('scbIbTuj'); STATE.ibScanned = []; }
+    if (!has) {
+      UI.Scb.reset('scbIbFrom');
+      UI.Scb.reset('scbIbTuj');
+      STATE.ibScanMap   = {};
+      STATE.ibActiveTuj = '';
+    }
+    CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
     CreatePage._checkIbReady();
     CreatePage._checkForm();
   },
 
-  _checkIbReady() {
-    const ready = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj'));
-    // Buka scanner otomatis jika semua field IB terisi
-    if (ready) {
-      setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', UI.Scb.getValue('scbIbTuj')), 200);
-    }
+  onIbFromSelect(v) {
+    const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && v);
+    UI.Scb.setDisabled('scbIbTuj', !hasSvcFrom);
+    if (!hasSvcFrom) { UI.Scb.reset('scbIbTuj'); }
+    CreatePage._checkIbReady();
+    CreatePage._checkForm();
+  },
+
+  onIbTujSelect(v) {
+    if (v && !STATE.ibScanMap[v]) STATE.ibScanMap[v] = [];
+    STATE.ibActiveTuj = v;
+    CreatePage.renderIbTabs();
+    CreatePage.renderIbScanList();
+    // Enable tombol tambah tujuan lain & rescan
+    const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom'));
+    if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !hasSvcFrom;
+    if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !v;
+    // Buka scanner otomatis setelah pilih tujuan
+    if (v) setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', v), 200);
+    CreatePage._checkForm();
+  },
+
+  renderIbTabs() {
+    const keys = Object.keys(STATE.ibScanMap);
+    document.getElementById('ibTabs').innerHTML = keys.map(t =>
+      `<div class="scan-tab${t === STATE.ibActiveTuj ? ' active' : ''}" onclick="CreatePage.switchIbTuj('${escQ(t)}')">
+        ${escH(t)} <span class="cnt">${STATE.ibScanMap[t].length}</span>
+        <span class="rm" onclick="event.stopPropagation();CreatePage.removeIbTuj('${escQ(t)}')">✕</span>
+      </div>`
+    ).join('');
+    CreatePage._updateIbTotal();
+  },
+
+  switchIbTuj(t) {
+    STATE.ibActiveTuj = t;
+    CreatePage.renderIbTabs();
+    CreatePage.renderIbScanList();
+    Scanner.open('create-ib', 'Scan AWB IB', t);
+  },
+
+  removeIbTuj(t) {
+    delete STATE.ibScanMap[t];
+    const k = Object.keys(STATE.ibScanMap);
+    STATE.ibActiveTuj = k.length ? k[0] : '';
+    // Sync scbIbTuj combobox ke tujuan aktif
+    UI.Scb.setValue('scbIbTuj', STATE.ibActiveTuj);
+    CreatePage.renderIbTabs();
+    CreatePage.renderIbScanList();
+    CreatePage._checkForm();
   },
 
   renderIbScanList() {
-    const t = STATE.ibScanned.length;
-    document.getElementById('ibTotalLabel').innerText = t + ' AWB total';
-    document.getElementById('ibScanList').innerHTML = t
-      ? STATE.ibScanned.map((awb, i) =>
-          `<div class="scan-item"><span>${escH(awb)}</span><span class="scan-item-del" onclick="STATE.ibScanned.splice(${i},1);CreatePage.renderIbScanList()">🗑</span></div>`
+    const el = document.getElementById('ibScanList');
+    if (!STATE.ibActiveTuj || !STATE.ibScanMap[STATE.ibActiveTuj]) {
+      el.innerHTML = '<div class="scan-empty">Pilih tujuan dulu</div>';
+      CreatePage._updateIbTotal();
+      return;
+    }
+    const arr = STATE.ibScanMap[STATE.ibActiveTuj];
+    el.innerHTML = arr.length
+      ? arr.map((awb, i) =>
+          `<div class="scan-item"><span>${escH(awb)}</span><span class="scan-item-del" onclick="CreatePage.removeIbAwb(${i})">🗑</span></div>`
         ).join('')
-      : '<div class="scan-empty">Belum ada AWB</div>';
+      : `<div class="scan-empty">Belum ada AWB untuk <b>${escH(STATE.ibActiveTuj)}</b></div>`;
+    CreatePage._updateIbTotal();
+  },
+
+  removeIbAwb(i) {
+    STATE.ibScanMap[STATE.ibActiveTuj].splice(i, 1);
+    CreatePage.renderIbTabs();
+    CreatePage.renderIbScanList();
+  },
+
+  _updateIbTotal() {
+    const t = Object.values(STATE.ibScanMap).reduce((s, a) => s + a.length, 0);
+    document.getElementById('ibTotalLabel').innerText = t + ' AWB total';
+  },
+
+  // ── Add Tujuan IB Modal ──
+  openAddIbTujModal() {
+    const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom'));
+    if (!hasSvcFrom) { UI.Toast.error('Pilih SERVICE & FROM dulu'); return; }
+    document.getElementById('inpNewIbTuj').value = '';
+    const ic  = STATE.globalIncharge;
+    const ib  = (STATE.masterData.ibData || {})[ic] || {};
+    UI.Scb.setOptions('scbNewIbTuj', ib.tujuans || []);
+    UI.Modal.open('ibTujModal');
+    setTimeout(() => document.getElementById('inpNewIbTuj').focus(), 200);
+  },
+
+  closeIbTujModal() { UI.Modal.close('ibTujModal'); },
+
+  confirmAddIbTuj() {
+    const tuj = document.getElementById('inpNewIbTuj').value.trim();
+    if (!tuj) { UI.Toast.error('Masukkan tujuan'); return; }
+    CreatePage.closeIbTujModal();
+    if (!STATE.ibScanMap[tuj]) STATE.ibScanMap[tuj] = [];
+    STATE.ibActiveTuj = tuj;
+    UI.Scb.setValue('scbIbTuj', tuj);
+    CreatePage.renderIbTabs();
+    CreatePage.renderIbScanList();
+    CreatePage._checkForm();
+    setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', tuj), 300);
+  },
+
+  _checkIbReady() {
+    const hasSvc  = !!UI.Scb.getValue('scbIbSvc');
+    const hasFrom = !!UI.Scb.getValue('scbIbFrom');
+    const hasTuj  = !!STATE.ibActiveTuj;
+    if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !(hasSvc && hasFrom);
+    if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !hasTuj;
   },
 
   _checkForm() {
     if (STATE.createType === 'ob' || STATE.createType === 'hvs') CreatePage._checkObForm();
     else if (STATE.createType === 'ib') {
-      const ok = !!(STATE.globalIncharge && UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj'));
+      const hasTuj = Object.keys(STATE.ibScanMap).length > 0;
+      const ok = !!(STATE.globalIncharge && UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom') && hasTuj);
       document.getElementById('btnSave').disabled = !ok;
     }
   },
@@ -322,20 +428,22 @@ const CreatePage = {
   async _saveIb() {
     const service = UI.Scb.getValue('scbIbSvc');
     const from    = UI.Scb.getValue('scbIbFrom');
-    const tujuan  = UI.Scb.getValue('scbIbTuj');
-    if (!STATE.globalIncharge || !service || !from || !tujuan) { UI.Toast.error('Lengkapi semua field'); return; }
+    if (!STATE.globalIncharge || !service || !from) { UI.Toast.error('Lengkapi SERVICE & FROM'); return; }
+    const keys = Object.keys(STATE.ibScanMap);
+    if (!keys.length) { UI.Toast.error('Tambahkan minimal 1 tujuan'); return; }
 
     UI.Loading.show('Menyimpan...');
     try {
-      const res = await API.post('saveIb', {
-        incharge: STATE.globalIncharge, service, from, tujuan, awbList: [...STATE.ibScanned]
-      });
+      const results = await Promise.all(keys.map(tujuan =>
+        API.post('saveIb', { incharge: STATE.globalIncharge, service, from, tujuan, awbList: STATE.ibScanMap[tujuan] || [] })
+      ));
       UI.Loading.hide();
-      if (res.error) { UI.Toast.error('Gagal: ' + res.error); return; }
-      UI.Toast.success('✅ IB disimpan! ' + res.noTrack);
-      STATE.currentNoTrack    = res.noTrack || '';
+      const errs = results.filter(r => r.error);
+      if (errs.length) { UI.Toast.error('Error: ' + errs[0].error); return; }
+      UI.Toast.success(`✅ ${results.length} NO TRACK IB dibuat`);
+      STATE.currentNoTrack    = results[0].noTrack || '';
       STATE.currentSvc        = service;
-      STATE.currentTuj        = tujuan;
+      STATE.currentTuj        = keys[0];
       STATE.currentDetailType = 'ib';
       STATE.currentDetailItem = null;
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
@@ -354,11 +462,15 @@ const CreatePage = {
   },
 
   _resetIbForm() {
-    STATE.ibScanned = [];
+    STATE.ibScanMap   = {};
+    STATE.ibActiveTuj = '';
+    STATE.ibScanned   = [];
     UI.Scb.reset('scbIbSvc'); UI.Scb.reset('scbIbFrom'); UI.Scb.reset('scbIbTuj');
     UI.Scb.setDisabled('scbIbFrom', true);
     UI.Scb.setDisabled('scbIbTuj',  true);
+    if (document.getElementById('ibTabs')) document.getElementById('ibTabs').innerHTML = '';
     CreatePage.renderIbScanList();
+    CreatePage._updateIbTotal();
   }
 };
 
