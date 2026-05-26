@@ -1,11 +1,9 @@
 /* ============================================================
-   GTW BDO — selectable.js v1.1
+   GTW BDO — selectable.js v1.2
    GSheet-like cell selection & copy — KHUSUS halaman OB & IB
-   - Klik sel untuk pilih, drag untuk blok multi-sel
-   - Shift+klik untuk extend range
-   - Ctrl+C / Cmd+C copy ke clipboard
-   - Berlaku HANYA di: .obib-cell-awb, .obib-cell-ib-awb,
-     .obib-cell-ib-label, .obib-cell-date (semua isi tabel obib)
+   - Klik sel → select 1 sel
+   - Drag / Shift+klik → blok SATU KOLOM saja (kolom yang sama)
+   - Ctrl+C / Cmd+C → copy ke clipboard (1 AWB per baris)
    ============================================================ */
 
 (function () {
@@ -14,7 +12,6 @@
   /* ── CSS ── */
   var s = document.createElement('style');
   s.textContent = `
-/* ─── OBIB SELECTABLE ─── */
 .obib-sel {
   cursor: cell;
   user-select: none;
@@ -30,7 +27,6 @@
   outline-offset: -1px;
 }
 
-/* ─── FLOATING COPY BAR ─── */
 #_obibSelBar {
   position: fixed;
   z-index: 9999;
@@ -45,58 +41,41 @@
   font-weight: 600;
   box-shadow: 0 4px 20px rgba(0,0,0,.25);
   white-space: nowrap;
-  pointer-events: auto;
   user-select: none;
   font-family: var(--font, sans-serif);
+  pointer-events: auto;
 }
 #_obibSelBar.show { display: flex; }
 #_obibSelBar .sbar-count { opacity:.75; font-weight:400; font-size:11px; }
 #_obibSelBar button {
   background: rgba(255,255,255,.2);
-  border: none;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 14px;
-  padding: 3px 11px;
-  cursor: pointer;
-  transition: background .15s;
+  border: none; color: #fff;
+  font-size: 11px; font-weight: 700;
+  border-radius: 14px; padding: 3px 11px;
+  cursor: pointer; transition: background .15s;
   font-family: inherit;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: flex; align-items: center; gap: 4px;
 }
 #_obibSelBar button:hover { background: rgba(255,255,255,.35); }
 #_obibSelBar .sbar-close {
   background: rgba(255,255,255,.08);
-  font-size: 15px;
-  padding: 2px 7px;
-  line-height: 1;
+  font-size: 15px; padding: 2px 8px; line-height: 1;
 }
 
-/* ─── COPY TOAST ─── */
 #_obibCopyToast {
   position: fixed;
-  bottom: 76px;
-  left: 50%;
+  bottom: 76px; left: 50%;
   transform: translateX(-50%) translateY(10px);
   background: rgba(21,101,192,.93);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 18px;
-  border-radius: 20px;
-  pointer-events: none;
-  z-index: 10000;
-  opacity: 0;
-  transition: opacity .22s, transform .22s;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  color: #fff; font-size: 12px; font-weight: 600;
+  padding: 6px 18px; border-radius: 20px;
+  pointer-events: none; z-index: 10000;
+  opacity: 0; transition: opacity .22s, transform .22s;
+  white-space: nowrap; box-shadow: 0 4px 16px rgba(0,0,0,.2);
   font-family: var(--font, sans-serif);
 }
 #_obibCopyToast.pop {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  opacity: 1; transform: translateX(-50%) translateY(0);
 }
 `;
   document.head.appendChild(s);
@@ -113,52 +92,77 @@
     '<button class="sbar-close" id="_obibSelClearBtn">✕</button>';
   document.body.appendChild(bar);
 
-  var ct = document.createElement('div');
-  ct.id = '_obibCopyToast';
-  document.body.appendChild(ct);
+  var toast = document.createElement('div');
+  toast.id = '_obibCopyToast';
+  document.body.appendChild(toast);
 
   /* ── State ── */
-  var _anchor   = null;   // anchor TD element
+  var _anchor   = null;   // {el, colIdx, rowIdx}
   var _sel      = [];     // [{el, text}]
   var _dragging = false;
-  var _ctTimer  = null;
+  var _toastTimer = null;
 
-  /* ── Helpers ── */
-  function _text(el) {
-    var t = el.dataset.selText || el.textContent || '';
-    return t.trim();
+  /* ── Util ── */
+  function _text(td) {
+    return (td.textContent || '').trim();
   }
 
+  // Dapatkan index kolom dari <td> dalam <tr>-nya
+  function _colIdx(td) {
+    return Array.prototype.indexOf.call(td.parentElement.children, td);
+  }
+
+  // Dapatkan semua <td> pada kolom yang sama (colIdx) dalam tbody
+  function _colCells(tbody, ci) {
+    var cells = [];
+    var rows = tbody.querySelectorAll('tr');
+    rows.forEach(function(tr) {
+      var td = tr.children[ci];
+      if (td && td.classList.contains('obib-sel')) cells.push(td);
+    });
+    return cells;
+  }
+
+  function _getRowIdx(td) {
+    var tr = td.parentElement;
+    var tbody = tr.parentElement;
+    return Array.prototype.indexOf.call(tbody.querySelectorAll('tr'), tr);
+  }
+
+  function _getTbody(td) {
+    return td.closest('tbody');
+  }
+
+  /* ── Clear ── */
   function _clearSel() {
-    _sel.forEach(function(c){ c.el.classList.remove('sel-on','sel-anchor'); });
-    if (_anchor) _anchor.classList.remove('sel-anchor','sel-on');
+    _sel.forEach(function(c) { c.el.classList.remove('sel-on', 'sel-anchor'); });
     _sel = []; _anchor = null;
   }
 
+  /* ── Bar ── */
   function _hideBar() { bar.classList.remove('show'); }
 
   function _showBar(refEl) {
-    var n = _sel.length;
-    if (!n) { _hideBar(); return; }
-    document.getElementById('_obibSelCount').textContent = n + ' sel';
+    if (!_sel.length) { _hideBar(); return; }
+    document.getElementById('_obibSelCount').textContent = _sel.length + ' sel';
     bar.classList.add('show');
-    // position floating bar above reference cell
     var r   = refEl.getBoundingClientRect();
     var bw  = bar.offsetWidth || 190;
     var left = Math.min(Math.max(8, r.left + r.width/2 - bw/2), window.innerWidth - bw - 8);
-    var top  = r.top - 46;
-    if (top < 8) top = r.bottom + 8;
+    var top  = r.top - 46; if (top < 8) top = r.bottom + 8;
     bar.style.left = left + 'px';
-    bar.style.top  = top  + 'px';
+    bar.style.top  = top + 'px';
   }
 
+  /* ── Toast ── */
   function _showToast(msg) {
-    clearTimeout(_ctTimer);
-    ct.textContent = msg;
-    ct.classList.add('pop');
-    _ctTimer = setTimeout(function(){ ct.classList.remove('pop'); }, 2200);
+    clearTimeout(_toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('pop');
+    _toastTimer = setTimeout(function(){ toast.classList.remove('pop'); }, 2300);
   }
 
+  /* ── Copy ── */
   function _doCopy() {
     if (!_sel.length) return;
     var text = _sel.map(function(c){ return c.text; }).filter(Boolean).join('\n');
@@ -166,83 +170,77 @@
     function done() { _showToast('✓ ' + n + ' AWB disalin'); _clearSel(); _hideBar(); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(done).catch(function(){
-        _fallbackCopy(text); done();
+        _fallback(text); done();
       });
-    } else { _fallbackCopy(text); done(); }
+    } else { _fallback(text); done(); }
   }
 
-  function _fallbackCopy(text) {
+  function _fallback(text) {
     var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';
     document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
+    document.execCommand('copy'); document.body.removeChild(ta);
   }
 
-  /* ── Bar buttons ── */
-  document.getElementById('_obibSelCopyBtn').addEventListener('click', _doCopy);
-  document.getElementById('_obibSelClearBtn').addEventListener('click', function(){ _clearSel(); _hideBar(); });
+  bar.querySelector('#_obibSelCopyBtn').addEventListener('click', _doCopy);
+  bar.querySelector('#_obibSelClearBtn').addEventListener('click', function(){ _clearSel(); _hideBar(); });
 
-  /* ── Range select logic ── */
-  function _getContainer(el) {
-    // walk up to tbody
-    var p = el.parentElement;
-    while (p && p.tagName !== 'TBODY' && p.tagName !== 'TABLE') p = p.parentElement;
-    return p;
-  }
-
-  function _allSelectables(container) {
-    return Array.from(container.querySelectorAll('td.obib-sel'));
-  }
-
-  function _selectSingle(el) {
+  /* ── Select single ── */
+  function _selectSingle(td) {
     _clearSel();
-    _anchor = el;
-    el.classList.add('sel-anchor');
-    _sel = [{ el: el, text: _text(el) }];
-    _showBar(el);
+    _anchor = td;
+    td.classList.add('sel-anchor');
+    _sel = [{ el: td, text: _text(td) }];
+    _showBar(td);
   }
 
-  function _selectRange(from, to) {
-    var container = _getContainer(from);
-    if (!container) { _selectSingle(from); return; }
-    var all  = _allSelectables(container);
-    var iF   = all.indexOf(from);
-    var iT   = all.indexOf(to);
-    if (iF === -1 || iT === -1) { _selectSingle(from); return; }
-    if (iF > iT) { var tmp=iF; iF=iT; iT=tmp; }
+  /* ── Select range — HANYA dalam kolom yang sama ── */
+  function _selectRange(fromTd, toTd) {
+    var ciFrom = _colIdx(fromTd);
+    var ciTo   = _colIdx(toTd);
+
+    // Beda kolom → hanya select toTd saja (tidak blok lintas kolom)
+    if (ciFrom !== ciTo) {
+      _selectSingle(fromTd);
+      return;
+    }
+
+    var tbody  = _getTbody(fromTd);
+    if (!tbody) { _selectSingle(fromTd); return; }
+
+    // Ambil semua sel di kolom ini
+    var colCells = _colCells(tbody, ciFrom);
+    var iFrom    = colCells.indexOf(fromTd);
+    var iTo      = colCells.indexOf(toTd);
+    if (iFrom === -1 || iTo === -1) { _selectSingle(fromTd); return; }
+    if (iFrom > iTo) { var tmp = iFrom; iFrom = iTo; iTo = tmp; }
+
     _clearSel();
-    _anchor = from;
+    _anchor = fromTd;
     _sel = [];
-    all.forEach(function(el, i){
-      if (i >= iF && i <= iT) {
-        el.classList.add(el === from ? 'sel-anchor' : 'sel-on');
-        _sel.push({ el: el, text: _text(el) });
+    colCells.forEach(function(td, i) {
+      if (i >= iFrom && i <= iTo) {
+        td.classList.add(td === fromTd ? 'sel-anchor' : 'sel-on');
+        _sel.push({ el: td, text: _text(td) });
       }
     });
-    _showBar(to);
+    _showBar(toTd);
   }
 
-  /* ── Attach to OBIB table ── */
+  /* ── Attach ke tabel ── */
   function _attachObib() {
     var wrap = document.getElementById('obibTableWrap');
     if (!wrap) return;
-
-    // Target semua td yang berisi AWB atau label (bukan header, bukan rownumber)
-    var cells = wrap.querySelectorAll(
-      'td.obib-cell-awb, td.obib-cell-ib-awb, td.obib-cell-ib-label, ' +
-      'td.obib-cell-date, td.obib-cell-date-empty, td.obib-cell-empty'
+    var tds = wrap.querySelectorAll(
+      'td.obib-cell-awb, td.obib-cell-ib-awb, td.obib-cell-ib-label'
     );
-
-    cells.forEach(function(td) {
+    tds.forEach(function(td) {
       if (td.dataset.selBound) return;
       td.dataset.selBound = '1';
       td.classList.add('obib-sel');
 
       td.addEventListener('mousedown', function(e) {
         if (e.button !== 0) return;
-        // Jangan intercept klik di dalam elemen interaktif
         if (e.target.closest('button,a,input')) return;
         e.preventDefault();
         _dragging = true;
@@ -254,67 +252,58 @@
       });
 
       td.addEventListener('mouseover', function() {
-        if (_dragging && _anchor) _selectRange(_anchor, td);
+        if (!_dragging || !_anchor) return;
+        // Hanya lanjutkan drag jika kolom sama
+        if (_colIdx(td) === _colIdx(_anchor)) {
+          _selectRange(_anchor, td);
+        }
       });
     });
   }
 
-  /* ── Observer: re-attach setelah tabel di-render ulang ── */
+  /* ── Observer ── */
   window.addEventListener('DOMContentLoaded', function() {
     var wrap = document.getElementById('obibTableWrap');
     if (!wrap) return;
-
-    // Observe perubahan di obibTableWrap (tiap render ulang)
     new MutationObserver(function() {
       setTimeout(_attachObib, 80);
     }).observe(wrap, { childList: true, subtree: false });
-
-    // Initial attach jika sudah ada isi
     setTimeout(_attachObib, 200);
   });
 
-  /* ── Global mouse / keyboard ── */
+  /* ── Global events ── */
   document.addEventListener('mouseup', function() {
     if (_dragging) {
       _dragging = false;
-      if (_sel.length) _showBar(_sel[_sel.length-1].el);
+      if (_sel.length) _showBar(_sel[_sel.length - 1].el);
     }
   });
 
   document.addEventListener('keydown', function(e) {
     var ctrl = e.ctrlKey || e.metaKey;
+    var active = document.activeElement;
+    var inInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
 
-    // Ctrl+C
-    if (ctrl && e.key === 'c' && _sel.length) {
-      var active = document.activeElement;
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
-      e.preventDefault();
-      _doCopy();
-      return;
+    if (ctrl && e.key === 'c' && _sel.length && !inInput) {
+      e.preventDefault(); _doCopy(); return;
     }
 
-    // Shift+ArrowDown/Up — extend range
-    if (e.shiftKey && _anchor && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
-      var active2 = document.activeElement;
-      if (active2 && (active2.tagName === 'INPUT' || active2.tagName === 'TEXTAREA')) return;
-      var last = _sel.length ? _sel[_sel.length-1].el : _anchor;
-      var container = _getContainer(_anchor);
-      if (!container) return;
-      var all = _allSelectables(container);
-      var idx = all.indexOf(last);
+    if (e.shiftKey && _anchor && !inInput && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      var last   = _sel.length ? _sel[_sel.length - 1].el : _anchor;
+      var tbody  = _getTbody(_anchor);
+      if (!tbody) return;
+      var ci     = _colIdx(_anchor);
+      var cells  = _colCells(tbody, ci);
+      var idx    = cells.indexOf(last);
       if (idx === -1) return;
-      var next = all[idx + (e.key === 'ArrowDown' ? 1 : -1)];
+      var next   = cells[idx + (e.key === 'ArrowDown' ? 1 : -1)];
       if (next) { e.preventDefault(); _selectRange(_anchor, next); }
       return;
     }
 
-    // Escape
-    if (e.key === 'Escape' && _sel.length) {
-      _clearSel(); _hideBar();
-    }
+    if (e.key === 'Escape' && _sel.length) { _clearSel(); _hideBar(); }
   });
 
-  // Klik di luar — clear
   document.addEventListener('mousedown', function(e) {
     if (bar.contains(e.target)) return;
     if (e.target.closest('.obib-sel')) return;
