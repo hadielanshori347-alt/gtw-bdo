@@ -3,7 +3,7 @@
 // ════════════════════════════════════════════
 
 const CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycbzSyvPY_IcnfyNtMW45cF5k1bZYZxcMcHwmN1l8zIm2D7D4I-OFxonEp_siKB9ZOMzT1Q/exec",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbx0hcNsdxppffTWARNESwMQl__CFSGGjceoYQb5T4l1lDvuKjbxrfyAJEXAzaXPmEo8-w/exec",
   DRIVE_FOLDER_ID: "1v95v5hZ9jvfudYUCIO3qP8XdOCH9dqgu",
   TOAST_DURATION: 2500,
   SCAN_DEBOUNCE: 80,
