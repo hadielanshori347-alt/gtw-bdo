@@ -1,67 +1,10 @@
 /* ============================================================
-   GTW BDO — core.js v5.0 (Supabase)
+   GTW BDO — core.js v4.2
    Config, API helpers, UI helpers, SmartCombobox
    ============================================================ */
 
 // ─── CONFIG ───
-var SUPABASE_URL = "https://mcsdhgzojydgytunixne.supabase.co";  // ← ganti
-var SUPABASE_KEY = "sb_publishable_I8tKjAoQ49RvG7uNIRZbaw_Z9knWECc";                // ← ganti
-
-// ─── SUPABASE HEADERS ───
-function _sbH() {
-  return {
-    "Content-Type":  "application/json",
-    "apikey":        SUPABASE_KEY,
-    "Authorization": "Bearer " + SUPABASE_KEY,
-    "Prefer":        "return=representation"
-  };
-}
-
-// ─── LOW-LEVEL HELPERS ───
-function sbGet(table, query) {
-  query = query || '';
-  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, { headers: _sbH() })
-    .then(function(r) {
-      if (!r.ok) return r.text().then(function(t) { throw new Error('sbGet ' + table + ': ' + t); });
-      return r.json();
-    });
-}
-
-function sbPost(table, body) {
-  return fetch(SUPABASE_URL + '/rest/v1/' + table, {
-    method: 'POST', headers: _sbH(), body: JSON.stringify(body)
-  }).then(function(r) {
-    if (!r.ok) return r.text().then(function(t) { throw new Error('sbPost ' + table + ': ' + t); });
-    return r.json();
-  });
-}
-
-function sbPatch(table, query, body) {
-  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, {
-    method: 'PATCH', headers: _sbH(), body: JSON.stringify(body)
-  }).then(function(r) {
-    if (!r.ok) return r.text().then(function(t) { throw new Error('sbPatch ' + table + ': ' + t); });
-    return r.json();
-  });
-}
-
-function sbDelete(table, query) {
-  return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, {
-    method: 'DELETE', headers: _sbH()
-  }).then(function(r) { return r.ok; });
-}
-
-// ─── GENERATE ID (sama dengan GAS) ───
-function generateId(service, tujuan, type) {
-  var svcCode = (service || '').replace(/[^A-Z0-9]/gi, '').substring(0, 3).toUpperCase();
-  var tujCode = (tujuan  || '').replace(/\s+/g, '_').replace(/[^A-Z0-9_]/gi, '').substring(0, 8).toUpperCase();
-  var now  = new Date();
-  var pad  = function(n) { return n < 10 ? '0' + n : '' + n; };
-  var date = '' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate());
-  var ms   = now.getTime().toString().slice(-4);
-  var rnd  = Math.random().toString(36).substring(2, 5).toUpperCase();
-  return type + '_' + svcCode + '_' + tujCode + '_' + date + '_' + ms + rnd;
-}
+var GAS_URL = "https://script.google.com/macros/s/AKfycbyIsSTxjhxia3KJn9UxChqIrasN14eGBHlHmbGzd5-6yyBJtqDLSJ9XP4RuIOv9fodrKw/exec";
 
 // ─── STATE ───
 var masterData = {};
@@ -78,360 +21,42 @@ var _mfData = null, _mfLoaded = false, _mfFilter = '';
 var _mfSelRow = -1, _mfSelCol = -1, _mfFilteredRows = [];
 var allScanAwbs = [];
 
-// ─── gasGet / gasPost — PENGGANTI drop-in ke Supabase ───
-// Semua kode lama yang memanggil gasGet/gasPost otomatis teredirect
-// ke Supabase tanpa perlu mengubah views.js, filter.js, forms.js, dll
-
+// ─── API ───
 function gasGet(action, params) {
-  params = params || {};
-  switch (action) {
-    case 'getMasterData':
-      return _sbGetMasterData();
-
-    case 'getObList':
-      return sbGet('ob', 'select=*&order=created_date.desc')
-        .then(function(rows) { return { list: _mapObRows(rows || []) }; });
-
-    case 'getHvsList':
-      return sbGet('hvs', 'select=*&order=created_date.desc')
-        .then(function(rows) { return { list: _mapHvsRows(rows || []) }; });
-
-    case 'getIbList':
-      return sbGet('ib', 'select=*&order=created_date.desc')
-        .then(function(rows) { return { list: _mapIbRows(rows || []) }; });
-
-    case 'getObFull':
-    case 'getObibFull':
-      return _sbGetFull('ob');
-
-    case 'getHvsFull':
-      return _sbGetFull('hvs');
-
-    case 'getIbFull':
-      return _sbGetFull('ib');
-
-    case 'getAwbList':
-      return _sbGetAwbList(params);
-
-    case 'getDetail':
-      return _sbGetDetail(params);
-
-    case 'getAllScanAwbs':
-      return _sbGetAllScanAwbs();
-
-    case 'searchAwb':
-      return _sbSearchAwb(params);
-
-    // Manifest & OBIB — web-only fitur, masih ada GAS fallback
-    // karena tabel manifest di Supabase perlu setup manual.
-    // Kalau kamu tidak pakai fitur ini, bisa return error biasa.
-    case 'getManifestData':
-    case 'getManifest':
-    case 'getOBIB':
-      return _sbGetManifestOrObib(action, params);
-
-    default:
-      console.warn('[gasGet] Unknown action:', action);
-      return Promise.resolve({ error: 'Unknown action: ' + action });
-  }
+  return new Promise(function(resolve, reject) {
+    var url = new URL(GAS_URL);
+    url.searchParams.set('action', action);
+    if (params) Object.keys(params).forEach(function(k) { url.searchParams.set(k, params[k]); });
+    fetch(url.toString(), { redirect: 'follow', mode: 'cors' })
+      .then(function(r) { return r.json(); }).then(resolve)
+      .catch(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url.toString(), true);
+        xhr.onload = function() { try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(new Error('Parse error')); } };
+        xhr.onerror = function() { reject(new Error('Network error')); };
+        xhr.send();
+      });
+  });
 }
 
 function gasPost(action, data) {
-  data = data || {};
-  switch (action) {
-    case 'saveOb':          return _sbSaveOb(data);
-    case 'saveHvs':         return _sbSaveHvs(data);
-    case 'saveIb':          return _sbSaveIb(data);
-    case 'addAwbToTrack':   return _sbAddAwbToTrack(data);
-    case 'updateObStatus':  return sbPatch('ob',  'no_track=eq.' + encodeURIComponent(data.noTrack), { status: data.newStatus }).then(function() { return { success: true }; });
-    case 'updateHvsStatus': return sbPatch('hvs', 'no_track=eq.' + encodeURIComponent(data.noTrack), { status: data.newStatus }).then(function() { return { success: true }; });
-    case 'updateIbStatus':  return sbPatch('ib',  'no_track=eq.' + encodeURIComponent(data.noTrack), { status: data.newStatus }).then(function() { return { success: true }; });
-    case 'deleteOb':        return _sbDelete('ob',  'scan_ob',  data.noTrack);
-    case 'deleteHvs':       return _sbDelete('hvs', 'scan_hvs', data.noTrack);
-    case 'deleteIb':        return _sbDelete('ib',  'scan_ib',  data.noTrack);
-    case 'uploadFoto':
-    case 'updateFoto':      return _sbUploadFoto(data);
-    default:
-      console.warn('[gasPost] Unknown action:', action);
-      return Promise.resolve({ error: 'Unknown action: ' + action });
-  }
-}
-
-// ─── IMPLEMENTATION DETAIL ───
-
-function _sbGetMasterData() {
-  return sbGet('data_master', 'select=*').then(function(rows) {
-    var obMap = {}, ibMap = {};
-    (rows || []).forEach(function(r) {
-      if (r.incharge && r.service && r.tujuan) {
-        if (!obMap[r.incharge]) obMap[r.incharge] = { services: {}, tujuans: {} };
-        obMap[r.incharge].services[r.service] = true;
-        obMap[r.incharge].tujuans[r.tujuan]   = true;
-      }
-      if (r.ib_incharge && r.ib_service) {
-        if (!ibMap[r.ib_incharge]) ibMap[r.ib_incharge] = { services: {}, froms: {}, tujuans: {} };
-        ibMap[r.ib_incharge].services[r.ib_service] = true;
-        if (r.ib_from)  ibMap[r.ib_incharge].froms[r.ib_from]     = true;
-        if (r.ib_tujuan) ibMap[r.ib_incharge].tujuans[r.ib_tujuan] = true;
-      }
-    });
-    var obIncharges = Object.keys(obMap).sort();
-    var ibIncharges = Object.keys(ibMap).sort();
-    var obData2 = {}, ibData2 = {};
-    obIncharges.forEach(function(k) {
-      obData2[k] = { services: Object.keys(obMap[k].services).sort(), tujuans: Object.keys(obMap[k].tujuans).sort() };
-    });
-    ibIncharges.forEach(function(k) {
-      ibData2[k] = { services: Object.keys(ibMap[k].services).sort(), froms: Object.keys(ibMap[k].froms).sort(), tujuans: Object.keys(ibMap[k].tujuans).sort() };
-    });
-    return { obIncharges: obIncharges, ibIncharges: ibIncharges, obData: obData2, ibData: ibData2 };
+  data.action = action;
+  var body = JSON.stringify(data);
+  return new Promise(function(resolve, reject) {
+    fetch(GAS_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body })
+      .then(function(r) { return r.json(); }).then(resolve)
+      .catch(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', GAS_URL, true);
+        xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+        xhr.onload = function() { try { resolve(JSON.parse(xhr.responseText)); } catch(e) { reject(new Error('Parse error')); } };
+        xhr.onerror = function() { reject(new Error('Network error')); };
+        xhr.send(body);
+      });
   });
 }
 
-function _mapObRows(rows) {
-  return rows.map(function(r) {
-    var obj = {
-      no_track: r.no_track, incharge: r.incharge, service: r.service, tujuan: r.tujuan,
-      created_date: r.created_date, status: r.status, total_awb: r.total_awb || 0,
-      foto_url: r.foto_url_1 || ''
-    };
-    if (r.foto_url_2) obj.foto_url_2 = r.foto_url_2;
-    if (r.foto_url_3) obj.foto_url_3 = r.foto_url_3;
-    if (r.foto_url_4) obj.foto_url_4 = r.foto_url_4;
-    if (r.foto_url_5) obj.foto_url_5 = r.foto_url_5;
-    return obj;
-  });
-}
-
-function _mapHvsRows(rows) { return _mapObRows(rows); }
-
-function _mapIbRows(rows) {
-  return rows.map(function(r) {
-    var obj = {
-      no_track: r.no_track, incharge: r.incharge, service: r.service,
-      from: r.ib_from, tujuan: r.tujuan,
-      created_date: r.created_date, status: r.status, total_awb: r.total_awb || 0,
-      foto_url: r.foto_url_1 || ''
-    };
-    if (r.foto_url_2) obj.foto_url_2 = r.foto_url_2;
-    if (r.foto_url_3) obj.foto_url_3 = r.foto_url_3;
-    return obj;
-  });
-}
-
-function _sbGetFull(type) {
-  var parentTable = type === 'ib' ? 'ib' : type === 'hvs' ? 'hvs' : 'ob';
-  var scanTable   = type === 'ib' ? 'scan_ib' : type === 'hvs' ? 'scan_hvs' : 'scan_ob';
-  return Promise.all([
-    sbGet(parentTable, 'select=*&order=created_date.desc'),
-    sbGet(scanTable,   'select=no_track,awb')
-  ]).then(function(results) {
-    var rows     = results[0] || [];
-    var scanRows = results[1] || [];
-    var awbMap   = {};
-    scanRows.forEach(function(s) {
-      if (!awbMap[s.no_track]) awbMap[s.no_track] = [];
-      if (s.awb) awbMap[s.no_track].push(s.awb);
-    });
-    var list = (type === 'ib' ? _mapIbRows(rows) : _mapObRows(rows)).map(function(item) {
-      item.awbs = awbMap[item.no_track] || [];
-      return item;
-    });
-    return { list: list };
-  });
-}
-
-function _sbGetAwbList(params) {
-  var noTrack = params.noTrack;
-  var type    = (params.type || 'OB').toUpperCase();
-  var table   = type === 'IB' ? 'scan_ib' : type === 'HVS' ? 'scan_hvs' : 'scan_ob';
-  return sbGet(table, 'no_track=eq.' + encodeURIComponent(noTrack) + '&select=awb,tujuan,ib_from')
-    .then(function(rows) {
-      return {
-        list: (rows || []).map(function(r) {
-          var o = { awb: r.awb, tujuan: r.tujuan };
-          if (type === 'IB') o.from = r.ib_from;
-          return o;
-        })
-      };
-    });
-}
-
-function _sbGetDetail(params) {
-  var noTrack  = params.noTrack;
-  var type     = (params.type || 'OB').toUpperCase();
-  var scanTbl  = type === 'IB' ? 'scan_ib' : type === 'HVS' ? 'scan_hvs' : 'scan_ob';
-  var parentTbl = type === 'IB' ? 'ib' : type === 'HVS' ? 'hvs' : 'ob';
-  var ntEnc    = encodeURIComponent(noTrack);
-  return Promise.all([
-    sbGet(scanTbl,  'no_track=eq.' + ntEnc + '&select=awb'),
-    sbGet(parentTbl,'no_track=eq.' + ntEnc + '&select=foto_url_1,foto_url_2,foto_url_3,foto_url_4,foto_url_5')
-  ]).then(function(res) {
-    var awbs   = (res[0] || []).map(function(r) { return r.awb; }).filter(Boolean);
-    var p      = (res[1] || [])[0] || {};
-    var photos = [p.foto_url_1, p.foto_url_2, p.foto_url_3, p.foto_url_4, p.foto_url_5].filter(Boolean);
-    return { awbs: awbs, photos: photos };
-  });
-}
-
-function _sbGetAllScanAwbs() {
-  return Promise.all([
-    sbGet('scan_ob',  'select=no_track,incharge,scan_date,awb,service,tujuan'),
-    sbGet('scan_hvs', 'select=no_track,incharge,scan_date,awb,service,tujuan'),
-    sbGet('scan_ib',  'select=no_track,incharge,scan_date,awb,tujuan,service,ib_from')
-  ]).then(function(res) {
-    var list = [];
-    (res[0] || []).forEach(function(r) { if (r.awb) list.push({ awb: r.awb, no_track: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: '', type: 'ob' }); });
-    (res[1] || []).forEach(function(r) { if (r.awb) list.push({ awb: r.awb, no_track: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: '', type: 'hvs' }); });
-    (res[2] || []).forEach(function(r) { if (r.awb) list.push({ awb: r.awb, no_track: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: r.ib_from, type: 'ib' }); });
-    return { list: list };
-  });
-}
-
-function _sbSearchAwb(params) {
-  var q = (params.q || '').trim();
-  if (!q) return Promise.resolve({ list: [] });
-  var enc = encodeURIComponent(q);
-  return Promise.all([
-    sbGet('scan_ob',  'awb=ilike.*' + enc + '*&select=no_track,incharge,scan_date,awb,service,tujuan'),
-    sbGet('scan_hvs', 'awb=ilike.*' + enc + '*&select=no_track,incharge,scan_date,awb,service,tujuan'),
-    sbGet('scan_ib',  'awb=ilike.*' + enc + '*&select=no_track,incharge,scan_date,awb,tujuan,service,ib_from')
-  ]).then(function(res) {
-    var list = [];
-    (res[0] || []).forEach(function(r) { list.push({ awb: r.awb, noTrack: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: '', type: 'ob', status: '' }); });
-    (res[1] || []).forEach(function(r) { list.push({ awb: r.awb, noTrack: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: '', type: 'hvs', status: '' }); });
-    (res[2] || []).forEach(function(r) { list.push({ awb: r.awb, noTrack: r.no_track, incharge: r.incharge, date: r.scan_date, service: r.service, tujuan: r.tujuan, from: r.ib_from, type: 'ib', status: '' }); });
-    return { list: list };
-  });
-}
-
-function _sbSaveOb(data) {
-  var noTrack = generateId(data.service, data.tujuan, 'OB');
-  var now     = new Date().toISOString();
-  return sbPost('ob', {
-    no_track: noTrack, incharge: data.incharge, service: data.service, tujuan: data.tujuan,
-    created_date: now, status: 'ON PROSES', total_awb: 0
-  }).then(function() {
-    var awbs = data.awbList || [];
-    if (!awbs.length) return { success: true, noTrack: noTrack };
-    return sbPost('scan_ob', awbs.map(function(awb) {
-      return { no_track: noTrack, incharge: data.incharge, scan_date: now, awb: awb, status: 'ON PROSES', service: data.service, tujuan: data.tujuan };
-    })).then(function() {
-      return sbPatch('ob', 'no_track=eq.' + encodeURIComponent(noTrack), { total_awb: awbs.length });
-    }).then(function() { return { success: true, noTrack: noTrack }; });
-  });
-}
-
-function _sbSaveHvs(data) {
-  var noTrack = generateId(data.service, data.tujuan, 'HVS');
-  var now     = new Date().toISOString();
-  return sbPost('hvs', {
-    no_track: noTrack, incharge: data.incharge, service: data.service, tujuan: data.tujuan,
-    created_date: now, status: 'ON PROSES', total_awb: 0
-  }).then(function() {
-    var awbs = data.awbList || [];
-    if (!awbs.length) return { success: true, noTrack: noTrack };
-    return sbPost('scan_hvs', awbs.map(function(awb) {
-      return { no_track: noTrack, incharge: data.incharge, scan_date: now, awb: awb, status: 'ON PROSES', service: data.service, tujuan: data.tujuan };
-    })).then(function() {
-      return sbPatch('hvs', 'no_track=eq.' + encodeURIComponent(noTrack), { total_awb: awbs.length });
-    }).then(function() { return { success: true, noTrack: noTrack }; });
-  });
-}
-
-function _sbSaveIb(data) {
-  var noTrack = generateId(data.service, data.tujuan, 'IB');
-  var now     = new Date().toISOString();
-  return sbPost('ib', {
-    no_track: noTrack, incharge: data.incharge, service: data.service, ib_from: data.from, tujuan: data.tujuan,
-    created_date: now, status: 'ON PROSES', total_awb: 0
-  }).then(function() {
-    var awbs = data.awbList || [];
-    if (!awbs.length) return { success: true, noTrack: noTrack };
-    return sbPost('scan_ib', awbs.map(function(awb) {
-      return { no_track: noTrack, incharge: data.incharge, scan_date: now, awb: awb, tujuan: data.tujuan, status: 'ON PROSES', service: data.service, ib_from: data.from };
-    })).then(function() {
-      return sbPatch('ib', 'no_track=eq.' + encodeURIComponent(noTrack), { total_awb: awbs.length });
-    }).then(function() { return { success: true, noTrack: noTrack }; });
-  });
-}
-
-function _sbAddAwbToTrack(data) {
-  var type   = (data.type || 'OB').toUpperCase();
-  var awbs   = data.awbList || [];
-  if (!awbs.length) return Promise.resolve({ success: false, error: 'AWB list kosong' });
-
-  var parentTable = type === 'OB' ? 'ob' : type === 'HVS' ? 'hvs' : 'ib';
-  var scanTable   = type === 'OB' ? 'scan_ob' : type === 'HVS' ? 'scan_hvs' : 'scan_ib';
-  var ntEnc       = encodeURIComponent(data.noTrack);
-
-  return sbGet(parentTable, 'no_track=eq.' + ntEnc + '&select=*').then(function(parentRows) {
-    var parent = (parentRows || [])[0];
-    if (!parent) return { success: false, error: 'NO TRACK tidak ditemukan' };
-    var now  = new Date().toISOString();
-    var rows = awbs.map(function(awb) {
-      var row = { no_track: data.noTrack, incharge: parent.incharge, scan_date: now, awb: awb, status: 'ON PROSES', service: parent.service, tujuan: parent.tujuan };
-      if (type === 'IB') row.ib_from = parent.ib_from;
-      return row;
-    });
-    return sbPost(scanTable, rows).then(function() {
-      return sbGet(scanTable, 'no_track=eq.' + ntEnc + '&select=id');
-    }).then(function(countRows) {
-      return sbPatch(parentTable, 'no_track=eq.' + ntEnc, { total_awb: (countRows || []).length });
-    }).then(function() { return { success: true, added: awbs.length }; });
-  });
-}
-
-function _sbDelete(parentTable, scanTable, noTrack) {
-  var ntEnc = encodeURIComponent(noTrack);
-  return sbDelete(scanTable, 'no_track=eq.' + ntEnc)
-    .then(function() { return sbDelete(parentTable, 'no_track=eq.' + ntEnc); })
-    .then(function() { return { success: true }; });
-}
-
-function _sbUploadFoto(data) {
-  var type      = (data.type || 'OB').toUpperCase();
-  var photoIdx  = data.photoIndex != null ? parseInt(data.photoIndex, 10) : 0;
-  var fileName  = type + '/' + data.noTrack + '_' + (photoIdx + 1) + '_' + Date.now() + '.jpg';
-
-  var b64 = (data.base64Data || '');
-  if (b64.indexOf(',') !== -1) b64 = b64.split(',')[1];
-
-  var byteStr = atob(b64);
-  var ab = new ArrayBuffer(byteStr.length);
-  var ia = new Uint8Array(ab);
-  for (var i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
-  var blob = new Blob([ab], { type: 'image/jpeg' });
-
-  return fetch(SUPABASE_URL + '/storage/v1/object/foto-gtw/' + fileName, {
-    method: 'POST',
-    headers: { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "image/jpeg" },
-    body: blob
-  }).then(function(r) {
-    if (!r.ok) return r.text().then(function(t) { return { success: false, error: 'Upload gagal: ' + t }; });
-    var publicUrl = SUPABASE_URL + '/storage/v1/object/public/foto-gtw/' + fileName;
-    var parentTable = type === 'HVS' ? 'hvs' : type === 'IB' ? 'ib' : 'ob';
-    var fotoCol = 'foto_url_' + (photoIdx + 1);
-    var patch = {};
-    patch[fotoCol] = publicUrl;
-    return sbPatch(parentTable, 'no_track=eq.' + encodeURIComponent(data.noTrack), patch)
-      .then(function() { return { success: true, url: publicUrl }; });
-  });
-}
-
-// Manifest & OBIB: fitur desktop web yang membaca struktur header sheet khusus.
-// Di Supabase tidak ada tabel manifest dinamis seperti di GSheet.
-// Return error informatif — kamu bisa implementasi manual bila diperlukan.
-function _sbGetManifestOrObib(action, params) {
-  console.warn('[gasGet] ' + action + ': fitur ini membutuhkan implementasi khusus di Supabase. Lihat CATATAN_MIGRASI.md');
-  return Promise.resolve({
-    error: action + ' belum diimplementasi di Supabase. Gunakan tabel manifest yang diisi manual.',
-    columns: [], headerRows: [], colDefs: [], awbRows: [], totalCols: 0,
-    headerR1: [], headerR2: [], headerR3: [], headerR4: [], dataRows: [], ibSections: []
-  });
-}
-
-// ─── UI HELPERS ─── (tidak berubah dari versi GAS)
+// ─── UI HELPERS ───
 function showLoading(t) { document.getElementById('loadingText').innerText = t || 'Memuat...'; document.getElementById('loading').style.display = 'flex'; }
 function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 function toast(msg, type) {
@@ -452,7 +77,7 @@ document.querySelectorAll('.modal-overlay').forEach(function(el) {
   el.addEventListener('click', function(e) { if (e.target === el) el.classList.remove('open'); });
 });
 
-// ─── SMART COMBOBOX ─── (tidak berubah — copy persis dari versi GAS)
+// ─── SMART COMBOBOX ───
 var cbRegistry = {};
 
 function registerCb(cbId, inputId, dropId, options, onSelect, readOnly) {
