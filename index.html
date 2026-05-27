@@ -341,11 +341,11 @@
 
 <!-- ADD TUJUAN MODAL -->
 <div class="modal-overlay" id="tujuanModal">
-  <div class="modal" style="width:340px">
+  <div class="modal allow-dropdown-overflow" style="width:480px">
     <div class="modal-hdr"><div class="modal-title">Tambah Tujuan Baru</div><button class="modal-close" onclick="closeModal('tujuanModal')"><span class="material-icons-round">close</span></button></div>
-    <div class="modal-body">
-      <p style="font-size:13px;color:var(--gray6);margin-bottom:10px">Pilih tujuan untuk sesi scan baru.</p>
-      <div class="fg"><label>TUJUAN</label><div class="form-smart-cb" id="newTujuanCb"><input class="form-smart-cb-input" id="newTujuanInput" placeholder="Ketik / pilih tujuan..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('newTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="newTujuanDrop"></div></div></div>
+    <div class="modal-body" style="min-height:280px">
+      <p style="font-size:13px;color:var(--gray6);margin-bottom:14px">Pilih tujuan untuk sesi scan baru.</p>
+      <div class="fg"><label>TUJUAN</label><div class="form-smart-cb" id="newTujuanCb"><input class="form-smart-cb-input" id="newTujuanInput" placeholder="Ketik / pilih tujuan..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('newTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="newTujuanDrop" style="max-height:180px"></div></div></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('tujuanModal')">Batal</button><button class="btn btn-primary btn-sm" onclick="confirmAddTujuan()"><span class="material-icons-round">check</span> Tambah</button></div>
   </div>
