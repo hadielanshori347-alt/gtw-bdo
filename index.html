@@ -2,527 +2,795 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0a0e1a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GTW BDO">
-<meta name="mobile-web-app-capable" content="yes">
-<title>GTW BDO Mobile</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<link rel="stylesheet" href="style-mobile.css">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTW BDO — v5.0</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='135%25' y2='135%25'%3E%3Cstop offset='0%25' style='stop-color:%231b2a4a'/%3E%3Cstop offset='100%25' style='stop-color:%230d1628'/%3E%3C/linearGradient%3E%3CradialGradient id='wi' cx='50%25' cy='40%25' r='60%25'%3E%3Cstop offset='0%25' style='stop-color:%23ffffff'/%3E%3Cstop offset='100%25' style='stop-color:%23f0f4fa'/%3E%3C/radialGradient%3E%3ClinearGradient id='bl' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%232563b0'/%3E%3Cstop offset='50%25' style='stop-color:%234a90d9'/%3E%3Cstop offset='100%25' style='stop-color:%231e3a6e'/%3E%3C/linearGradient%3E%3ClinearGradient id='rg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234a90d9'/%3E%3Cstop offset='25%25' style='stop-color:%23a8d4f8'/%3E%3Cstop offset='55%25' style='stop-color:%232563b0'/%3E%3Cstop offset='80%25' style='stop-color:%236baee8'/%3E%3Cstop offset='100%25' style='stop-color:%231e3a6e'/%3E%3C/linearGradient%3E%3ClinearGradient id='ga' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234ade80'/%3E%3Cstop offset='100%25' style='stop-color:%2316a34a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='100' cy='100' r='95' fill='url(%23bg)'/%3E%3Ccircle cx='100' cy='100' r='94' fill='none' stroke='url(%23rg)' stroke-width='2.2'/%3E%3Ccircle cx='100' cy='100' r='74' fill='url(%23wi)'/%3E%3Ctext x='100' y='100' font-family='Georgia,serif' font-size='44' font-weight='700' fill='url(%23bl)' text-anchor='middle' dominant-baseline='middle' letter-spacing='4'%3EGTW%3C/text%3E%3Cline x1='46' y1='118' x2='94' y2='118' stroke='%234a90d9' stroke-width='0.8' opacity='0.4'/%3E%3Cpolygon points='100,115 103,118 100,121 97,118' fill='%234a90d9' opacity='0.8'/%3E%3Cline x1='106' y1='118' x2='154' y2='118' stroke='%234a90d9' stroke-width='0.8' opacity='0.4'/%3E%3Ctext x='100' y='135' font-family='Georgia,serif' font-size='12' font-weight='600' fill='%232563b0' text-anchor='middle' dominant-baseline='middle' letter-spacing='9'%3EBDO%3C/text%3E%3Ccircle cx='100' cy='153' r='4.5' fill='url(%23ga)'/%3E%3Ccircle cx='100' cy='153' r='1.8' fill='%23fff'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+<link rel="stylesheet" href="main.css">
+<style>
+/* ── Manifest DATE override ── */
+.mf-cell-date {
+  background: #FEFCE8;
+  color: var(--ink-low);
+  font-size: 10.5px;
+  font-family: var(--mono);
+  padding: 4px 7px;
+  text-align: center;
+  min-width: 82px;
+  max-width: 92px;
+  white-space: nowrap;
+  border-right: 2px solid #FEF08A !important;
+  cursor: default;
+}
+.mf-hdr-date {
+  background: #FEF9C3;
+  color: #854D0E;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  padding: 5px 7px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  min-width: 82px;
+  border-right: 2px solid #FEF08A !important;
+}
+.mf-mode-group {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: 9px;
+  padding: 3px;
+}
+.mf-mode-group .btn {
+  border-radius: 6px !important;
+  transition: all .15s ease;
+}
+</style>
 </head>
 <body>
 
-<!-- Loading -->
-<div id="gloading">
-  <div id="gloading-bar"></div>
-  <div id="gloading-pill">
-    <div class="spinner"></div>
-    <div id="gloading-txt">Memuat...</div>
-  </div>
-</div>
-<div id="gtoast"></div>
-
-<!-- ═══ SIDEBAR OVERLAY ═══ -->
-<div class="sidebar-ov" id="sidebarOv" onclick="UI.Sidebar.close()"></div>
-
-<!-- ═══ SIDEBAR ═══ -->
+<!-- ═══════════════════════════════════════════ -->
+<!-- SIDEBAR                                     -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-hdr">
-    <div class="sidebar-logo">GTW BDO</div>
-    <div class="sidebar-ic-row">
-      <div class="sidebar-ic-dot" id="sidebarIcDot"></div>
-      <div class="sidebar-ic-name" id="sidebarIcName">Pilih Incharge</div>
+
+  <!-- Brand -->
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-icon" style="background:transparent;padding:0;border-radius:50%;overflow:hidden;width:36px;height:36px;flex-shrink:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="36" height="36" style="display:block;">
+        <defs>
+          <linearGradient id="bgGrad" x1="0%" y1="0%" x2="135%" y2="135%">
+            <stop offset="0%" style="stop-color:#1b2a4a"/>
+            <stop offset="100%" style="stop-color:#0d1628"/>
+          </linearGradient>
+          <radialGradient id="whiteInner" cx="50%" cy="40%" r="60%">
+            <stop offset="0%" style="stop-color:#ffffff"/>
+            <stop offset="100%" style="stop-color:#f0f4fa"/>
+          </radialGradient>
+          <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2563b0"/>
+            <stop offset="50%" style="stop-color:#4a90d9"/>
+            <stop offset="100%" style="stop-color:#1e3a6e"/>
+          </linearGradient>
+          <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4a90d9"/>
+            <stop offset="25%" style="stop-color:#a8d4f8"/>
+            <stop offset="55%" style="stop-color:#2563b0"/>
+            <stop offset="80%" style="stop-color:#6baee8"/>
+            <stop offset="100%" style="stop-color:#1e3a6e"/>
+          </linearGradient>
+          <linearGradient id="greenAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#4ade80"/>
+            <stop offset="100%" style="stop-color:#16a34a"/>
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="100" r="95" fill="url(#bgGrad)"/>
+        <circle cx="100" cy="100" r="94" fill="none" stroke="url(#ringGrad)" stroke-width="2.2"/>
+        <circle cx="100" cy="100" r="86" fill="none" stroke="#4a90d9" stroke-width="0.6" opacity="0.4"/>
+        <circle cx="100" cy="100" r="81" fill="none" stroke="#6baee8" stroke-width="0.5" stroke-dasharray="3,5" opacity="0.3"/>
+        <circle cx="100" cy="100" r="74" fill="url(#whiteInner)"/>
+        <circle cx="100" cy="100" r="74" fill="none" stroke="#4a90d9" stroke-width="1" opacity="0.2"/>
+        <circle cx="100" cy="100" r="70" fill="none" stroke="#4a90d9" stroke-width="0.4" opacity="0.12"/>
+        <polygon points="100,34 104.5,42 100,50 95.5,42" fill="url(#ringGrad)"/>
+        <polygon points="100,39 102,42 100,45 98,42" fill="#0d1628"/>
+        <path d="M 64 55 A 48 48 0 0 1 136 55" fill="none" stroke="#4a90d9" stroke-width="0.8" opacity="0.25" stroke-linecap="round"/>
+        <text x="100" y="100" font-family="Georgia,'Palatino Linotype',serif" font-size="44" font-weight="700" fill="url(#blueGrad)" text-anchor="middle" dominant-baseline="middle" letter-spacing="4">GTW</text>
+        <line x1="46" y1="118" x2="94" y2="118" stroke="#4a90d9" stroke-width="0.8" opacity="0.4"/>
+        <polygon points="100,115 103,118 100,121 97,118" fill="#4a90d9" opacity="0.8"/>
+        <line x1="106" y1="118" x2="154" y2="118" stroke="#4a90d9" stroke-width="0.8" opacity="0.4"/>
+        <text x="100" y="135" font-family="Georgia,'Palatino Linotype',serif" font-size="12" font-weight="600" fill="#2563b0" text-anchor="middle" dominant-baseline="middle" letter-spacing="9">BDO</text>
+        <circle cx="100" cy="153" r="4.5" fill="url(#greenAccent)"/>
+        <circle cx="100" cy="153" r="1.8" fill="#fff"/>
+        <path d="M 68 162 A 44 44 0 0 0 132 162" fill="none" stroke="#4a90d9" stroke-width="0.7" opacity="0.2" stroke-linecap="round"/>
+        <circle cx="100" cy="7"   r="2.5" fill="url(#ringGrad)" opacity="0.85"/>
+        <circle cx="100" cy="193" r="2.5" fill="url(#ringGrad)" opacity="0.85"/>
+        <circle cx="7"   cy="100" r="2.5" fill="url(#ringGrad)" opacity="0.85"/>
+        <circle cx="193" cy="100" r="2.5" fill="url(#ringGrad)" opacity="0.85"/>
+      </svg>
+    </div>
+    <div class="brand-texts">
+      <div class="brand-label">GTW BDO</div>
+      <div class="brand-title">Outbound GTW BDO</div>
     </div>
   </div>
 
-  <div class="sidebar-body">
-    <div class="sidebar-section">Navigasi</div>
-    <button class="sidebar-item active" id="sbnHome" onclick="switchNav('home')">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      </span>
-      Data Pengiriman
-    </button>
-    <button class="sidebar-item" id="sbnSearch" onclick="switchNav('search')">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-      Cari AWB
-    </button>
-
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Aksi</div>
-    <button class="sidebar-item" onclick="CreatePage.open()">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      </span>
-      Tambah Data
-    </button>
-    <button class="sidebar-item" onclick="IcModal.open();UI.Sidebar.close()">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      </span>
-      Pilih Incharge
-    </button>
-
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Filter Tipe</div>
-    <button class="sidebar-item" id="sbnOb" onclick="HomePage.switchTab('ob');UI.Sidebar.close()">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-      </span>
-      OB BDO
-    </button>
-    <button class="sidebar-item" id="sbnHvs" onclick="HomePage.switchTab('hvs');UI.Sidebar.close()">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      </span>
-      OB HVS
-    </button>
-    <button class="sidebar-item" id="sbnIb" onclick="HomePage.switchTab('ib');UI.Sidebar.close()">
-      <span class="si-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-      </span>
-      IB HVS
-    </button>
-  </div>
-
-  <div class="sidebar-footer">GTW BDO v3.0 — 2025</div>
-</div>
-
-<!-- ═══ HOME PAGE ═══ -->
-<div class="page" id="pgHome">
-  <div class="appbar">
-    <button class="hamburger" onclick="UI.Sidebar.toggle()" aria-label="Menu">
-      <span></span>
-    </button>
-    <div class="appbar-title">GTW BDO</div>
-    <div class="ic-widget" onclick="IcModal.open()">
-      <div class="ic-dot" id="icDot"></div>
-      <div class="ic-name" id="icName">Pilih IC</div>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-    <button class="appbar-icon" onclick="reloadAll()" aria-label="Refresh">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-  </div>
-
-  <div class="tab-bar">
-    <div class="tab-item active" id="homeTabOb"  onclick="HomePage.switchTab('ob')">OB BDO</div>
-    <div class="tab-item"        id="homeTabHvs" onclick="HomePage.switchTab('hvs')">OB HVS</div>
-    <div class="tab-item"        id="homeTabIb"  onclick="HomePage.switchTab('ib')">IB HVS</div>
-  </div>
-
-  <div class="scroll-content" id="homeScroll">
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-label">Total AWB</div>
-        <div class="stat-value" id="statAwb">0</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-label">Selesai</div>
-        <div class="stat-value" id="statSelesai">0</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-label">Proses</div>
-        <div class="stat-value" id="statProses">0</div>
-      </div>
-    </div>
-    <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
-    <div class="safe-pad"></div>
-  </div>
-
-  <!-- FAB -->
-  <button
-    style="position:fixed;bottom:calc(22px + var(--safe-bot));right:18px;
-           width:54px;height:54px;
-           background:linear-gradient(135deg,var(--gold),var(--gold2));
-           border-radius:16px;
-           display:flex;align-items:center;justify-content:center;
-           color:var(--ink);
-           box-shadow:0 6px 20px rgba(201,168,76,.35);
-           z-index:100;cursor:pointer;border:none;"
-    onclick="CreatePage.open()"
-    aria-label="Tambah data">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  <!-- Toggle Button -->
+  <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+    <svg class="toggle-icon-open" width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg class="toggle-icon-closed" width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </button>
+
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+
+    <div class="nav-section-label">Menu</div>
+
+    <div class="nav-item active" onclick="switchPage('ob')" id="nav-ob">
+      <div class="nav-icon-wrap" style="background:rgba(59,130,246,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="1" y="7" width="22" height="14" rx="2" stroke="#60A5FA" stroke-width="1.8"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="#60A5FA" stroke-width="1.8"/>
+          <path d="M12 12v4M10 14h4" stroke="#93C5FD" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="nav-label">Outbound BDO</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('hvs')" id="nav-hvs">
+      <div class="nav-icon-wrap" style="background:rgba(168,85,247,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#C084FC" stroke-width="1.8"/>
+          <path d="M9 22V12h6v10" stroke="#D8B4FE" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="8" r="1.4" fill="#C084FC"/>
+        </svg>
+      </div>
+      <span class="nav-label">Outbound HVS</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('ib')" id="nav-ib">
+      <div class="nav-icon-wrap" style="background:rgba(16,185,129,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M22 12h-6l-2 3H10l-2-3H2" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" stroke="#34D399" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <span class="nav-label">Inbound HVS</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Laporan</div>
+
+    <div class="nav-item" onclick="switchPage('manifest')" id="nav-manifest">
+      <div class="nav-icon-wrap" style="background:rgba(245,158,11,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="#FCD34D" stroke-width="1.8"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="#FCD34D" stroke-width="1.8"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="#FDE68A" stroke-width="1.8"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.2" stroke="#FDE68A" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <span class="nav-label">Manifest</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('obib')" id="nav-obib">
+      <div class="nav-icon-wrap" style="background:rgba(20,184,166,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#2DD4BF" stroke-width="1.8"/>
+          <path d="M3 9h18M3 15h18M9 9v9M15 9v9" stroke="#5EEAD4" stroke-width="1.3"/>
+        </svg>
+      </div>
+      <span class="nav-label">OB &amp; IB</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('search')" id="nav-search">
+      <div class="nav-icon-wrap" style="background:rgba(236,72,153,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="7" stroke="#F472B6" stroke-width="1.8"/>
+          <path d="M21 21l-4.35-4.35" stroke="#F9A8D4" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M8 11h6M11 8v6" stroke="#F472B6" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="nav-label">Cari AWB</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+  </nav>
+
+  <!-- Quick AWB Search -->
+  <div class="sidebar-search-section">
+    <div class="sidebar-search-label">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2.2"/>
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Cari AWB</span>
+    </div>
+    <div class="sidebar-search-box">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div class="sidebar-bottom">
+    <div class="ver">v5.0 — GTW BDO</div>
+  </div>
+
 </div>
 
-<!-- ═══ SEARCH PAGE ═══ -->
-<div class="page hidden" id="pgSearch">
-  <div class="appbar">
-    <button class="hamburger" onclick="UI.Sidebar.toggle()" aria-label="Menu"><span></span></button>
-    <div class="appbar-title">Cari AWB</div>
-    <button class="appbar-icon" onclick="reloadAll()" aria-label="Refresh">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+<!-- ═══════════════════════════════════════════ -->
+<!-- MAIN                                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="main" id="mainWrapper">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+
+    <!-- Mobile/mini toggle button (visible when sidebar fully hidden on small screens) -->
+    <button class="topbar-menu-btn" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
+    <div class="topbar-title" id="topbarTitle">
+      Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span>
+    </div>
+
+    <!-- Global Incharge Picker -->
+    <div class="incharge-widget">
+      <span class="material-icons-round" style="font-size:14px;color:var(--accent)">person</span>
+      <span class="incharge-widget-label">Incharge</span>
+      <div class="smart-cb" id="globalSmartCb">
+        <input class="smart-cb-input" id="globalInchargeInput" placeholder="— Pilih —" autocomplete="off" readonly>
+        <span class="material-icons-round smart-cb-arrow">expand_more</span>
+        <div class="smart-cb-dropdown" id="globalCbDrop"></div>
+      </div>
+      <span class="incharge-dot" id="inchargeDot"></span>
+    </div>
+
+    <button class="btn btn-outline btn-sm" onclick="reloadAll()">
+      <span class="material-icons-round">refresh</span> Refresh
+    </button>
+    <button class="export-btn" onclick="exportCSV()">
+      <span class="material-icons-round">file_download</span> Export CSV
     </button>
   </div>
-  <div class="scroll-content">
-    <div class="search-hero">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:.3px;">Cari nomor AWB di semua data OB, HVS, dan IB</div>
-      <div class="search-inp-row">
-        <input class="search-main-inp" id="searchMainInp" placeholder="Scan atau ketik AWB..." autocomplete="off"
-          oninput="SearchPage.search(this.value)" onkeydown="if(event.key==='Enter')SearchPage.search(this.value)">
-        <button class="btn btn-outline btn-sm" onclick="SearchPage.clear()" style="flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+
+  <!-- ═══════ PAGES ═══════ -->
+  <div class="content" id="mainContent">
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OUTBOUND BDO                       -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-ob">
+
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-label">Total AWB</div>
+          <div class="stat-value" id="obTotalAwb">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Selesai</div>
+          <div class="stat-value" id="obSelesai">0</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">On Proses</div>
+          <div class="stat-value" id="obProses">0</div>
+        </div>
+      </div>
+
+      <div class="form-panel">
+        <div class="form-panel-hdr" onclick="toggleForm('ob')">
+          <div class="form-panel-title">
+            <span class="material-icons-round">add_circle_outline</span>
+            Tambah Data Outbound BDO
+          </div>
+          <span class="material-icons-round" id="obFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+        </div>
+        <div class="form-panel-body" id="obFormBody">
+          <div id="obInfoBar" class="info-bar" style="display:none">
+            <span class="material-icons-round">badge</span>
+            <span>Incharge: <strong id="obInchargeDisplay">—</strong></span>
+            <span class="hint">(ubah di topbar)</span>
+          </div>
+          <div id="obWarnBar" class="warn-bar">
+            <span class="material-icons-round">warning_amber</span>
+            Pilih <strong>Incharge</strong> terlebih dahulu di topbar kanan atas.
+          </div>
+          <div id="obFormGrid" class="form-grid" style="display:none">
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="obServiceCb">
+                <input class="form-smart-cb-input" id="obService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="obServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>TUJUAN (utama)</label>
+              <div class="form-smart-cb" id="obTujuanCb">
+                <input class="form-smart-cb-input" id="obTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obTujuanCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="obTujuanDrop"></div>
+              </div>
+            </div>
+          </div>
+          <div id="obServiceHint" class="service-hint" style="display:none">
+            <span class="material-icons-round">info_outline</span>
+            Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.
+          </div>
+          <div class="scan-section" id="obScanSection" style="display:none">
+            <div class="multi-tuj-info">
+              <span class="material-icons-round">info_outline</span>
+              Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol "+ Tujuan Baru".
+            </div>
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="obTotalScanLabel">0 AWB total</span>
+            </div>
+            <div class="scan-row">
+              <input class="scan-inp" id="obScanInput" placeholder="Pilih service &amp; tujuan dulu..." disabled onkeydown="handleScan(event,'ob')">
+              <button class="btn btn-sm" id="obAddTujBtn"
+                style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px"
+                disabled onclick="addMultiTujuan('ob')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
+            </div>
+            <div id="obTujuanTabs" class="scan-tujuan-tabs"></div>
+            <div class="scan-list" id="obScanList">
+              <div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div>
+            </div>
+          </div>
+          <div class="form-actions" id="obFormActions" style="display:none">
+            <button class="btn btn-outline btn-sm" onclick="resetObForm()">Batal</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveOb" disabled onclick="saveOb()">
+              <span class="material-icons-round">save</span> Simpan Semua Tujuan
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-panel">
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">
+            Outbound BDO &mdash;
+            <span style="color:var(--ink-low);font-weight:400" id="obTableCount">0 record</span>
+          </div>
+          <div class="search-box">
+            <span class="material-icons-round">search</span>
+            <input id="obSearch" placeholder="Cari no track, tujuan..." oninput="filterObTable()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>Tujuan</th>
+                <th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="obTbody">
+              <tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat data...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div class="search-result" id="searchResult">
-      <div class="search-empty">Ketik nomor AWB untuk mencari</div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OUTBOUND HVS                       -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-hvs" style="display:none">
+      <div class="stats-row">
+        <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="hvsTotalAwb">0</div></div>
+        <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="hvsSelesai">0</div></div>
+        <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="hvsProses">0</div></div>
+      </div>
+      <div class="form-panel">
+        <div class="form-panel-hdr" onclick="toggleForm('hvs')">
+          <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Outbound HVS</div>
+          <span class="material-icons-round" id="hvsFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+        </div>
+        <div class="form-panel-body" id="hvsFormBody">
+          <div id="hvsInfoBar" class="info-bar" style="display:none"><span class="material-icons-round">badge</span><span>Incharge: <strong id="hvsInchargeDisplay">—</strong></span><span class="hint">(ubah di topbar)</span></div>
+          <div id="hvsWarnBar" class="warn-bar"><span class="material-icons-round">warning_amber</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
+          <div id="hvsFormGrid" class="form-grid" style="display:none">
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="hvsServiceCb">
+                <input class="form-smart-cb-input" id="hvsService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="hvsServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>TUJUAN (utama)</label>
+              <div class="form-smart-cb" id="hvsTujuanCb">
+                <input class="form-smart-cb-input" id="hvsTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsTujuanCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="hvsTujuanDrop"></div>
+              </div>
+            </div>
+          </div>
+          <div id="hvsServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info_outline</span>Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.</div>
+          <div class="scan-section" id="hvsScanSection" style="display:none">
+            <div class="multi-tuj-info"><span class="material-icons-round">info_outline</span>Setiap tujuan akan dibuat NO TRACK terpisah.</div>
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="hvsTotalScanLabel">0 AWB total</span>
+            </div>
+            <div class="scan-row">
+              <input class="scan-inp" id="hvsScanInput" placeholder="Pilih service &amp; tujuan dulu..." disabled onkeydown="handleScan(event,'hvs')">
+              <button class="btn btn-sm" id="hvsAddTujBtn" style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px" disabled onclick="addMultiTujuan('hvs')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
+            </div>
+            <div id="hvsTujuanTabs" class="scan-tujuan-tabs"></div>
+            <div class="scan-list" id="hvsScanList"><div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div></div>
+          </div>
+          <div class="form-actions" id="hvsFormActions" style="display:none">
+            <button class="btn btn-outline btn-sm" onclick="resetHvsForm()">Batal</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveHvs" disabled onclick="saveHvs()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-panel">
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">Outbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="hvsTableCount">0 record</span></div>
+          <div class="search-box"><span class="material-icons-round">search</span><input id="hvsSearch" placeholder="Cari..." oninput="filterHvsTable()"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>Tujuan</th><th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th></tr></thead>
+            <tbody id="hvsTbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="safe-pad"></div>
-  </div>
-</div>
 
-<!-- ═══ CREATE PAGE ═══ -->
-<div class="page hidden" id="pgCreate">
-  <div class="appbar">
-    <button class="back-icon" onclick="CreatePage.close()" aria-label="Kembali">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="appbar-title">Tambah Data</div>
-  </div>
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: INBOUND HVS                        -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-ib" style="display:none">
+      <div class="stats-row">
+        <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="ibTotalAwb">0</div></div>
+        <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="ibSelesai">0</div></div>
+        <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="ibProses">0</div></div>
+      </div>
+      <div class="form-panel">
+        <div class="form-panel-hdr" onclick="toggleForm('ib')">
+          <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Inbound HVS</div>
+          <span class="material-icons-round" id="ibFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+        </div>
+        <div class="form-panel-body" id="ibFormBody">
+          <div id="ibInfoBar" class="info-bar" style="display:none"><span class="material-icons-round">badge</span><span>Incharge: <strong id="ibInchargeDisplay">—</strong></span><span class="hint">(ubah di topbar)</span></div>
+          <div id="ibWarnBar" class="warn-bar"><span class="material-icons-round">warning_amber</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
+          <div id="ibFormGrid" class="form-grid" style="display:none">
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="ibServiceCb">
+                <input class="form-smart-cb-input" id="ibService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="ibServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>FROM *</label>
+              <div class="form-smart-cb" id="ibFromCb">
+                <input class="form-smart-cb-input" id="ibFrom" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibFromCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="ibFromDrop"></div>
+              </div>
+            </div>
+          </div>
+          <div id="ibServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info_outline</span>Pilih <strong>SERVICE</strong> dulu sebelum mengisi FROM dan scan AWB.</div>
+          <div id="ibMultiTujInfo" class="multi-tuj-info" style="display:none"><span class="material-icons-round">info_outline</span>Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol "+ Tujuan Baru".</div>
+          <div id="ibScanHint" class="ib-scan-hint" style="display:none"><span class="material-icons-round">warning_amber</span>Wajib isi <strong>FROM</strong> dan pilih/tambah <strong>TUJUAN</strong> terlebih dahulu sebelum scan AWB.</div>
+          <div class="scan-section" id="ibScanSection" style="display:none">
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="ibTotalScanLabel">0 AWB total</span>
+            </div>
+            <div class="scan-row">
+              <input class="scan-inp" id="ibScanInput" placeholder="Pilih service &amp; FROM dulu..." disabled onkeydown="handleScan(event,'ib')">
+              <button class="btn btn-sm" id="ibAddTujBtn" style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px" disabled onclick="addMultiTujuan('ib')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
+            </div>
+            <div class="scan-tujuan-tabs" id="ibTujuanTabs"></div>
+            <div class="scan-list" id="ibScanList"><div class="scan-empty">Pilih atau tambah tujuan terlebih dahulu</div></div>
+          </div>
+          <div class="form-actions" id="ibFormActions" style="display:none">
+            <button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-panel">
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">Inbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="ibTableCount">0 record</span></div>
+          <div class="search-box"><span class="material-icons-round">search</span><input id="ibSearch" placeholder="Cari..." oninput="filterIbTable()"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>From</th><th>Tujuan</th><th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th></tr></thead>
+            <tbody id="ibTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-  <div class="scroll-content" id="createScroll">
-    <div class="section-title">Tipe Pengiriman</div>
-    <div class="type-grid">
-      <div class="type-card" id="tcOb"  onclick="CreatePage.selectType('ob')">
-        <span class="type-card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: MANIFEST                           -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-manifest" style="display:none">
+      <div class="mf-toolbar">
+        <span style="font-weight:700;font-size:14px;color:var(--ink);flex:1;letter-spacing:-.02em">Manifest AWB</span>
+        <div class="mf-mode-group">
+          <button id="mfBtnToday" class="btn btn-primary btn-sm" onclick="loadManifestPage('today')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">today</span> Hari Ini
+          </button>
+          <button id="mfBtnAll" class="btn btn-outline btn-sm" onclick="loadManifestPage('all')" style="gap:5px">
+            <span class="material-icons-round" style="font-size:13px">calendar_month</span> Semua Data
+          </button>
+        </div>
+        <div class="search-box">
+          <span class="material-icons-round">search</span>
+          <input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:165px">
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="reloadManifest()"><span class="material-icons-round">refresh</span> Refresh</button>
+        <button class="export-btn" onclick="exportManifestCSV()"><span class="material-icons-round">file_download</span> Export CSV</button>
+        <span style="font-size:11px;color:var(--ink-low);background:var(--surface-2);border-radius:6px;padding:3px 8px;white-space:nowrap;border:1px solid var(--surface-3)">
+          <span class="material-icons-round" style="font-size:12px;vertical-align:middle">keyboard</span>
+          Klik sel → Ctrl+C
         </span>
-        <div class="type-card-label">OB BDO</div>
       </div>
-      <div class="type-card" id="tcHvs" onclick="CreatePage.selectType('hvs')">
-        <span class="type-card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-        </span>
-        <div class="type-card-label">OB HVS</div>
-      </div>
-      <div class="type-card" id="tcIb"  onclick="CreatePage.selectType('ib')">
-        <span class="type-card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-        </span>
-        <div class="type-card-label">IB HVS</div>
-      </div>
-    </div>
-
-    <div id="createWarnBar" class="warn-bar">
-      Pilih <b>Incharge</b> di topbar kanan atas dahulu.
-    </div>
-    <div id="createInfoBar" class="info-bar" style="display:none">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Incharge: <b id="createIcDisplay"></b>
-    </div>
-
-    <!-- OB/HVS FORM -->
-    <div id="formObHvs" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Service *</label>
-        <div class="scb" id="scbSvc">
-          <input class="scb-input" id="inpSvc" placeholder="Pilih service..." readonly>
-          <span class="scb-arrow">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-          <div class="scb-drop" id="dropSvc"></div>
+      <div class="mf-stats-row">
+        <div class="stat-card blue"><div class="stat-label">Total Kolom</div><div class="stat-value" id="mfTotalCols">0</div></div>
+        <div class="stat-card green"><div class="stat-label">Total AWB</div><div class="stat-value" id="mfTotalAwb">0</div></div>
+        <div class="stat-card orange"><div class="stat-label">Incharge</div><div class="stat-value" id="mfTotalInc">0</div></div>
+        <div class="stat-card" style="border-color:var(--surface-3)">
+          <div class="stat-label">Sel Aktif</div>
+          <div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--ink-low);font-family:var(--mono)">—</div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Tujuan (utama)</label>
-        <div class="scb" id="scbTuj">
-          <input class="scb-input" id="inpTuj" placeholder="Pilih service dulu..." readonly disabled>
-          <span class="scb-arrow">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-          <div class="scb-drop" id="dropTuj"></div>
+      <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
+        <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:48px;text-align:center">
+          <span class="material-icons-round" style="font-size:56px;color:var(--ink-ghost)">grid_on</span>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px">Manifest AWB</div>
+            <div style="font-size:13px;color:var(--ink-low);max-width:280px;line-height:1.6">Pilih mode tampilan data manifest:</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" style="padding:10px 22px;font-size:13px;border-radius:9px;gap:7px" onclick="loadManifestPage('today')">
+              <span class="material-icons-round" style="font-size:17px">today</span> Hari Ini
+            </button>
+            <button class="btn btn-outline" style="padding:10px 22px;font-size:13px;border-radius:9px;gap:7px" onclick="loadManifestPage('all')">
+              <span class="material-icons-round" style="font-size:17px">calendar_month</span> Semua Data
+            </button>
+          </div>
         </div>
       </div>
-      <div class="multi-info">💡 Setiap tujuan = 1 NO TRACK. Scanner terbuka otomatis setelah pilih tujuan.</div>
-      <div class="scan-total" id="obTotalLabel">0 AWB total</div>
-      <div class="scan-tabs" id="obTabs"></div>
-      <div class="scan-add-row">
-        <button class="btn-add-tuj" id="btnAddTuj" disabled onclick="CreatePage.openAddTujModal()">+ Tujuan Lain</button>
-        <button class="btn btn-outline btn-sm" id="btnObRescan" disabled onclick="CreatePage.rescanOb()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Scan Lagi
-        </button>
-      </div>
-      <div class="scan-list" id="obScanList"><div class="scan-empty">Pilih service & tujuan dulu</div></div>
     </div>
 
-    <!-- IB FORM -->
-    <div id="formIb" style="display:none">
-      <div class="form-group">
-        <label class="form-label">Service *</label>
-        <div class="scb" id="scbIbSvc">
-          <input class="scb-input" id="inpIbSvc" placeholder="Pilih service..." readonly>
-          <span class="scb-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-          <div class="scb-drop" id="dropIbSvc"></div>
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OB & IB COMBINED                   -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-obib" style="display:none">
+      <div class="table-panel">
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">OB &amp; IB &mdash; Combined View</div>
+          <div class="search-box">
+            <span class="material-icons-round">search</span>
+            <input id="obibSearch" placeholder="Cari AWB, tujuan, service..." oninput="filterObib()">
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="reloadObib()"><span class="material-icons-round">refresh</span> Refresh</button>
+          <button class="export-btn" onclick="exportObibCSV()"><span class="material-icons-round">file_download</span> Export</button>
+        </div>
+        <div class="obib-table-wrap" id="obibTableWrap">
+          <div class="empty-state"><span class="material-icons-round">table_view</span>Memuat data...</div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">From *</label>
-        <div class="scb" id="scbIbFrom">
-          <input class="scb-input" id="inpIbFrom" placeholder="Pilih service dulu..." readonly disabled>
-          <span class="scb-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-          <div class="scb-drop" id="dropIbFrom"></div>
+    </div>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: CARI AWB                           -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <div id="page-search" style="display:none">
+      <div class="search-awb-hero">
+        <div class="search-awb-hero-title">
+          <span class="material-icons-round">manage_search</span> Cari AWB
+        </div>
+        <div class="search-awb-hero-sub">Cari nomor AWB di seluruh data: Outbound BDO, Outbound HVS, dan Inbound HVS</div>
+        <div class="search-awb-input-row">
+          <input class="search-awb-main-input" id="searchAwbMainInput"
+            placeholder="Ketik atau scan nomor AWB..."
+            autocomplete="off"
+            oninput="doSearchAwb(this.value)"
+            onkeydown="if(event.key==='Enter')doSearchAwb(this.value)">
+          <button class="btn btn-primary" onclick="doSearchAwb(document.getElementById('searchAwbMainInput').value)">
+            <span class="material-icons-round">search</span> Cari
+          </button>
+          <button class="btn btn-outline" onclick="clearSearchAwb()">
+            <span class="material-icons-round">clear</span>
+          </button>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Tujuan (utama)</label>
-        <div class="scb" id="scbIbTuj">
-          <input class="scb-input" id="inpIbTuj" placeholder="Pilih FROM dulu..." readonly disabled>
-          <span class="scb-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-          <div class="scb-drop" id="dropIbTuj"></div>
+      <div class="search-awb-result" id="searchAwbResult">
+        <div class="search-awb-result-hdr">
+          <span class="material-icons-round">info_outline</span> Masukkan nomor AWB untuk mencari
+        </div>
+        <div class="search-awb-result-body" id="searchAwbResultBody">
+          <div class="search-awb-empty">
+            <span class="material-icons-round">search</span>
+            Ketik nomor AWB di atas untuk mencari di semua data
+          </div>
         </div>
       </div>
-      <div class="multi-info">💡 Setiap tujuan = 1 NO TRACK. Scanner terbuka otomatis setelah pilih tujuan.</div>
-      <div class="scan-total" id="ibTotalLabel">0 AWB total</div>
-      <div class="scan-tabs" id="ibTabs"></div>
-      <div class="scan-add-row">
-        <button class="btn-add-tuj" id="btnAddIbTuj" disabled onclick="CreatePage.openAddIbTujModal()">+ Tujuan Lain</button>
-        <button class="btn btn-outline btn-sm" id="btnIbRescan" disabled onclick="CreatePage.rescanIb()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Scan Lagi
-        </button>
-      </div>
-      <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi form dulu</div></div>
     </div>
 
-    <div style="margin-top:14px;display:flex;gap:8px;display:none" id="createActions">
-      <button class="btn btn-outline" onclick="CreatePage.close()">Batal</button>
-      <button class="btn btn-primary" style="flex:1" id="btnSave" disabled onclick="CreatePage.doSave()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Simpan
-      </button>
-    </div>
-    <div class="safe-pad"></div>
-  </div>
-</div>
+  </div><!-- /content -->
+</div><!-- /main -->
 
-<!-- ═══ SCANNER PAGE ═══ -->
-<div class="page hidden" id="pgScan" style="display:flex;flex-direction:column">
-  <div class="appbar">
-    <button class="back-icon" onclick="Scanner.close()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="appbar-title" id="scanTitle">Scan AWB</div>
-    <button class="torch-btn" id="torchBtn" onclick="Scanner.toggleFlash()" aria-label="Flash">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-    </button>
-  </div>
-  <div class="scan-ctx-bar" id="scanCtxBar" style="display:flex">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Scan ke: &nbsp;<span id="scanCtxLabel" style="font-weight:800;color:var(--gold2)"></span>
-  </div>
-  <div class="cam-wrap"><div id="reader"></div></div>
-  <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
-  <div class="scroll-content" style="flex:1;overflow-y:auto;padding-bottom:80px">
-    <div class="form-group" style="margin-bottom:12px">
-      <label class="form-label">Input Manual AWB</label>
-      <input type="text" class="scan-inp" id="scanManualInp" placeholder="Ketik AWB & tekan Enter"
-        onkeydown="Scanner.handleManual(event)" autocomplete="off">
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-head);letter-spacing:.3px;text-transform:uppercase">
-        Scanned <span style="color:var(--gold2);font-family:var(--mono)" id="scanCount">0</span>
-      </span>
-      <button class="btn-ghost" style="border:1px solid var(--border-gold);border-radius:8px;padding:5px 12px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px" onclick="Scanner.clearAll()">Clear All</button>
-    </div>
-    <div class="scan-list" id="scanList"><div class="scan-empty">Belum ada data</div></div>
-  </div>
-  <div style="padding:12px 16px;padding-bottom:calc(12px + var(--safe-bot));background:var(--ink2);border-top:1px solid var(--border);flex-shrink:0">
-    <button id="btnSaveScan" disabled onclick="Scanner.saveAndNext()"
-      style="width:100%;padding:16px;font-size:13px;font-weight:700;letter-spacing:1px;border:none;border-radius:14px;cursor:pointer;background:var(--surface3);color:var(--text3);font-family:var(--font-head);text-transform:uppercase;transition:.2s">
-      Simpan &amp; Foto
-    </button>
-  </div>
-</div>
+<!-- ═══════════════════════════════════════════ -->
+<!-- SIDEBAR OVERLAY (mobile)                    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
 
-<!-- ═══ PHOTO PAGE ═══ -->
-<div class="page hidden" id="pgPhoto" style="display:flex;flex-direction:column">
-  <div class="appbar">
-    <button class="back-icon" onclick="Photo.close()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="appbar-title">Ambil Foto</div>
-    <button class="appbar-icon" onclick="Photo.skip()" style="font-size:11px;font-weight:700;font-family:var(--font-head);letter-spacing:.5px;min-width:auto;padding:6px 12px;border-radius:8px">SKIP</button>
-  </div>
-  <div class="photo-container" id="photoContainer" style="flex:1;min-height:0">
-    <video id="photoVideo" autoplay playsinline muted></video>
-    <canvas id="photoCanvas"></canvas>
-    <img id="photoPreview" alt="Preview">
-  </div>
-  <div class="gps-bar" id="gpsBar">
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:4px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Mendapatkan lokasi...
-  </div>
+<!-- ═══════════════════════════════════════════ -->
+<!-- GLOBAL UI                                   -->
+<!-- ═══════════════════════════════════════════ -->
+<div id="loading"><div class="spinner"></div><div id="loadingText">Memuat data...</div></div>
+<div id="toast"></div>
+<div class="copy-flash" id="copyFlash">✓ Copied!</div>
 
-  <div id="photoBarWrap" style="flex-shrink:0;background:var(--ink2);border-top:1px solid var(--border)">
-    <div class="photo-bar" id="barAmbil" style="padding:14px 16px;padding-bottom:calc(14px + var(--safe-bot))">
-      <button class="btn-cam btn-ambil" onclick="Photo.ambil()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Ambil Foto
-      </button>
-    </div>
-    <div class="photo-bar" id="barResult" style="display:none;flex-direction:column;gap:8px;padding:12px 16px;padding-bottom:calc(12px + var(--safe-bot))">
-      <div style="display:flex;gap:8px">
-        <button class="btn-cam btn-ulangi" style="flex:1" onclick="Photo.ulangi()">↺ Ulangi</button>
-        <button class="btn-cam btn-tambah" style="flex:1" onclick="Photo.tambahKeAntrian()">+ Tambah</button>
-      </div>
-      <button class="btn-cam btn-simpan-langsung" onclick="Photo.simpanLangsung()">✓ Simpan Foto Ini</button>
-    </div>
-    <div class="photo-bar" id="barAfterSave" style="display:none;flex-direction:column;gap:6px;padding:10px 16px;padding-bottom:calc(10px + var(--safe-bot));border-top:1px solid var(--border)">
-      <div id="queueLabel" style="font-size:12px;font-weight:700;color:var(--gold2);text-align:center;letter-spacing:.3px;font-family:var(--font-head);text-transform:uppercase"></div>
-      <button id="btnSimpanSemua" class="btn-cam btn-simpan-foto" disabled onclick="Photo.simpanSemua()">✓ Simpan Semua &amp; Selesai</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ DETAIL PAGE ═══ -->
-<div class="page hidden" id="pgDetail">
-  <div class="appbar">
-    <button class="back-icon" onclick="DetailPage.close()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <div class="appbar-title" id="detailTitle">Detail</div>
-    <button class="menu-icon" onclick="UI.Menu.toggle()" aria-label="Menu">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-    </button>
-  </div>
-  <div class="dd-ov" id="ddOv" onclick="UI.Menu.close()"></div>
-  <div class="dd-menu" id="ddMenu"></div>
-  <div class="scroll-content" id="detailScroll">
-    <div class="photo-box" id="detailPhotoBox">
-      <div class="no-img">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3;margin-bottom:6px;display:block;margin-left:auto;margin-right:auto"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Belum ada foto
-      </div>
-    </div>
-    <div class="ro-bar hidden" id="roBbar">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Data SELESAI — tidak dapat diubah
-    </div>
-    <div class="detail-section" id="detailFields"></div>
-    <div class="detail-section" style="margin-top:8px">
-      <div class="detail-field">
-        <div class="d-label">List AWB (<span id="awbCount">0</span>)</div>
-      </div>
-      <div id="awbListBox" style="max-height:220px;overflow-y:auto">
-        <div class="scan-empty">Memuat...</div>
-      </div>
-    </div>
-    <div class="safe-pad"></div>
-  </div>
-  <div style="padding:12px 14px;background:var(--ink2);border-top:1px solid var(--border);padding-bottom:calc(12px + var(--safe-bot));display:flex;gap:8px" id="detailFooter"></div>
-  <input type="file" accept="image/*" style="display:none" id="fotoFileInput" onchange="DetailPage.onFileChange(event)">
-</div>
-
-<!-- ═══ INCHARGE MODAL ═══ -->
-<div class="modal-ov" id="icModal">
-  <div class="modal-sheet">
+<!-- ── DETAIL MODAL ── -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="width:560px">
     <div class="modal-hdr">
-      <div class="modal-title">Pilih Incharge</div>
-      <button class="modal-close" onclick="UI.Modal.close('icModal')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" style="padding:12px 14px">
-      <input class="form-input" id="icSearch" placeholder="Cari incharge..." oninput="IcModal.render()" style="margin-bottom:10px">
-      <div id="icList"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ ADD TUJUAN IB MODAL ═══ -->
-<div class="modal-ov" id="ibTujModal">
-  <div class="modal-sheet">
-    <div class="modal-hdr">
-      <div class="modal-title">Tambah Tujuan IB</div>
-      <button class="modal-close" onclick="CreatePage.closeIbTujModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <div class="modal-title" id="detailModalTitle">Detail</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">
+        <span class="material-icons-round">close</span>
       </button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Tujuan</label>
-        <div class="scb" id="scbNewIbTuj">
-          <input class="scb-input" id="inpNewIbTuj" placeholder="Ketik / pilih tujuan..." autocomplete="off">
-          <span class="scb-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-          <div class="scb-drop" id="dropNewIbTuj"></div>
+      <div class="photo-box" id="detailPhotoBox">
+        <span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>
+      </div>
+      <div id="detailReadonlyBar" class="readonly-bar" style="display:none">
+        <span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah
+      </div>
+      <div class="detail-grid" id="detailGrid"></div>
+      <div style="margin-top:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink-low);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">
+          List AWB (<span id="awbCount">0</span>)
+        </div>
+        <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
+      </div>
+      <div id="detailAddAwbSection" style="margin-top:12px;display:none"></div>
+    </div>
+    <div class="modal-footer" id="detailModalFooter"></div>
+  </div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="width:360px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="confirmTitle">Konfirmasi</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="font-size:13px;color:var(--ink-mid);line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('confirmModal')">Batal</button>
+      <button class="btn btn-danger btn-sm" id="confirmBtn">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD TUJUAN MODAL ── -->
+<div class="modal-overlay" id="tujuanModal">
+  <div class="modal allow-dropdown-overflow" style="width:460px">
+    <div class="modal-hdr">
+      <div class="modal-title">Tambah Tujuan Baru</div>
+      <button class="modal-close" onclick="closeModal('tujuanModal')">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
+    <div class="modal-body" style="min-height:260px">
+      <p style="font-size:13px;color:var(--ink-low);margin-bottom:16px;line-height:1.6">
+        Pilih atau ketik tujuan untuk sesi scan baru.
+      </p>
+      <div class="fg">
+        <label>TUJUAN</label>
+        <div class="form-smart-cb" id="newTujuanCb">
+          <input class="form-smart-cb-input" id="newTujuanInput" placeholder="Ketik / pilih tujuan..." autocomplete="off">
+          <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('newTujuanCb')">expand_more</span>
+          <div class="form-smart-cb-dropdown" id="newTujuanDrop" style="max-height:160px"></div>
         </div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="CreatePage.closeIbTujModal()">Batal</button>
-      <button class="btn btn-primary" style="flex:1" onclick="CreatePage.confirmAddIbTuj()">✓ Tambah</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ ADD TUJUAN MODAL ═══ -->
-<div class="modal-ov" id="tujModal">
-  <div class="modal-sheet">
-    <div class="modal-hdr">
-      <div class="modal-title">Tambah Tujuan</div>
-      <button class="modal-close" onclick="CreatePage.closeTujModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('tujuanModal')">Batal</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmAddTujuan()">
+        <span class="material-icons-round">check</span> Tambah
       </button>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Tujuan</label>
-        <div class="scb" id="scbNewTuj">
-          <input class="scb-input" id="inpNewTuj" placeholder="Ketik / pilih tujuan..." autocomplete="off">
-          <span class="scb-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></span>
-          <div class="scb-drop" id="dropNewTuj"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline" onclick="CreatePage.closeTujModal()">Batal</button>
-      <button class="btn btn-primary" style="flex:1" onclick="CreatePage.confirmAddTuj()">✓ Tambah</button>
-    </div>
   </div>
 </div>
 
-<!-- ═══ AWB MODAL ═══ -->
-<div class="modal-ov" id="awbModal">
-  <div class="modal-sheet">
-    <div class="modal-hdr">
-      <div class="modal-title">List AWB (<span id="awbModalCount">0</span>)</div>
-      <button class="modal-close" onclick="UI.Modal.close('awbModal')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" style="padding:0">
-      <div id="awbModalList"></div>
-    </div>
-  </div>
-</div>
+<!-- ═══ SCRIPTS — urutan penting! ═══ -->
+<script src="core.js"></script>
+<script src="incharge.js"></script>
+<script src="forms.js"></script>
+<script src="views.js"></script>
+<script src="filter.js"></script>
+<script src="selectable.js"></script>
 
-<!-- ═══ FOTO FULLSCREEN ═══ -->
-<div id="fotoFullModal">
-  <button id="fotoFullClose" onclick="FotoFull.close()">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-  <div id="fotoFullCounter" style="display:none"></div>
-  <img class="foto-full-img" id="fotoFullImg" alt=""
-    ontouchstart="FotoFull._touchStart(event)"
-    ontouchend="FotoFull._touchEnd(event)">
-  <div class="foto-full-dots" id="fotoFullDots"></div>
-</div>
+<!-- ═══ SIDEBAR TOGGLE ENHANCEMENT ═══ -->
+<script>
+(function() {
+  var SIDEBAR_KEY = 'gtw_sidebar_collapsed';
+  var sidebar     = document.getElementById('sidebar');
+  var overlay     = document.getElementById('sidebarOverlay');
+  var isMobile    = function() { return window.innerWidth <= 860; };
 
-<!-- Scripts -->
-<script src="config-mobile.js"></script>
-<script src="api-mobile.js"></script>
-<script src="ui-mobile.js"></script>
-<script src="scanner-mobile.js"></script>
-<script src="photo-mobile.js"></script>
-<script src="pages-mobile.js"></script>
-<script src="app-mobile.js"></script>
+  function _applyState(collapsed, animate) {
+    if (!animate) sidebar.classList.add('no-transition');
+    sidebar.classList.toggle('collapsed', collapsed);
+    if (!animate) {
+      sidebar.offsetHeight;
+      sidebar.classList.remove('no-transition');
+    }
+    try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch(e) {}
+  }
+
+  window.toggleSidebar = function() {
+    if (isMobile()) {
+      var isOpen = sidebar.classList.contains('mobile-open');
+      sidebar.classList.toggle('mobile-open', !isOpen);
+      overlay.classList.toggle('visible', !isOpen);
+    } else {
+      var collapsed = !sidebar.classList.contains('collapsed');
+      _applyState(collapsed, true);
+    }
+  };
+
+  window.closeSidebarMobile = function() {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('visible');
+  };
+
+  window.addEventListener('resize', function() {
+    if (!isMobile()) {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('visible');
+    }
+  });
+
+  (function init() {
+    if (isMobile()) return;
+    var saved = null;
+    try { saved = localStorage.getItem(SIDEBAR_KEY); } catch(e) {}
+    if (saved === '1') _applyState(true, false);
+  })();
+})();
+</script>
+
 </body>
 </html>
