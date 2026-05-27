@@ -34,7 +34,6 @@
   min-width: 82px;
   border-right: 2px solid #FEF08A !important;
 }
-/* ── Manifest mode toggle ── */
 .mf-mode-group {
   display: flex;
   gap: 2px;
@@ -55,69 +54,151 @@
 <!-- ═══════════════════════════════════════════ -->
 <div class="sidebar" id="sidebar">
 
+  <!-- Brand -->
   <div class="sidebar-brand">
-    <span class="material-icons-round" style="color:rgba(255,255,255,.7);font-size:20px;flex-shrink:0">hub</span>
+    <div class="sidebar-brand-icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z" fill="rgba(255,255,255,.92)"/>
+        <path d="M9 12l2 2 4-4" stroke="#3B82F6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div class="brand-texts">
       <div class="brand-label">GTW BDO</div>
       <div class="brand-title">Outbound GTW BDO</div>
     </div>
   </div>
 
-  <div class="sidebar-toggle" onclick="toggleSidebar()">
-    <span class="material-icons-round">chevron_left</span>
-  </div>
+  <!-- Toggle Button -->
+  <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+    <svg class="toggle-icon-open" width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg class="toggle-icon-closed" width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
 
-  <div class="sidebar-nav">
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+
+    <div class="nav-section-label">Menu</div>
+
     <div class="nav-item active" onclick="switchPage('ob')" id="nav-ob">
-      <span class="material-icons-round">local_shipping</span>
+      <div class="nav-icon-wrap" style="background:rgba(59,130,246,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="1" y="7" width="22" height="14" rx="2" stroke="#60A5FA" stroke-width="1.8"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="#60A5FA" stroke-width="1.8"/>
+          <path d="M12 12v4M10 14h4" stroke="#93C5FD" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
       <span class="nav-label">Outbound BDO</span>
+      <span class="nav-active-dot"></span>
     </div>
-    <div class="nav-item" onclick="switchPage('hvs')" id="nav-hvs">
-      <span class="material-icons-round">inventory_2</span>
-      <span class="nav-label">Outbound HVS</span>
-    </div>
-    <div class="nav-item" onclick="switchPage('ib')" id="nav-ib">
-      <span class="material-icons-round">move_to_inbox</span>
-      <span class="nav-label">Inbound HVS</span>
-    </div>
-    <div class="nav-item" onclick="switchPage('manifest')" id="nav-manifest">
-      <span class="material-icons-round">grid_on</span>
-      <span class="nav-label">Manifest</span>
-    </div>
-    <div class="nav-item" onclick="switchPage('obib')" id="nav-obib">
-      <span class="material-icons-round">table_view</span>
-      <span class="nav-label">OB &amp; IB</span>
-    </div>
-    <div class="nav-item" onclick="switchPage('search')" id="nav-search">
-      <span class="material-icons-round">manage_search</span>
-      <span class="nav-label">Cari AWB</span>
-    </div>
-  </div>
 
-  <!-- Quick AWB search in sidebar -->
+    <div class="nav-item" onclick="switchPage('hvs')" id="nav-hvs">
+      <div class="nav-icon-wrap" style="background:rgba(168,85,247,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#C084FC" stroke-width="1.8"/>
+          <path d="M9 22V12h6v10" stroke="#D8B4FE" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="12" cy="8" r="1.4" fill="#C084FC"/>
+        </svg>
+      </div>
+      <span class="nav-label">Outbound HVS</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('ib')" id="nav-ib">
+      <div class="nav-icon-wrap" style="background:rgba(16,185,129,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <path d="M22 12h-6l-2 3H10l-2-3H2" stroke="#34D399" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" stroke="#34D399" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <span class="nav-label">Inbound HVS</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Laporan</div>
+
+    <div class="nav-item" onclick="switchPage('manifest')" id="nav-manifest">
+      <div class="nav-icon-wrap" style="background:rgba(245,158,11,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="#FCD34D" stroke-width="1.8"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="#FCD34D" stroke-width="1.8"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="#FDE68A" stroke-width="1.8"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.2" stroke="#FDE68A" stroke-width="1.8"/>
+        </svg>
+      </div>
+      <span class="nav-label">Manifest</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('obib')" id="nav-obib">
+      <div class="nav-icon-wrap" style="background:rgba(20,184,166,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#2DD4BF" stroke-width="1.8"/>
+          <path d="M3 9h18M3 15h18M9 9v9M15 9v9" stroke="#5EEAD4" stroke-width="1.3"/>
+        </svg>
+      </div>
+      <span class="nav-label">OB &amp; IB</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+    <div class="nav-item" onclick="switchPage('search')" id="nav-search">
+      <div class="nav-icon-wrap" style="background:rgba(236,72,153,.18)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="7" stroke="#F472B6" stroke-width="1.8"/>
+          <path d="M21 21l-4.35-4.35" stroke="#F9A8D4" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M8 11h6M11 8v6" stroke="#F472B6" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="nav-label">Cari AWB</span>
+      <span class="nav-active-dot"></span>
+    </div>
+
+  </nav>
+
+  <!-- Quick AWB Search -->
   <div class="sidebar-search-section">
     <div class="sidebar-search-label">
-      <span class="material-icons-round">qr_code_scanner</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2.2"/>
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
       <span class="nav-label">Cari AWB</span>
     </div>
     <div class="sidebar-search-box">
-      <span class="material-icons-round">search</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <circle cx="11" cy="11" r="8" stroke="rgba(255,255,255,.3)" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke="rgba(255,255,255,.3)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
       <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
     </div>
   </div>
 
+  <!-- Bottom -->
   <div class="sidebar-bottom">
     <div class="ver">v5.0 — GTW BDO</div>
   </div>
+
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- MAIN                                        -->
 <!-- ═══════════════════════════════════════════ -->
-<div class="main">
+<div class="main" id="mainWrapper">
 
   <!-- TOPBAR -->
   <div class="topbar">
+
+    <!-- Mobile/mini toggle button (visible when sidebar fully hidden on small screens) -->
+    <button class="topbar-menu-btn" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Menu">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
     <div class="topbar-title" id="topbarTitle">
       Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span>
     </div>
@@ -150,7 +231,6 @@
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-ob">
 
-      <!-- Stats -->
       <div class="stats-row">
         <div class="stat-card blue">
           <div class="stat-label">Total AWB</div>
@@ -166,7 +246,6 @@
         </div>
       </div>
 
-      <!-- Form Panel -->
       <div class="form-panel">
         <div class="form-panel-hdr" onclick="toggleForm('ob')">
           <div class="form-panel-title">
@@ -176,7 +255,6 @@
           <span class="material-icons-round" id="obFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
         </div>
         <div class="form-panel-body" id="obFormBody">
-
           <div id="obInfoBar" class="info-bar" style="display:none">
             <span class="material-icons-round">badge</span>
             <span>Incharge: <strong id="obInchargeDisplay">—</strong></span>
@@ -186,7 +264,6 @@
             <span class="material-icons-round">warning_amber</span>
             Pilih <strong>Incharge</strong> terlebih dahulu di topbar kanan atas.
           </div>
-
           <div id="obFormGrid" class="form-grid" style="display:none">
             <div class="fg">
               <label>SERVICE *</label>
@@ -205,12 +282,10 @@
               </div>
             </div>
           </div>
-
           <div id="obServiceHint" class="service-hint" style="display:none">
             <span class="material-icons-round">info_outline</span>
             Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.
           </div>
-
           <div class="scan-section" id="obScanSection" style="display:none">
             <div class="multi-tuj-info">
               <span class="material-icons-round">info_outline</span>
@@ -233,18 +308,15 @@
               <div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div>
             </div>
           </div>
-
           <div class="form-actions" id="obFormActions" style="display:none">
             <button class="btn btn-outline btn-sm" onclick="resetObForm()">Batal</button>
             <button class="btn btn-primary btn-sm" id="btnSaveOb" disabled onclick="saveOb()">
               <span class="material-icons-round">save</span> Simpan Semua Tujuan
             </button>
           </div>
-
         </div>
       </div>
 
-      <!-- Table -->
       <div class="table-panel">
         <div class="table-toolbar">
           <div class="table-toolbar-title">
@@ -260,16 +332,8 @@
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>No Track</th>
-                <th>Incharge</th>
-                <th>Service</th>
-                <th>Tujuan</th>
-                <th>Created Date</th>
-                <th>Total AWB</th>
-                <th>Status</th>
-                <th>Foto</th>
-                <th>Aksi</th>
+                <th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>Tujuan</th>
+                <th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody id="obTbody">
@@ -284,13 +348,11 @@
     <!-- PAGE: OUTBOUND HVS                       -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-hvs" style="display:none">
-
       <div class="stats-row">
         <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="hvsTotalAwb">0</div></div>
         <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="hvsSelesai">0</div></div>
         <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="hvsProses">0</div></div>
       </div>
-
       <div class="form-panel">
         <div class="form-panel-hdr" onclick="toggleForm('hvs')">
           <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Outbound HVS</div>
@@ -339,7 +401,6 @@
           </div>
         </div>
       </div>
-
       <div class="table-panel">
         <div class="table-toolbar">
           <div class="table-toolbar-title">Outbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="hvsTableCount">0 record</span></div>
@@ -358,13 +419,11 @@
     <!-- PAGE: INBOUND HVS                        -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-ib" style="display:none">
-
       <div class="stats-row">
         <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="ibTotalAwb">0</div></div>
         <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="ibSelesai">0</div></div>
         <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="ibProses">0</div></div>
       </div>
-
       <div class="form-panel">
         <div class="form-panel-hdr" onclick="toggleForm('ib')">
           <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Inbound HVS</div>
@@ -414,7 +473,6 @@
           </div>
         </div>
       </div>
-
       <div class="table-panel">
         <div class="table-toolbar">
           <div class="table-toolbar-title">Inbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="ibTableCount">0 record</span></div>
@@ -433,11 +491,8 @@
     <!-- PAGE: MANIFEST                           -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-manifest" style="display:none">
-
-      <!-- Toolbar -->
       <div class="mf-toolbar">
         <span style="font-weight:700;font-size:14px;color:var(--ink);flex:1;letter-spacing:-.02em">Manifest AWB</span>
-
         <div class="mf-mode-group">
           <button id="mfBtnToday" class="btn btn-primary btn-sm" onclick="loadManifestPage('today')" style="gap:5px">
             <span class="material-icons-round" style="font-size:13px">today</span> Hari Ini
@@ -446,7 +501,6 @@
             <span class="material-icons-round" style="font-size:13px">calendar_month</span> Semua Data
           </button>
         </div>
-
         <div class="search-box">
           <span class="material-icons-round">search</span>
           <input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:165px">
@@ -458,8 +512,6 @@
           Klik sel → Ctrl+C
         </span>
       </div>
-
-      <!-- Stats -->
       <div class="mf-stats-row">
         <div class="stat-card blue"><div class="stat-label">Total Kolom</div><div class="stat-value" id="mfTotalCols">0</div></div>
         <div class="stat-card green"><div class="stat-label">Total AWB</div><div class="stat-value" id="mfTotalAwb">0</div></div>
@@ -469,8 +521,6 @@
           <div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--ink-low);font-family:var(--mono)">—</div>
         </div>
       </div>
-
-      <!-- Sheet area -->
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
         <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:48px;text-align:center">
           <span class="material-icons-round" style="font-size:56px;color:var(--ink-ghost)">grid_on</span>
@@ -514,7 +564,6 @@
     <!-- PAGE: CARI AWB                           -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-search" style="display:none">
-
       <div class="search-awb-hero">
         <div class="search-awb-hero-title">
           <span class="material-icons-round">manage_search</span> Cari AWB
@@ -534,7 +583,6 @@
           </button>
         </div>
       </div>
-
       <div class="search-awb-result" id="searchAwbResult">
         <div class="search-awb-result-hdr">
           <span class="material-icons-round">info_outline</span> Masukkan nomor AWB untuk mencari
@@ -550,6 +598,11 @@
 
   </div><!-- /content -->
 </div><!-- /main -->
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SIDEBAR OVERLAY (mobile)                    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- GLOBAL UI                                   -->
@@ -568,7 +621,6 @@
       </button>
     </div>
     <div class="modal-body">
-      <!-- Photo gallery injected by forms.js -->
       <div class="photo-box" id="detailPhotoBox">
         <span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>
       </div>
@@ -582,7 +634,6 @@
         </div>
         <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
       </div>
-      <!-- Tambah AWB section injected by forms.js -->
       <div id="detailAddAwbSection" style="margin-top:12px;display:none"></div>
     </div>
     <div class="modal-footer" id="detailModalFooter"></div>
@@ -643,5 +694,56 @@
 <script src="views.js"></script>
 <script src="filter.js"></script>
 <script src="selectable.js"></script>
+
+<!-- ═══ SIDEBAR TOGGLE ENHANCEMENT ═══ -->
+<script>
+(function() {
+  var SIDEBAR_KEY = 'gtw_sidebar_collapsed';
+  var sidebar     = document.getElementById('sidebar');
+  var overlay     = document.getElementById('sidebarOverlay');
+  var isMobile    = function() { return window.innerWidth <= 860; };
+
+  function _applyState(collapsed, animate) {
+    if (!animate) sidebar.classList.add('no-transition');
+    sidebar.classList.toggle('collapsed', collapsed);
+    if (!animate) {
+      sidebar.offsetHeight;
+      sidebar.classList.remove('no-transition');
+    }
+    try { localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0'); } catch(e) {}
+  }
+
+  window.toggleSidebar = function() {
+    if (isMobile()) {
+      var isOpen = sidebar.classList.contains('mobile-open');
+      sidebar.classList.toggle('mobile-open', !isOpen);
+      overlay.classList.toggle('visible', !isOpen);
+    } else {
+      var collapsed = !sidebar.classList.contains('collapsed');
+      _applyState(collapsed, true);
+    }
+  };
+
+  window.closeSidebarMobile = function() {
+    sidebar.classList.remove('mobile-open');
+    overlay.classList.remove('visible');
+  };
+
+  window.addEventListener('resize', function() {
+    if (!isMobile()) {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('visible');
+    }
+  });
+
+  (function init() {
+    if (isMobile()) return;
+    var saved = null;
+    try { saved = localStorage.getItem(SIDEBAR_KEY); } catch(e) {}
+    if (saved === '1') _applyState(true, false);
+  })();
+})();
+</script>
+
 </body>
 </html>
