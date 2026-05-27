@@ -3,43 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OUTBOUND GTW BDO — v4.10</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>GTW BDO — v5.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 <link rel="stylesheet" href="main.css">
 <style>
-/* ── Manifest DATE di kiri: compact, warm yellow ── */
+/* ── Manifest DATE override ── */
 .mf-cell-date {
-  background: #FFF8E1;
-  color: var(--gray6);
-  font-size: 10px;
+  background: #FEFCE8;
+  color: var(--ink-low);
+  font-size: 10.5px;
   font-family: var(--mono);
-  padding: 4px 6px;
+  padding: 4px 7px;
   text-align: center;
   min-width: 82px;
   max-width: 92px;
   white-space: nowrap;
-  border-right: 2px solid #FFE082 !important;
+  border-right: 2px solid #FEF08A !important;
   cursor: default;
 }
 .mf-hdr-date {
-  background: #FFF3CD;
-  color: #856404;
+  background: #FEF9C3;
+  color: #854D0E;
   font-weight: 700;
   font-size: 10px;
   text-align: center;
-  padding: 5px 6px;
+  padding: 5px 7px;
   letter-spacing: .5px;
   text-transform: uppercase;
   min-width: 82px;
-  border-right: 2px solid #FFE082 !important;
+  border-right: 2px solid #FEF08A !important;
 }
-/* Toggle button group */
+/* ── Manifest mode toggle ── */
 .mf-mode-group {
   display: flex;
-  gap: 3px;
-  background: var(--gray2);
-  border-radius: 8px;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: 9px;
   padding: 3px;
 }
 .mf-mode-group .btn {
@@ -50,38 +50,81 @@
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- SIDEBAR                                     -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="sidebar" id="sidebar">
+
   <div class="sidebar-brand">
-    <span class="material-icons-round" style="color:#fff;font-size:22px;flex-shrink:0">hub</span>
+    <span class="material-icons-round" style="color:rgba(255,255,255,.7);font-size:20px;flex-shrink:0">hub</span>
     <div class="brand-texts">
       <div class="brand-label">GTW BDO</div>
-      <div class="brand-title">OUTBOUND GTW BDO</div>
+      <div class="brand-title">Outbound GTW BDO</div>
     </div>
   </div>
-  <div class="sidebar-toggle" onclick="toggleSidebar()"><span class="material-icons-round">chevron_left</span></div>
-  <div class="sidebar-nav">
-    <div class="nav-item active" onclick="switchPage('ob')" id="nav-ob"><span class="material-icons-round">local_shipping</span><span class="nav-label">Outbound BDO</span></div>
-    <div class="nav-item" onclick="switchPage('hvs')" id="nav-hvs"><span class="material-icons-round">inventory_2</span><span class="nav-label">Outbound HVS</span></div>
-    <div class="nav-item" onclick="switchPage('ib')" id="nav-ib"><span class="material-icons-round">move_to_inbox</span><span class="nav-label">Inbound HVS</span></div>
-    <div class="nav-item" onclick="switchPage('manifest')" id="nav-manifest"><span class="material-icons-round">grid_on</span><span class="nav-label">Manifest</span></div>
-    <div class="nav-item" onclick="switchPage('obib')" id="nav-obib"><span class="material-icons-round">table_view</span><span class="nav-label">OB &amp; IB</span></div>
-    <div class="nav-item" onclick="switchPage('search')" id="nav-search"><span class="material-icons-round">manage_search</span><span class="nav-label">Cari AWB</span></div>
+
+  <div class="sidebar-toggle" onclick="toggleSidebar()">
+    <span class="material-icons-round">chevron_left</span>
   </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-item active" onclick="switchPage('ob')" id="nav-ob">
+      <span class="material-icons-round">local_shipping</span>
+      <span class="nav-label">Outbound BDO</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('hvs')" id="nav-hvs">
+      <span class="material-icons-round">inventory_2</span>
+      <span class="nav-label">Outbound HVS</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('ib')" id="nav-ib">
+      <span class="material-icons-round">move_to_inbox</span>
+      <span class="nav-label">Inbound HVS</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('manifest')" id="nav-manifest">
+      <span class="material-icons-round">grid_on</span>
+      <span class="nav-label">Manifest</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('obib')" id="nav-obib">
+      <span class="material-icons-round">table_view</span>
+      <span class="nav-label">OB &amp; IB</span>
+    </div>
+    <div class="nav-item" onclick="switchPage('search')" id="nav-search">
+      <span class="material-icons-round">manage_search</span>
+      <span class="nav-label">Cari AWB</span>
+    </div>
+  </div>
+
+  <!-- Quick AWB search in sidebar -->
   <div class="sidebar-search-section">
-    <div class="sidebar-search-label"><span class="material-icons-round">search</span><span class="nav-label">Cari AWB</span></div>
-    <div class="sidebar-search-box">
+    <div class="sidebar-search-label">
       <span class="material-icons-round">qr_code_scanner</span>
+      <span class="nav-label">Cari AWB</span>
+    </div>
+    <div class="sidebar-search-box">
+      <span class="material-icons-round">search</span>
       <input id="sidebarSearchInput" placeholder="Scan / ketik AWB..." onkeydown="handleSidebarSearch(event)" autocomplete="off">
     </div>
   </div>
-  <div class="sidebar-bottom"><div class="ver">v4.10 — GTW BDO</div></div>
+
+  <div class="sidebar-bottom">
+    <div class="ver">v5.0 — GTW BDO</div>
+  </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- MAIN                                        -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="main">
+
+  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-title" id="topbarTitle">Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span></div>
+    <div class="topbar-title" id="topbarTitle">
+      Outbound BDO <span class="topbar-sub">Log pengiriman keluar dari hub</span>
+    </div>
+
+    <!-- Global Incharge Picker -->
     <div class="incharge-widget">
-      <span class="material-icons-round" style="font-size:15px;color:var(--blue)">person</span>
+      <span class="material-icons-round" style="font-size:14px;color:var(--accent)">person</span>
       <span class="incharge-widget-label">Incharge</span>
       <div class="smart-cb" id="globalSmartCb">
         <input class="smart-cb-input" id="globalInchargeInput" placeholder="— Pilih —" autocomplete="off" readonly>
@@ -90,206 +133,412 @@
       </div>
       <span class="incharge-dot" id="inchargeDot"></span>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="reloadAll()"><span class="material-icons-round">refresh</span> Refresh</button>
-    <button class="export-btn" onclick="exportCSV()"><span class="material-icons-round">file_download</span> Export CSV</button>
+
+    <button class="btn btn-outline btn-sm" onclick="reloadAll()">
+      <span class="material-icons-round">refresh</span> Refresh
+    </button>
+    <button class="export-btn" onclick="exportCSV()">
+      <span class="material-icons-round">file_download</span> Export CSV
+    </button>
   </div>
 
+  <!-- ═══════ PAGES ═══════ -->
   <div class="content" id="mainContent">
 
-    <!-- OB PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OUTBOUND BDO                       -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-ob">
+
+      <!-- Stats -->
       <div class="stats-row">
-        <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="obTotalAwb">0</div></div>
-        <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="obSelesai">0</div></div>
-        <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="obProses">0</div></div>
+        <div class="stat-card blue">
+          <div class="stat-label">Total AWB</div>
+          <div class="stat-value" id="obTotalAwb">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Selesai</div>
+          <div class="stat-value" id="obSelesai">0</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">On Proses</div>
+          <div class="stat-value" id="obProses">0</div>
+        </div>
       </div>
+
+      <!-- Form Panel -->
       <div class="form-panel">
         <div class="form-panel-hdr" onclick="toggleForm('ob')">
-          <div class="form-panel-title"><span class="material-icons-round">add_circle</span> Tambah Data Outbound BDO</div>
-          <span class="material-icons-round" id="obFormIcon" style="color:#fff;font-size:19px">expand_more</span>
+          <div class="form-panel-title">
+            <span class="material-icons-round">add_circle_outline</span>
+            Tambah Data Outbound BDO
+          </div>
+          <span class="material-icons-round" id="obFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
         </div>
         <div class="form-panel-body" id="obFormBody">
-          <div id="obInfoBar" class="info-bar" style="display:none"><span class="material-icons-round">badge</span><span>Incharge: <strong id="obInchargeDisplay">—</strong></span><span class="hint">(ubah di topbar)</span></div>
-          <div id="obWarnBar" class="warn-bar"><span class="material-icons-round">warning</span>Pilih <strong>Incharge</strong> terlebih dahulu di topbar kanan atas.</div>
-          <div id="obFormGrid" class="form-grid" style="display:none">
-            <div class="fg"><label>SERVICE *</label><div class="form-smart-cb" id="obServiceCb"><input class="form-smart-cb-input" id="obService" placeholder="Pilih service dulu..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obServiceCb')">expand_more</span><div class="form-smart-cb-dropdown" id="obServiceDrop"></div></div></div>
-            <div class="fg"><label>TUJUAN (utama)</label><div class="form-smart-cb" id="obTujuanCb"><input class="form-smart-cb-input" id="obTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="obTujuanDrop"></div></div></div>
+
+          <div id="obInfoBar" class="info-bar" style="display:none">
+            <span class="material-icons-round">badge</span>
+            <span>Incharge: <strong id="obInchargeDisplay">—</strong></span>
+            <span class="hint">(ubah di topbar)</span>
           </div>
-          <div id="obServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info</span>Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.</div>
+          <div id="obWarnBar" class="warn-bar">
+            <span class="material-icons-round">warning_amber</span>
+            Pilih <strong>Incharge</strong> terlebih dahulu di topbar kanan atas.
+          </div>
+
+          <div id="obFormGrid" class="form-grid" style="display:none">
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="obServiceCb">
+                <input class="form-smart-cb-input" id="obService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="obServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>TUJUAN (utama)</label>
+              <div class="form-smart-cb" id="obTujuanCb">
+                <input class="form-smart-cb-input" id="obTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('obTujuanCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="obTujuanDrop"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="obServiceHint" class="service-hint" style="display:none">
+            <span class="material-icons-round">info_outline</span>
+            Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.
+          </div>
+
           <div class="scan-section" id="obScanSection" style="display:none">
-            <div class="multi-tuj-info"><span class="material-icons-round">info</span>Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol "+ Tujuan Baru".</div>
-            <div class="scan-header"><span class="scan-header-label">Scan AWB</span><span style="font-size:11px;color:var(--gray5)" id="obTotalScanLabel">0 AWB total</span></div>
+            <div class="multi-tuj-info">
+              <span class="material-icons-round">info_outline</span>
+              Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol "+ Tujuan Baru".
+            </div>
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="obTotalScanLabel">0 AWB total</span>
+            </div>
             <div class="scan-row">
-              <input class="scan-inp" id="obScanInput" placeholder="Pilih service & tujuan dulu..." disabled onkeydown="handleScan(event,'ob')">
-              <button class="btn btn-sm" id="obAddTujBtn" style="background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-mid)" disabled onclick="addMultiTujuan('ob')"><span class="material-icons-round">add_location</span> Tujuan Baru</button>
+              <input class="scan-inp" id="obScanInput" placeholder="Pilih service &amp; tujuan dulu..." disabled onkeydown="handleScan(event,'ob')">
+              <button class="btn btn-sm" id="obAddTujBtn"
+                style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px"
+                disabled onclick="addMultiTujuan('ob')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
             </div>
             <div id="obTujuanTabs" class="scan-tujuan-tabs"></div>
-            <div class="scan-list" id="obScanList"><div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div></div>
+            <div class="scan-list" id="obScanList">
+              <div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div>
+            </div>
           </div>
+
           <div class="form-actions" id="obFormActions" style="display:none">
             <button class="btn btn-outline btn-sm" onclick="resetObForm()">Batal</button>
-            <button class="btn btn-primary btn-sm" id="btnSaveOb" disabled onclick="saveOb()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveOb" disabled onclick="saveOb()">
+              <span class="material-icons-round">save</span> Simpan Semua Tujuan
+            </button>
           </div>
+
         </div>
       </div>
+
+      <!-- Table -->
       <div class="table-panel">
-        <div class="table-toolbar"><div class="table-toolbar-title">Outbound BDO — <span style="color:var(--gray5);font-weight:400" id="obTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="obSearch" placeholder="Cari no track, tujuan..." oninput="filterObTable()"></div></div>
-        <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="obTbody"><tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Loading...</div></td></tr></tbody></table></div>
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">
+            Outbound BDO &mdash;
+            <span style="color:var(--ink-low);font-weight:400" id="obTableCount">0 record</span>
+          </div>
+          <div class="search-box">
+            <span class="material-icons-round">search</span>
+            <input id="obSearch" placeholder="Cari no track, tujuan..." oninput="filterObTable()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>No Track</th>
+                <th>Incharge</th>
+                <th>Service</th>
+                <th>Tujuan</th>
+                <th>Created Date</th>
+                <th>Total AWB</th>
+                <th>Status</th>
+                <th>Foto</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="obTbody">
+              <tr><td colspan="10"><div class="empty-state"><span class="material-icons-round">hourglass_empty</span>Memuat data...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- HVS PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OUTBOUND HVS                       -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-hvs" style="display:none">
+
       <div class="stats-row">
         <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="hvsTotalAwb">0</div></div>
         <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="hvsSelesai">0</div></div>
         <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="hvsProses">0</div></div>
       </div>
+
       <div class="form-panel">
-        <div class="form-panel-hdr" onclick="toggleForm('hvs')"><div class="form-panel-title"><span class="material-icons-round">add_circle</span> Tambah Data Outbound HVS</div><span class="material-icons-round" id="hvsFormIcon" style="color:#fff;font-size:19px">expand_more</span></div>
+        <div class="form-panel-hdr" onclick="toggleForm('hvs')">
+          <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Outbound HVS</div>
+          <span class="material-icons-round" id="hvsFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+        </div>
         <div class="form-panel-body" id="hvsFormBody">
           <div id="hvsInfoBar" class="info-bar" style="display:none"><span class="material-icons-round">badge</span><span>Incharge: <strong id="hvsInchargeDisplay">—</strong></span><span class="hint">(ubah di topbar)</span></div>
-          <div id="hvsWarnBar" class="warn-bar"><span class="material-icons-round">warning</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
+          <div id="hvsWarnBar" class="warn-bar"><span class="material-icons-round">warning_amber</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
           <div id="hvsFormGrid" class="form-grid" style="display:none">
-            <div class="fg"><label>SERVICE *</label><div class="form-smart-cb" id="hvsServiceCb"><input class="form-smart-cb-input" id="hvsService" placeholder="Pilih service dulu..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsServiceCb')">expand_more</span><div class="form-smart-cb-dropdown" id="hvsServiceDrop"></div></div></div>
-            <div class="fg"><label>TUJUAN (utama)</label><div class="form-smart-cb" id="hvsTujuanCb"><input class="form-smart-cb-input" id="hvsTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="hvsTujuanDrop"></div></div></div>
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="hvsServiceCb">
+                <input class="form-smart-cb-input" id="hvsService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="hvsServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>TUJUAN (utama)</label>
+              <div class="form-smart-cb" id="hvsTujuanCb">
+                <input class="form-smart-cb-input" id="hvsTujuan" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('hvsTujuanCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="hvsTujuanDrop"></div>
+              </div>
+            </div>
           </div>
-          <div id="hvsServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info</span>Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.</div>
+          <div id="hvsServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info_outline</span>Pilih <strong>SERVICE</strong> dulu sebelum memilih tujuan dan scan AWB.</div>
           <div class="scan-section" id="hvsScanSection" style="display:none">
-            <div class="multi-tuj-info"><span class="material-icons-round">info</span>Setiap tujuan akan dibuat NO TRACK terpisah.</div>
-            <div class="scan-header"><span class="scan-header-label">Scan AWB</span><span style="font-size:11px;color:var(--gray5)" id="hvsTotalScanLabel">0 AWB total</span></div>
-            <div class="scan-row"><input class="scan-inp" id="hvsScanInput" placeholder="Pilih service & tujuan dulu..." disabled onkeydown="handleScan(event,'hvs')"><button class="btn btn-sm" id="hvsAddTujBtn" style="background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-mid)" disabled onclick="addMultiTujuan('hvs')"><span class="material-icons-round">add_location</span> Tujuan Baru</button></div>
+            <div class="multi-tuj-info"><span class="material-icons-round">info_outline</span>Setiap tujuan akan dibuat NO TRACK terpisah.</div>
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="hvsTotalScanLabel">0 AWB total</span>
+            </div>
+            <div class="scan-row">
+              <input class="scan-inp" id="hvsScanInput" placeholder="Pilih service &amp; tujuan dulu..." disabled onkeydown="handleScan(event,'hvs')">
+              <button class="btn btn-sm" id="hvsAddTujBtn" style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px" disabled onclick="addMultiTujuan('hvs')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
+            </div>
             <div id="hvsTujuanTabs" class="scan-tujuan-tabs"></div>
             <div class="scan-list" id="hvsScanList"><div class="scan-empty">Pilih service dan tujuan terlebih dahulu</div></div>
           </div>
-          <div class="form-actions" id="hvsFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetHvsForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveHvs" disabled onclick="saveHvs()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button></div>
+          <div class="form-actions" id="hvsFormActions" style="display:none">
+            <button class="btn btn-outline btn-sm" onclick="resetHvsForm()">Batal</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveHvs" disabled onclick="saveHvs()"><span class="material-icons-round">save</span> Simpan Semua Tujuan</button>
+          </div>
         </div>
       </div>
+
       <div class="table-panel">
-        <div class="table-toolbar"><div class="table-toolbar-title">Outbound HVS — <span style="color:var(--gray5);font-weight:400" id="hvsTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="hvsSearch" placeholder="Cari..." oninput="filterHvsTable()"></div></div>
-        <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="hvsTbody"></tbody></table></div>
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">Outbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="hvsTableCount">0 record</span></div>
+          <div class="search-box"><span class="material-icons-round">search</span><input id="hvsSearch" placeholder="Cari..." oninput="filterHvsTable()"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>Tujuan</th><th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th></tr></thead>
+            <tbody id="hvsTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- IB PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: INBOUND HVS                        -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-ib" style="display:none">
+
       <div class="stats-row">
         <div class="stat-card blue"><div class="stat-label">Total AWB</div><div class="stat-value" id="ibTotalAwb">0</div></div>
         <div class="stat-card green"><div class="stat-label">Selesai</div><div class="stat-value" id="ibSelesai">0</div></div>
         <div class="stat-card orange"><div class="stat-label">On Proses</div><div class="stat-value" id="ibProses">0</div></div>
       </div>
+
       <div class="form-panel">
-        <div class="form-panel-hdr" onclick="toggleForm('ib')"><div class="form-panel-title"><span class="material-icons-round">add_circle</span> Tambah Data Inbound HVS</div><span class="material-icons-round" id="ibFormIcon" style="color:#fff;font-size:19px">expand_more</span></div>
+        <div class="form-panel-hdr" onclick="toggleForm('ib')">
+          <div class="form-panel-title"><span class="material-icons-round">add_circle_outline</span> Tambah Data Inbound HVS</div>
+          <span class="material-icons-round" id="ibFormIcon" style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+        </div>
         <div class="form-panel-body" id="ibFormBody">
           <div id="ibInfoBar" class="info-bar" style="display:none"><span class="material-icons-round">badge</span><span>Incharge: <strong id="ibInchargeDisplay">—</strong></span><span class="hint">(ubah di topbar)</span></div>
-          <div id="ibWarnBar" class="warn-bar"><span class="material-icons-round">warning</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
+          <div id="ibWarnBar" class="warn-bar"><span class="material-icons-round">warning_amber</span>Pilih <strong>Incharge</strong> terlebih dahulu.</div>
           <div id="ibFormGrid" class="form-grid" style="display:none">
-            <div class="fg"><label>SERVICE *</label><div class="form-smart-cb" id="ibServiceCb"><input class="form-smart-cb-input" id="ibService" placeholder="Pilih service dulu..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibServiceCb')">expand_more</span><div class="form-smart-cb-dropdown" id="ibServiceDrop"></div></div></div>
-            <div class="fg"><label>FROM *</label><div class="form-smart-cb" id="ibFromCb"><input class="form-smart-cb-input" id="ibFrom" placeholder="Pilih service dulu..." autocomplete="off" disabled><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibFromCb')">expand_more</span><div class="form-smart-cb-dropdown" id="ibFromDrop"></div></div></div>
+            <div class="fg">
+              <label>SERVICE *</label>
+              <div class="form-smart-cb" id="ibServiceCb">
+                <input class="form-smart-cb-input" id="ibService" placeholder="Pilih service..." autocomplete="off">
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibServiceCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="ibServiceDrop"></div>
+              </div>
+            </div>
+            <div class="fg">
+              <label>FROM *</label>
+              <div class="form-smart-cb" id="ibFromCb">
+                <input class="form-smart-cb-input" id="ibFrom" placeholder="Pilih service dulu..." autocomplete="off" disabled>
+                <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('ibFromCb')">expand_more</span>
+                <div class="form-smart-cb-dropdown" id="ibFromDrop"></div>
+              </div>
+            </div>
           </div>
-          <div id="ibServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info</span>Pilih <strong>SERVICE</strong> dulu sebelum mengisi FROM dan scan AWB.</div>
-          <div id="ibMultiTujInfo" class="multi-tuj-info" style="display:none"><span class="material-icons-round">info</span>Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol &quot;+ Tujuan Baru&quot;.</div>
+          <div id="ibServiceHint" class="service-hint" style="display:none"><span class="material-icons-round">info_outline</span>Pilih <strong>SERVICE</strong> dulu sebelum mengisi FROM dan scan AWB.</div>
+          <div id="ibMultiTujInfo" class="multi-tuj-info" style="display:none"><span class="material-icons-round">info_outline</span>Setiap tujuan akan dibuat NO TRACK terpisah. Tambah tujuan baru dengan tombol "+ Tujuan Baru".</div>
           <div id="ibScanHint" class="ib-scan-hint" style="display:none"><span class="material-icons-round">warning_amber</span>Wajib isi <strong>FROM</strong> dan pilih/tambah <strong>TUJUAN</strong> terlebih dahulu sebelum scan AWB.</div>
           <div class="scan-section" id="ibScanSection" style="display:none">
-            <div class="scan-header"><span class="scan-header-label">Scan AWB</span><span style="font-size:11px;color:var(--gray5)" id="ibTotalScanLabel">0 AWB total</span></div>
-            <div class="scan-row"><input class="scan-inp" id="ibScanInput" placeholder="Pilih service &amp; FROM dulu..." disabled onkeydown="handleScan(event,'ib')"><button class="btn btn-sm" id="ibAddTujBtn" style="background:var(--blue-light);color:var(--blue2);border:1px solid var(--blue-mid)" disabled onclick="addMultiTujuan('ib')"><span class="material-icons-round">add_location</span> Tujuan Baru</button></div>
+            <div class="scan-header">
+              <span class="scan-header-label">Scan AWB</span>
+              <span style="font-size:11px;color:var(--ink-low)" id="ibTotalScanLabel">0 AWB total</span>
+            </div>
+            <div class="scan-row">
+              <input class="scan-inp" id="ibScanInput" placeholder="Pilih service &amp; FROM dulu..." disabled onkeydown="handleScan(event,'ib')">
+              <button class="btn btn-sm" id="ibAddTujBtn" style="background:var(--accent-faint);color:var(--accent);border:1px solid var(--accent-light);gap:4px" disabled onclick="addMultiTujuan('ib')">
+                <span class="material-icons-round" style="font-size:14px">add_location_alt</span> Tujuan Baru
+              </button>
+            </div>
             <div class="scan-tujuan-tabs" id="ibTujuanTabs"></div>
             <div class="scan-list" id="ibScanList"><div class="scan-empty">Pilih atau tambah tujuan terlebih dahulu</div></div>
           </div>
-          <div class="form-actions" id="ibFormActions" style="display:none"><button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button><button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button></div>
+          <div class="form-actions" id="ibFormActions" style="display:none">
+            <button class="btn btn-outline btn-sm" onclick="resetIbForm()">Batal</button>
+            <button class="btn btn-primary btn-sm" id="btnSaveIb" disabled onclick="saveIb()"><span class="material-icons-round">save</span> Simpan</button>
+          </div>
         </div>
       </div>
+
       <div class="table-panel">
-        <div class="table-toolbar"><div class="table-toolbar-title">Inbound HVS — <span style="color:var(--gray5);font-weight:400" id="ibTableCount">0 record</span></div><div class="search-box"><span class="material-icons-round">search</span><input id="ibSearch" placeholder="Cari..." oninput="filterIbTable()"></div></div>
-        <div class="table-wrap"><table><thead><tr><th>#</th><th>NO TRACK</th><th>INCHARGE</th><th>SERVICE</th><th>FROM</th><th>TUJUAN</th><th>CREATED DATE</th><th>TOTAL AWB</th><th>STATUS</th><th>FOTO</th><th>AKSI</th></tr></thead><tbody id="ibTbody"></tbody></table></div>
+        <div class="table-toolbar">
+          <div class="table-toolbar-title">Inbound HVS &mdash; <span style="color:var(--ink-low);font-weight:400" id="ibTableCount">0 record</span></div>
+          <div class="search-box"><span class="material-icons-round">search</span><input id="ibSearch" placeholder="Cari..." oninput="filterIbTable()"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>No Track</th><th>Incharge</th><th>Service</th><th>From</th><th>Tujuan</th><th>Created Date</th><th>Total AWB</th><th>Status</th><th>Foto</th><th>Aksi</th></tr></thead>
+            <tbody id="ibTbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <!-- MANIFEST PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: MANIFEST                           -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-manifest" style="display:none">
-      <div class="mf-toolbar">
-        <span style="font-weight:700;font-size:14px;color:var(--gray8);flex:1">Manifest AWB</span>
 
-        <!-- Toggle Hari Ini / Semua Data -->
+      <!-- Toolbar -->
+      <div class="mf-toolbar">
+        <span style="font-weight:700;font-size:14px;color:var(--ink);flex:1;letter-spacing:-.02em">Manifest AWB</span>
+
         <div class="mf-mode-group">
-          <button id="mfBtnToday" class="btn btn-primary btn-sm"
-            onclick="loadManifestPage('today')" style="gap:5px">
+          <button id="mfBtnToday" class="btn btn-primary btn-sm" onclick="loadManifestPage('today')" style="gap:5px">
             <span class="material-icons-round" style="font-size:13px">today</span> Hari Ini
           </button>
-          <button id="mfBtnAll" class="btn btn-outline btn-sm"
-            onclick="loadManifestPage('all')" style="gap:5px">
+          <button id="mfBtnAll" class="btn btn-outline btn-sm" onclick="loadManifestPage('all')" style="gap:5px">
             <span class="material-icons-round" style="font-size:13px">calendar_month</span> Semua Data
           </button>
         </div>
 
-        <div class="search-box"><span class="material-icons-round">search</span><input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:170px"></div>
+        <div class="search-box">
+          <span class="material-icons-round">search</span>
+          <input id="manifestSearch" placeholder="Cari AWB / tujuan..." oninput="filterManifest()" style="width:165px">
+        </div>
         <button class="btn btn-outline btn-sm" onclick="reloadManifest()"><span class="material-icons-round">refresh</span> Refresh</button>
         <button class="export-btn" onclick="exportManifestCSV()"><span class="material-icons-round">file_download</span> Export CSV</button>
-        <span style="font-size:11px;color:var(--gray5);background:var(--gray2);border-radius:5px;padding:3px 7px;white-space:nowrap">
+        <span style="font-size:11px;color:var(--ink-low);background:var(--surface-2);border-radius:6px;padding:3px 8px;white-space:nowrap;border:1px solid var(--surface-3)">
           <span class="material-icons-round" style="font-size:12px;vertical-align:middle">keyboard</span>
-          Klik sel → Ctrl+C copy
+          Klik sel → Ctrl+C
         </span>
       </div>
+
+      <!-- Stats -->
       <div class="mf-stats-row">
         <div class="stat-card blue"><div class="stat-label">Total Kolom</div><div class="stat-value" id="mfTotalCols">0</div></div>
         <div class="stat-card green"><div class="stat-label">Total AWB</div><div class="stat-value" id="mfTotalAwb">0</div></div>
         <div class="stat-card orange"><div class="stat-label">Incharge</div><div class="stat-value" id="mfTotalInc">0</div></div>
-        <div class="stat-card" style="border-color:var(--gray3)"><div class="stat-label">Sel Aktif</div><div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--gray6);font-family:var(--mono)">—</div></div>
+        <div class="stat-card" style="border-color:var(--surface-3)">
+          <div class="stat-label">Sel Aktif</div>
+          <div class="stat-value" id="mfActiveCell" style="font-size:13px;color:var(--ink-low);font-family:var(--mono)">—</div>
+        </div>
       </div>
+
+      <!-- Sheet area -->
       <div class="mf-sheet-outer" id="mfSheetOuter" tabindex="0">
-        <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px;padding:40px;text-align:center">
-          <span class="material-icons-round" style="font-size:64px;color:var(--gray3)">grid_on</span>
-          <div style="font-size:16px;font-weight:700;color:var(--gray6)">Manifest AWB</div>
-          <div style="font-size:13px;color:var(--gray5);max-width:320px;line-height:1.6">
-            Pilih mode tampilan data manifest:
+        <div id="mfPlaceholder" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;padding:48px;text-align:center">
+          <span class="material-icons-round" style="font-size:56px;color:var(--ink-ghost)">grid_on</span>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.02em;margin-bottom:6px">Manifest AWB</div>
+            <div style="font-size:13px;color:var(--ink-low);max-width:280px;line-height:1.6">Pilih mode tampilan data manifest:</div>
           </div>
           <div style="display:flex;gap:10px;margin-top:4px">
-            <button class="btn btn-primary" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
-              onclick="loadManifestPage('today')">
-              <span class="material-icons-round" style="font-size:18px">today</span>
-              Hari Ini
+            <button class="btn btn-primary" style="padding:10px 22px;font-size:13px;border-radius:9px;gap:7px" onclick="loadManifestPage('today')">
+              <span class="material-icons-round" style="font-size:17px">today</span> Hari Ini
             </button>
-            <button class="btn btn-outline" style="padding:11px 24px;font-size:13px;border-radius:9px;gap:8px"
-              onclick="loadManifestPage('all')">
-              <span class="material-icons-round" style="font-size:18px">calendar_month</span>
-              Semua Data
+            <button class="btn btn-outline" style="padding:10px 22px;font-size:13px;border-radius:9px;gap:7px" onclick="loadManifestPage('all')">
+              <span class="material-icons-round" style="font-size:17px">calendar_month</span> Semua Data
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- OB&IB PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: OB & IB COMBINED                   -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-obib" style="display:none">
       <div class="table-panel">
         <div class="table-toolbar">
-          <div class="table-toolbar-title">OB &amp; IB — Combined View</div>
-          <div class="search-box"><span class="material-icons-round">search</span><input id="obibSearch" placeholder="Cari AWB, tujuan, service..." oninput="filterObib()"></div>
+          <div class="table-toolbar-title">OB &amp; IB &mdash; Combined View</div>
+          <div class="search-box">
+            <span class="material-icons-round">search</span>
+            <input id="obibSearch" placeholder="Cari AWB, tujuan, service..." oninput="filterObib()">
+          </div>
           <button class="btn btn-outline btn-sm" onclick="reloadObib()"><span class="material-icons-round">refresh</span> Refresh</button>
           <button class="export-btn" onclick="exportObibCSV()"><span class="material-icons-round">file_download</span> Export</button>
         </div>
         <div class="obib-table-wrap" id="obibTableWrap">
-          <div class="empty-state"><span class="material-icons-round">table_view</span>Loading...</div>
+          <div class="empty-state"><span class="material-icons-round">table_view</span>Memuat data...</div>
         </div>
       </div>
     </div>
 
-    <!-- SEARCH AWB PAGE -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- PAGE: CARI AWB                           -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <div id="page-search" style="display:none">
+
       <div class="search-awb-hero">
-        <div class="search-awb-hero-title"><span class="material-icons-round">manage_search</span> Cari AWB</div>
+        <div class="search-awb-hero-title">
+          <span class="material-icons-round">manage_search</span> Cari AWB
+        </div>
         <div class="search-awb-hero-sub">Cari nomor AWB di seluruh data: Outbound BDO, Outbound HVS, dan Inbound HVS</div>
         <div class="search-awb-input-row">
-          <input class="search-awb-main-input" id="searchAwbMainInput" placeholder="Ketik atau scan nomor AWB..." autocomplete="off"
-            oninput="doSearchAwb(this.value)" onkeydown="if(event.key==='Enter')doSearchAwb(this.value)">
+          <input class="search-awb-main-input" id="searchAwbMainInput"
+            placeholder="Ketik atau scan nomor AWB..."
+            autocomplete="off"
+            oninput="doSearchAwb(this.value)"
+            onkeydown="if(event.key==='Enter')doSearchAwb(this.value)">
           <button class="btn btn-primary" onclick="doSearchAwb(document.getElementById('searchAwbMainInput').value)">
             <span class="material-icons-round">search</span> Cari
           </button>
-          <button class="btn btn-outline" onclick="clearSearchAwb()"><span class="material-icons-round">clear</span></button>
+          <button class="btn btn-outline" onclick="clearSearchAwb()">
+            <span class="material-icons-round">clear</span>
+          </button>
         </div>
       </div>
+
       <div class="search-awb-result" id="searchAwbResult">
-        <div class="search-awb-result-hdr"><span class="material-icons-round">info</span> Masukkan nomor AWB untuk mencari</div>
+        <div class="search-awb-result-hdr">
+          <span class="material-icons-round">info_outline</span> Masukkan nomor AWB untuk mencari
+        </div>
         <div class="search-awb-result-body" id="searchAwbResultBody">
           <div class="search-awb-empty">
             <span class="material-icons-round">search</span>
@@ -302,52 +551,88 @@
   </div><!-- /content -->
 </div><!-- /main -->
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- GLOBAL UI                                   -->
+<!-- ═══════════════════════════════════════════ -->
 <div id="loading"><div class="spinner"></div><div id="loadingText">Memuat data...</div></div>
 <div id="toast"></div>
 <div class="copy-flash" id="copyFlash">✓ Copied!</div>
 
-<!-- DETAIL MODAL -->
+<!-- ── DETAIL MODAL ── -->
 <div class="modal-overlay" id="detailModal">
-  <div class="modal" style="width:540px">
-    <div class="modal-hdr"><div class="modal-title" id="detailModalTitle">Detail</div><button class="modal-close" onclick="closeModal('detailModal')"><span class="material-icons-round">close</span></button></div>
+  <div class="modal" style="width:560px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="detailModalTitle">Detail</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">
+        <span class="material-icons-round">close</span>
+      </button>
+    </div>
     <div class="modal-body">
-      <div class="photo-box" id="detailPhotoBox"><span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span></div>
-      <div id="detailReadonlyBar" class="readonly-bar" style="display:none"><span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah</div>
+      <!-- Photo gallery injected by forms.js -->
+      <div class="photo-box" id="detailPhotoBox">
+        <span class="no-img"><span class="material-icons-round">photo_camera</span>Belum ada foto</span>
+      </div>
+      <div id="detailReadonlyBar" class="readonly-bar" style="display:none">
+        <span class="material-icons-round">lock</span>Data sudah SELESAI — tidak dapat diubah
+      </div>
       <div class="detail-grid" id="detailGrid"></div>
-      <div style="margin-top:6px">
-        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">LIST AWB (<span id="awbCount">0</span>)</div>
+      <div style="margin-top:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink-low);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">
+          List AWB (<span id="awbCount">0</span>)
+        </div>
         <div class="awb-list-box" id="detailAwbList" style="max-height:180px"></div>
       </div>
-      <div id="detailAddAwbSection" style="margin-top:10px;display:none">
-        <div style="font-size:10px;font-weight:700;color:var(--gray5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">TAMBAH AWB</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input class="scan-inp" id="detailAddAwbInput" placeholder="Scan / ketik AWB lalu Enter..." autocomplete="off" onkeydown="handleDetailAddAwb(event)" style="flex:1">
-        </div>
-        <div style="font-size:11px;color:var(--gray5);margin-top:4px"><span class="material-icons-round" style="font-size:12px;vertical-align:middle">info</span> Tekan Enter untuk menambah AWB ke track ini</div>
-      </div>
+      <!-- Tambah AWB section injected by forms.js -->
+      <div id="detailAddAwbSection" style="margin-top:12px;display:none"></div>
     </div>
     <div class="modal-footer" id="detailModalFooter"></div>
   </div>
 </div>
 
-<!-- CONFIRM MODAL -->
+<!-- ── CONFIRM MODAL ── -->
 <div class="modal-overlay" id="confirmModal">
-  <div class="modal" style="width:340px">
-    <div class="modal-hdr"><div class="modal-title" id="confirmTitle">Konfirmasi</div></div>
-    <div class="modal-body"><p id="confirmMsg" style="font-size:13px;color:var(--gray7)"></p></div>
-    <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('confirmModal')">Batal</button><button class="btn btn-danger btn-sm" id="confirmBtn">Ya, Lanjutkan</button></div>
+  <div class="modal" style="width:360px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="confirmTitle">Konfirmasi</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="font-size:13px;color:var(--ink-mid);line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('confirmModal')">Batal</button>
+      <button class="btn btn-danger btn-sm" id="confirmBtn">Ya, Lanjutkan</button>
+    </div>
   </div>
 </div>
 
-<!-- ADD TUJUAN MODAL -->
+<!-- ── ADD TUJUAN MODAL ── -->
 <div class="modal-overlay" id="tujuanModal">
-  <div class="modal allow-dropdown-overflow" style="width:480px">
-    <div class="modal-hdr"><div class="modal-title">Tambah Tujuan Baru</div><button class="modal-close" onclick="closeModal('tujuanModal')"><span class="material-icons-round">close</span></button></div>
-    <div class="modal-body" style="min-height:280px">
-      <p style="font-size:13px;color:var(--gray6);margin-bottom:14px">Pilih tujuan untuk sesi scan baru.</p>
-      <div class="fg"><label>TUJUAN</label><div class="form-smart-cb" id="newTujuanCb"><input class="form-smart-cb-input" id="newTujuanInput" placeholder="Ketik / pilih tujuan..." autocomplete="off"><span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('newTujuanCb')">expand_more</span><div class="form-smart-cb-dropdown" id="newTujuanDrop" style="max-height:180px"></div></div></div>
+  <div class="modal allow-dropdown-overflow" style="width:460px">
+    <div class="modal-hdr">
+      <div class="modal-title">Tambah Tujuan Baru</div>
+      <button class="modal-close" onclick="closeModal('tujuanModal')">
+        <span class="material-icons-round">close</span>
+      </button>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('tujuanModal')">Batal</button><button class="btn btn-primary btn-sm" onclick="confirmAddTujuan()"><span class="material-icons-round">check</span> Tambah</button></div>
+    <div class="modal-body" style="min-height:260px">
+      <p style="font-size:13px;color:var(--ink-low);margin-bottom:16px;line-height:1.6">
+        Pilih atau ketik tujuan untuk sesi scan baru.
+      </p>
+      <div class="fg">
+        <label>TUJUAN</label>
+        <div class="form-smart-cb" id="newTujuanCb">
+          <input class="form-smart-cb-input" id="newTujuanInput" placeholder="Ketik / pilih tujuan..." autocomplete="off">
+          <span class="material-icons-round form-smart-cb-arrow" onclick="toggleFormCb('newTujuanCb')">expand_more</span>
+          <div class="form-smart-cb-dropdown" id="newTujuanDrop" style="max-height:160px"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeModal('tujuanModal')">Batal</button>
+      <button class="btn btn-primary btn-sm" onclick="confirmAddTujuan()">
+        <span class="material-icons-round">check</span> Tambah
+      </button>
+    </div>
   </div>
 </div>
 
