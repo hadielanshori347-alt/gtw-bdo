@@ -170,36 +170,31 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .sidebar.open { transform: translateX(0); }
 
 .sidebar-hdr {
-  padding: calc(var(--safe-top) + 20px) 20px 20px;
+  padding: calc(var(--safe-top) + 16px) 20px 16px;
   border-bottom: 1px solid var(--border);
   position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 14px;
 }
 .sidebar-hdr::before {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(201,168,76,.06) 0%, transparent 60%);
+  background: linear-gradient(135deg, rgba(255,255,255,.03) 0%, transparent 60%);
   pointer-events: none;
 }
-.sidebar-logo {
-  font-family: var(--font-head);
-  font-size: 22px; font-weight: 800;
-  letter-spacing: 2px;
-  background: linear-gradient(135deg, var(--gold2), var(--gold3));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 10px;
+.sidebar-logo-wrap {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(74,144,217,.35));
 }
-.sidebar-ic-row { display: flex; align-items: center; gap: 8px; }
+.sidebar-ic-row { display: flex; align-items: center; gap: 7px; }
 .sidebar-ic-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--text3); flex-shrink: 0;
+  background: rgba(255,255,255,.35); flex-shrink: 0;
 }
 .sidebar-ic-dot.on {
   background: var(--green);
   box-shadow: 0 0 0 3px rgba(16,185,129,.2);
 }
-.sidebar-ic-name { color: var(--text2); font-size: 12px; font-weight: 500; letter-spacing: .3px; }
+.sidebar-ic-name { color: rgba(255,255,255,.6); font-size: 11px; font-weight: 500; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .sidebar-body { flex: 1; overflow-y: auto; padding: 12px 10px; }
 .sidebar-section {
@@ -225,9 +220,9 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   letter-spacing: .2px;
 }
 .sidebar-item:active, .sidebar-item.active {
-  background: var(--gold-dim);
-  color: var(--gold2);
-  border: 1px solid var(--border-gold);
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
 }
 .sidebar-item .si-icon {
   width: 32px; height: 32px;
