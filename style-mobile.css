@@ -170,10 +170,10 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .sidebar.open { transform: translateX(0); }
 
 .sidebar-hdr {
-  padding: calc(var(--safe-top) + 16px) 20px 16px;
+  padding: calc(var(--safe-top) + 16px) 18px 16px;
   border-bottom: 1px solid var(--border);
   position: relative; overflow: hidden;
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 12px;
 }
 .sidebar-hdr::before {
   content: '';
@@ -184,6 +184,17 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .sidebar-logo-wrap {
   flex-shrink: 0;
   filter: drop-shadow(0 2px 8px rgba(74,144,217,.35));
+}
+.sidebar-hdr-text {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.sidebar-logo {
+  font-family: var(--font-head);
+  font-size: 18px; font-weight: 800;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 1;
 }
 .sidebar-ic-row { display: flex; align-items: center; gap: 7px; }
 .sidebar-ic-dot {
