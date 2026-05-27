@@ -14,12 +14,12 @@
   --surface2:  #1e2640;
   --surface3:  #252d47;
 
-  /* === Accent Gold === */
-  --gold:      #c9a84c;
-  --gold2:     #e8c97a;
-  --gold3:     #f5e0a8;
-  --gold-dim:  rgba(201,168,76,.12);
-  --gold-glow: rgba(201,168,76,.25);
+  /* === Accent White (was Gold) === */
+  --gold:      #ffffff;
+  --gold2:     #e8e8e8;
+  --gold3:     #cccccc;
+  --gold-dim:  rgba(255,255,255,.10);
+  --gold-glow: rgba(255,255,255,.18);
 
   /* === Semantic Colors === */
   --blue:      #3b82f6;
@@ -42,7 +42,7 @@
   /* === Border === */
   --border:    rgba(255,255,255,.07);
   --border2:   rgba(255,255,255,.12);
-  --border-gold: rgba(201,168,76,.3);
+  --border-gold: rgba(255,255,255,.25);
 
   /* === Typography === */
   --font:      'DM Sans', sans-serif;
@@ -54,7 +54,7 @@
   --r-sm:      10px;
   --r-xs:      6px;
   --sh:        0 4px 24px rgba(0,0,0,.4);
-  --sh-gold:   0 0 20px rgba(201,168,76,.15);
+  --sh-gold:   0 0 20px rgba(255,255,255,.10);
 
   /* === Safe Area === */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -273,8 +273,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   font-family: var(--font-head);
 }
 .tab-item.active {
-  color: var(--gold2);
-  border-bottom-color: var(--gold);
+  color: #ffffff;
+  border-bottom-color: #ffffff;
 }
 
 /* ─── Stats ─── */
@@ -335,7 +335,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
-  background: var(--gold);
+  background: #ffffff;
   opacity: 0;
   transition: opacity .2s;
 }
@@ -353,7 +353,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   margin-bottom: 6px;
 }
 .card-no {
-  color: var(--gold2);
+  color: #e8e8e8;
   font-size: 12px; font-weight: 600;
   font-family: var(--mono);
   letter-spacing: .5px;
@@ -380,7 +380,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .badge-selesai { background: var(--green-l);  color: var(--green);  border: 1px solid rgba(16,185,129,.25); }
 .badge-blue    { background: var(--blue-l);   color: var(--blue);   border: 1px solid rgba(59,130,246,.25); }
 .badge-purple  { background: var(--purple-l); color: var(--purple); border: 1px solid rgba(139,92,246,.25); }
-.badge-awb     { background: var(--gold-dim); color: var(--gold2);  border: 1px solid var(--border-gold); font-family: var(--mono); }
+.badge-awb     { background: rgba(255,255,255,.08); color: #e8e8e8; border: 1px solid rgba(255,255,255,.2); font-family: var(--mono); }
 
 /* ─── Buttons ─── */
 .btn {
@@ -397,7 +397,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 .btn:active { opacity: .8; transform: scale(.98); }
 .btn-primary {
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  background: #ffffff;
   color: var(--ink);
 }
 .btn-success  { background: var(--green); color: #fff; }
@@ -407,7 +407,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   color: var(--text2);
 }
 .btn-danger   { background: var(--red); color: #fff; }
-.btn-ghost    { background: transparent; color: var(--gold2); font-size: 12px; padding: 7px 12px; }
+.btn-ghost    { background: transparent; color: #e8e8e8; font-size: 12px; padding: 7px 12px; }
 .btn-full     { width: 100%; }
 .btn:disabled { opacity: .35; cursor: not-allowed; }
 .btn-sm       { padding: 7px 14px; font-size: 11px; }
@@ -443,8 +443,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   -webkit-appearance: none;
 }
 .form-input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-dim);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.10);
 }
 .form-input:disabled { background: var(--surface2); color: var(--text3); }
 
@@ -462,8 +462,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   cursor: pointer; transition: .18s;
 }
 .scb-input:focus {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-dim);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.10);
 }
 .scb-input:disabled { background: var(--surface2); color: var(--text3); cursor: not-allowed; }
 .scb-arrow {
@@ -472,12 +472,12 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   color: var(--text3); font-size: 14px;
   pointer-events: none; transition: .2s;
 }
-.scb.open .scb-arrow { transform: translateY(-50%) rotate(180deg); color: var(--gold); }
+.scb.open .scb-arrow { transform: translateY(-50%) rotate(180deg); color: #ffffff; }
 .scb-drop {
   position: absolute;
   top: calc(100% + 6px); left: 0; right: 0;
   background: var(--surface3);
-  border: 1px solid var(--border-gold);
+  border: 1px solid rgba(255,255,255,.25);
   border-radius: var(--r-sm);
   box-shadow: 0 12px 40px rgba(0,0,0,.5), var(--sh-gold);
   z-index: 2000;
@@ -494,8 +494,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   transition: .12s;
 }
 .scb-opt:last-child { border-bottom: none; }
-.scb-opt:active, .scb-opt.hl { background: var(--gold-dim); color: var(--gold2); }
-.scb-opt.sel { color: var(--gold2); font-weight: 600; }
+.scb-opt:active, .scb-opt.hl { background: rgba(255,255,255,.08); color: #e8e8e8; }
+.scb-opt.sel { color: #e8e8e8; font-weight: 600; }
 .scb-empty { padding: 14px; font-size: 12px; color: var(--text3); font-style: italic; text-align: center; }
 
 /* ─── Scan UI ─── */
@@ -513,12 +513,12 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   font-family: var(--font-head);
 }
 .scan-tab.active {
-  background: var(--gold-dim);
-  color: var(--gold2);
-  border-color: var(--border-gold);
+  background: rgba(255,255,255,.08);
+  color: #e8e8e8;
+  border-color: rgba(255,255,255,.25);
 }
 .scan-tab .cnt {
-  background: var(--gold);
+  background: #ffffff;
   color: var(--ink);
   border-radius: 10px;
   padding: 1px 6px; font-size: 9px;
@@ -528,14 +528,14 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .scan-inp {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid var(--border-gold);
+  border: 1px solid rgba(255,255,255,.25);
   border-radius: var(--r-sm);
   font-size: 14px; font-family: var(--mono);
   color: var(--text);
   background: var(--surface3);
   outline: none; transition: .18s;
 }
-.scan-inp:focus { box-shadow: 0 0 0 3px var(--gold-dim); }
+.scan-inp:focus { box-shadow: 0 0 0 3px rgba(255,255,255,.10); }
 .scan-list {
   background: var(--ink2);
   border-radius: var(--r-sm);
@@ -573,10 +573,10 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   display: none; flex-shrink: 0;
 }
 .scan-ctx-bar {
-  background: var(--gold-dim);
-  border-bottom: 1px solid var(--border-gold);
+  background: rgba(255,255,255,.07);
+  border-bottom: 1px solid rgba(255,255,255,.18);
   padding: 8px 16px;
-  font-size: 11px; color: var(--gold2);
+  font-size: 11px; color: #e8e8e8;
   font-weight: 700;
   flex-shrink: 0; display: none;
   align-items: center; gap: 6px;
@@ -594,7 +594,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 
 /* Scanner — save button */
 #btnSaveScan:not(:disabled) {
-  background: linear-gradient(135deg, var(--gold), var(--gold2)) !important;
+  background: #ffffff !important;
   color: var(--ink) !important;
   letter-spacing: .8px;
 }
@@ -623,7 +623,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   transition: .18s;
 }
 .btn-ambil {
-  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  background: #ffffff;
   color: var(--ink);
 }
 .btn-ulangi { background: var(--surface3); color: var(--text2); border: 1px solid var(--border2); }
@@ -653,7 +653,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   font-family: var(--font-head);
 }
 .d-value { font-size: 14px; color: var(--text); font-weight: 500; }
-.d-value.mono { font-family: var(--mono); font-size: 13px; color: var(--gold2); }
+.d-value.mono { font-family: var(--mono); font-size: 13px; color: #e8e8e8; }
 .photo-box {
   background: var(--surface2);
   border-radius: var(--r);
@@ -693,7 +693,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .awb-row::before {
   content: '';
   width: 6px; height: 6px; border-radius: 50%;
-  background: var(--gold); flex-shrink: 0;
+  background: #ffffff; flex-shrink: 0;
 }
 
 /* ─── Foto Slider ─── */
@@ -707,7 +707,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .foto-slide.active { display: block; }
 .foto-counter {
   position: absolute; bottom: 8px; right: 10px;
-  background: rgba(0,0,0,.6); color: var(--gold2);
+  background: rgba(0,0,0,.6); color: #e8e8e8;
   font-size: 11px; padding: 2px 8px;
   border-radius: 20px; pointer-events: none;
   font-family: var(--mono);
@@ -717,7 +717,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--border2); cursor: pointer; transition: background .2s;
 }
-.foto-dot.active { background: var(--gold); }
+.foto-dot.active { background: #ffffff; }
 
 /* ─── Search ─── */
 .search-hero {
@@ -729,13 +729,13 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .search-inp-row { display: flex; gap: 8px; align-items: center; }
 .search-main-inp {
   flex: 1; padding: 12px 14px;
-  border: 1px solid var(--border-gold);
+  border: 1px solid rgba(255,255,255,.25);
   border-radius: var(--r-sm);
   font-size: 14px; font-family: var(--mono);
   color: var(--text); background: var(--surface3);
   outline: none; transition: .18s;
 }
-.search-main-inp:focus { box-shadow: 0 0 0 3px var(--gold-dim); }
+.search-main-inp:focus { box-shadow: 0 0 0 3px rgba(255,255,255,.10); }
 .search-main-inp::placeholder { color: var(--text3); }
 .search-result {
   background: var(--surface2);
@@ -774,8 +774,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   font-weight: 600; color: var(--text); margin-bottom: 3px;
 }
 .search-item-awb mark {
-  background: rgba(201,168,76,.25);
-  color: var(--gold2);
+  background: rgba(255,255,255,.15);
+  color: #ffffff;
   border-radius: 2px; padding: 0 2px;
 }
 .search-item-meta { font-size: 11px; color: var(--text3); line-height: 1.6; }
@@ -810,7 +810,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 #tujModal .scb-drop,
 #ibTujModal .scb-drop {
   max-height: 240px; overflow-y: auto;
-  border: 1px solid var(--border-gold);
+  border: 1px solid rgba(255,255,255,.25);
   box-shadow: 0 8px 32px rgba(0,0,0,.5);
   z-index: 999;
 }
@@ -825,7 +825,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   content: '';
   position: absolute; bottom: 0; left: 20%; right: 20%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
 }
 .modal-title { font-weight: 700; font-size: 14px; font-family: var(--font-head); letter-spacing: .5px; }
 .modal-body { flex: 1; overflow-y: auto; padding: 14px; }
@@ -882,7 +882,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   flex-shrink: 0; max-width: 140px;
   transition: .18s;
 }
-.ic-widget:active { background: var(--gold-dim); border-color: var(--border-gold); }
+.ic-widget:active { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); }
 .ic-dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--text3); flex-shrink: 0; transition: .3s;
@@ -904,7 +904,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 #gloading-bar {
   height: 2px;
-  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  background: linear-gradient(90deg, #ffffff, #cccccc);
   animation: loadbar 1.2s ease-in-out infinite;
 }
 @keyframes loadbar {
@@ -915,8 +915,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 #gloading-pill {
   display: flex; align-items: center; gap: 8px;
   background: rgba(20,25,41,.95);
-  border: 1px solid var(--border-gold);
-  color: var(--gold2);
+  border: 1px solid rgba(255,255,255,.25);
+  color: #e8e8e8;
   font-size: 11px; font-weight: 600;
   padding: 7px 14px 7px 10px;
   border-radius: 0 0 12px 12px;
@@ -927,8 +927,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 .spinner {
   width: 14px; height: 14px;
-  border: 2px solid rgba(201,168,76,.2);
-  border-top-color: var(--gold);
+  border: 2px solid rgba(255,255,255,.15);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin .7s linear infinite; flex-shrink: 0;
 }
@@ -957,7 +957,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   position: absolute;
   top: calc(14px + var(--safe-top)); left: 50%;
   transform: translateX(-50%);
-  color: var(--gold2);
+  color: #e8e8e8;
   font-size: 12px; font-weight: 600;
   background: rgba(0,0,0,.5);
   padding: 4px 12px; border-radius: 20px;
@@ -973,7 +973,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   width: 7px; height: 7px; border-radius: 50%;
   background: rgba(255,255,255,.2); cursor: pointer; transition: .2s;
 }
-.foto-full-dot.active { background: var(--gold); }
+.foto-full-dot.active { background: #ffffff; }
 
 /* ─── Toast ─── */
 #gtoast {
@@ -1072,14 +1072,14 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 
 /* ─── Add tujuan button ─── */
 .btn-add-tuj {
-  background: var(--gold-dim);
-  color: var(--gold2);
+  background: rgba(255,255,255,.08);
+  color: #e8e8e8;
   padding: 9px 14px;
   border-radius: var(--r-sm);
   font-size: 11px; font-weight: 700;
   cursor: pointer; white-space: nowrap;
   flex-shrink: 0;
-  border: 1px solid var(--border-gold);
+  border: 1px solid rgba(255,255,255,.22);
   text-transform: uppercase; letter-spacing: .3px;
   font-family: var(--font-head);
 }
@@ -1100,8 +1100,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   border: 1px solid transparent;
   transition: .15s;
 }
-.ic-item:active { background: var(--gold-dim); border-color: var(--border-gold); }
-.ic-item.selected { background: var(--gold-dim); border-color: var(--border-gold); color: var(--gold2); }
+.ic-item:active { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); }
+.ic-item.selected { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.22); color: #e8e8e8; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
