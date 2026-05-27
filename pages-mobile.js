@@ -18,11 +18,16 @@ const HomePage = {
 
   render() {
     const arr  = STATE.currentTab === 'ob' ? STATE.obData : STATE.currentTab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    const data = HomePage.filteredData(arr);
+    const allData = HomePage.filteredData(arr);
+    // Hanya tampilkan yang masih On Proses — yang SELESAI disembunyikan dari list
+    const data = allData.filter(d => d.status !== 'SELESAI');
     const el   = document.getElementById('homeList');
 
     if (!data.length) {
-      el.innerHTML = '<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>';
+      const adaSelesai = allData.length > 0;
+      el.innerHTML = adaSelesai
+        ? '<div class="scan-empty" style="margin-top:24px">✅ Semua data sudah selesai</div>'
+        : '<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>';
       return;
     }
 
