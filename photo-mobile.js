@@ -205,6 +205,11 @@ const Photo = {
       const type = (STATE.currentDetailType || STATE.createType || 'ob').toUpperCase();
       const urls = [];
 
+      // Simpan semua foto ke galeri HP sebelum upload
+      STATE.photoQueue.forEach((b64, i) => {
+        Photo._saveToGallery('data:image/jpeg;base64,' + b64, i);
+      });
+
       for (let i = 0; i < STATE.photoQueue.length; i++) {
         document.getElementById('gloading-txt').innerText = `Upload foto ${i + 1}/${total}...`;
         const colIndex = (STATE.photoStartIndex || 0) + i;
@@ -258,6 +263,24 @@ const Photo = {
     } catch(e) {
       UI.Loading.hide();
       UI.Toast.error('Error: ' + e.message);
+    }
+  },
+
+  // ── Simpan ke galeri HP (auto-download) ──
+  // Cara ini memicu browser download yang pada Android/iOS tersimpan di galeri/Downloads
+  _saveToGallery(dataUrl, index) {
+    try {
+      const a = document.createElement('a');
+      const now = new Date();
+      const pad = n => n < 10 ? '0' + n : n;
+      const ts = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      a.href = dataUrl.startsWith('data:') ? dataUrl : `data:image/jpeg;base64,${dataUrl}`;
+      a.download = `gtw_bdo_${STATE.currentNoTrack || 'foto'}_${ts}_${index + 1}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch(e) {
+      // Tidak perlu error toast — fitur galeri adalah bonus
     }
   },
 
