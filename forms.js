@@ -1206,3 +1206,60 @@ function _nowDisplayStr() {
   ].join('');
   document.head.appendChild(style);
 })();
+
+// ============================================================
+// AUTO REFRESH — polling tiap 30 detik
+// Hanya fetch ulang data list; tidak mengganggu modal yang sedang terbuka
+// ============================================================
+(function startAutoRefresh() {
+  var INTERVAL = 30 * 1000; // 30 detik — ubah sesuai kebutuhan
+
+  function _isModalOpen() {
+    // Cek apakah ada modal yang sedang terbuka (user sedang interaksi)
+    var ids = ['detailModal', 'confirmModal', 'tujuanModal'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el && el.classList.contains('open')) return true;
+    }
+    return false;
+  }
+
+  function _hasPendingSave() {
+    // Jangan refresh kalau masih ada item _saving di data
+    var allData = (typeof obData !== 'undefined' ? obData : [])
+      .concat(typeof hvsData !== 'undefined' ? hvsData : [])
+      .concat(typeof ibData  !== 'undefined' ? ibData  : []);
+    return allData.some(function(d) { return d._saving; });
+  }
+
+  function refreshAll() {
+    // Skip kalau modal terbuka atau masih ada proses save
+    if (_isModalOpen() || _hasPendingSave()) return;
+
+    gasGet('getObList').then(function(r) {
+      if (r && r.list) {
+        obData = r.list;
+        renderObTable();
+        updateObStats();
+      }
+    }).catch(function() {});
+
+    gasGet('getHvsList').then(function(r) {
+      if (r && r.list) {
+        hvsData = r.list;
+        renderHvsTable();
+        updateHvsStats();
+      }
+    }).catch(function() {});
+
+    gasGet('getIbList').then(function(r) {
+      if (r && r.list) {
+        ibData = r.list;
+        renderIbTable();
+        updateIbStats();
+      }
+    }).catch(function() {});
+  }
+
+  setInterval(refreshAll, INTERVAL);
+})();
