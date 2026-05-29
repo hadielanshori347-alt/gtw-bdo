@@ -433,6 +433,12 @@ const CreatePage = {
       STATE.currentDetailType = STATE.createType;
       STATE.currentDetailItem = null;
 
+      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      STATE.createdTracks = results.map((r, i) => ({
+        noTrack: r.noTrack || '',
+        tujuan:  keys[i]  || ''
+      }));
+
       // Reload list di background
       const listAct = STATE.createType === 'ob' ? 'getObList' : 'getHvsList';
       API.get(listAct).then(r => {
@@ -471,6 +477,12 @@ const CreatePage = {
       STATE.currentTuj        = keys[0];
       STATE.currentDetailType = 'ib';
       STATE.currentDetailItem = null;
+
+      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      STATE.createdTracks = results.map((r, i) => ({
+        noTrack: r.noTrack || '',
+        tujuan:  keys[i]  || ''
+      }));
 
       // Reload list di background
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
@@ -519,6 +531,8 @@ const DetailPage = {
     STATE.currentNoTrack    = noTrack;
     STATE.currentSvc        = item.service;
     STATE.currentTuj        = item.tujuan;
+    // Reset createdTracks saat buka detail dari list (bukan dari create)
+    STATE.createdTracks     = [];
     DetailPage._render(item, type);
     UI.Page.show('pgDetail');
     DetailPage._loadAwbList(noTrack, type);
