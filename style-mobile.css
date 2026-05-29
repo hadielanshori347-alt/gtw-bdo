@@ -1161,3 +1161,206 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   color: #fff;
 }
 </style>
+
+<style>
+/* ─── Scanner Combobox Tujuan ─── */
+.scan-combo-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  font-family: var(--font-head);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.scan-combo-svc-tag {
+  background: var(--blue-l);
+  color: var(--blue);
+  border: 1px solid rgba(59,130,246,.25);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  font-family: var(--font-head);
+}
+.scan-combo-box {
+  position: relative;
+}
+.scan-combo-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--surface3);
+  border: 1.5px solid rgba(255,255,255,.22);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: .18s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.scan-combo-current:active {
+  background: var(--surface2);
+  border-color: rgba(255,255,255,.35);
+}
+.scan-combo-current-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  font-family: var(--font-head);
+  letter-spacing: .3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.scan-combo-current-meta {
+  font-size: 11px;
+  color: var(--green);
+  font-family: var(--mono);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.scan-combo-chevron {
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: transform .2s;
+}
+.scan-combo-drop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: var(--surface3);
+  border: 1.5px solid rgba(255,255,255,.25);
+  border-radius: var(--r-sm);
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  z-index: 500;
+  overflow: hidden;
+}
+.scan-combo-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: .13s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.scan-combo-opt:last-child {
+  border-bottom: none;
+}
+.scan-combo-opt:active {
+  background: rgba(255,255,255,.08);
+}
+.scan-combo-opt.active {
+  background: rgba(255,255,255,.06);
+}
+.scan-combo-opt-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e8e8e8;
+  letter-spacing: .2px;
+}
+.scan-combo-opt.active .scan-combo-opt-name {
+  color: #fff;
+  font-weight: 700;
+}
+.scan-combo-opt-cnt {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+  background: var(--surface2);
+  border-radius: 20px;
+  padding: 2px 9px;
+  flex-shrink: 0;
+}
+.scan-combo-opt.active .scan-combo-opt-cnt {
+  background: var(--green-l);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,.25);
+}
+.scan-combo-opt-check {
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.scan-combo-opt-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  color: rgba(255,255,255,.6);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  font-family: var(--font-head);
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  transition: .13s;
+}
+.scan-combo-opt-add:active {
+  background: rgba(255,255,255,.05);
+  color: #fff;
+}
+.scan-combo-hint {
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: .2px;
+}
+.scan-combo-hint b {
+  color: var(--gold2);
+}
+.scan-combo-empty {
+  font-size: 12px;
+  color: var(--text3);
+  padding: 8px 0;
+  letter-spacing: .2px;
+}
+ 
+/* Mode detail — info bar */
+.scan-combo-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+.scan-combo-track {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #e8e8e8;
+  font-weight: 600;
+}
+.scan-combo-arrow {
+  font-size: 11px;
+  color: var(--text3);
+}
+.scan-combo-tuj {
+  font-size: 13px;
+  color: var(--gold2);
+  font-weight: 700;
+}
+.scan-combo-svc {
+  font-size: 10px;
+  color: var(--text3);
+  background: var(--surface2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+}
+</style>
