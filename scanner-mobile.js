@@ -69,20 +69,25 @@ const Scanner = {
       return;
     }
 
-    const map     = isOb ? STATE.obScanMap : STATE.ibScanMap;
-    const active  = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
-    const keys    = Object.keys(map || {});
+    const map    = isOb ? STATE.obScanMap : STATE.ibScanMap;
+    const active = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
+    const keys   = Object.keys(map || {});
+
+    // Selalu tampilkan wrap jika context ob/ib
+    wrap.style.display = 'block';
 
     if (!keys.length) {
-      wrap.style.display = 'none';
+      wrap.innerHTML = `
+        <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;font-family:var(--font-head)">Tujuan Scan</div>
+        <div class="scan-empty" style="padding:10px 0;font-size:12px">Belum ada tujuan</div>
+        ${Scanner._addTujBtn(isOb)}
+      `;
       return;
     }
 
-    wrap.style.display = 'block';
-
     const tabs = keys.map(t => {
-      const cnt    = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
-      const isSel  = t === active;
+      const cnt   = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
+      const isSel = t === active;
       return `<div class="scan-tuj-tab${isSel ? ' active' : ''}" onclick="Scanner._switchTuj('${escQ(t)}')">
         <span>${escH(t)}</span>
         <span class="scan-tuj-cnt">${cnt}</span>
@@ -93,12 +98,31 @@ const Scanner = {
       <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px;font-family:var(--font-head)">
         Scan ke Tujuan
       </div>
-      <div class="scan-tuj-tabs">${tabs}</div>
-      ${active ? `<div style="font-size:11px;color:var(--text3);margin-top:6px;letter-spacing:.2px">
+      <div class="scan-tuj-tabs" style="margin-bottom:8px">${tabs}</div>
+      ${active ? `<div style="font-size:11px;color:var(--text3);margin-bottom:10px;letter-spacing:.2px">
         Aktif: <span style="color:var(--gold2);font-weight:700">${escH(active)}</span>
         — AWB scan masuk ke tujuan ini
       </div>` : ''}
+      ${Scanner._addTujBtn(isOb)}
     `;
+  },
+
+  // ── Helper tombol + Tujuan Lain di dalam scanner ──
+  _addTujBtn(isOb) {
+    const fn = isOb ? 'CreatePage.openAddTujFromScanner()' : 'CreatePage.openAddIbTujFromScanner()';
+    return `<button
+      style="display:inline-flex;align-items:center;gap:6px;
+             background:rgba(255,255,255,.07);color:#e8e8e8;
+             padding:7px 14px;border-radius:8px;
+             font-size:11px;font-weight:700;
+             cursor:pointer;white-space:nowrap;
+             border:1px solid rgba(255,255,255,.18);
+             text-transform:uppercase;letter-spacing:.3px;
+             font-family:var(--font-head);"
+      onclick="${fn}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      + Tujuan Lain
+    </button>`;
   },
 
   // ── Switch tujuan aktif tanpa menutup scanner ──
@@ -141,6 +165,25 @@ const Scanner = {
     await Scanner._stop();
     if (STATE.scanContext === 'detail') UI.Page.show('pgDetail');
     else UI.Page.show('pgCreate');
+  },
+
+  // ── Selesai scan create — flush lalu kembali ke pgCreate ──
+  _doneCreate() {
+    // Flush sisa scan items yang belum disimpan
+    if (STATE.scanItems.length) {
+      Scanner._flushToActive();
+    }
+
+    Scanner._stop().then(() => {
+      if (STATE.scanContext === 'create-ob') {
+        CreatePage.renderObTabs();
+        CreatePage.renderObScanList();
+      } else {
+        CreatePage.renderIbTabs();
+        CreatePage.renderIbScanList();
+      }
+      UI.Page.show('pgCreate');
+    });
   },
 
   _start() {
@@ -247,28 +290,38 @@ const Scanner = {
   },
 
   _updateUI() {
-    const isOb   = STATE.scanContext === 'create-ob';
-    const isIb   = STATE.scanContext === 'create-ib';
-    const active = isOb ? STATE.obActiveTuj : isIb ? STATE.ibActiveTuj : null;
+    const isOb     = STATE.scanContext === 'create-ob';
+    const isIb     = STATE.scanContext === 'create-ib';
+    const isCreate = isOb || isIb;
+    const active   = isOb ? STATE.obActiveTuj : isIb ? STATE.ibActiveTuj : null;
 
     document.getElementById('scanCount').innerText  = STATE.scanItems.length;
-    document.getElementById('btnSaveScan').disabled = !STATE.scanItems.length;
+
+    const btnSave = document.getElementById('btnSaveScan');
+    const btnDone = document.getElementById('btnDoneCreate');
+
+    // Tombol simpan AWB — aktif jika ada item
+    btnSave.disabled = !STATE.scanItems.length;
 
     // Label tombol simpan
-    const btn = document.getElementById('btnSaveScan');
-    if ((isOb || isIb) && active) {
-      btn.innerText = `Simpan ke "${active}"`;
+    if (isCreate && active) {
+      btnSave.innerText = `Simpan ke "${active}"`;
     } else if (STATE.scanContext === 'detail') {
-      btn.innerText = 'Simpan & Foto';
+      btnSave.innerText = 'Simpan & Foto';
     } else {
-      btn.innerText = 'Simpan & Foto';
+      btnSave.innerText = 'Simpan & Foto';
+    }
+
+    // Tombol "Selesai — Lanjut ke Simpan" hanya di mode create
+    if (btnDone) {
+      btnDone.style.display = isCreate ? 'block' : 'none';
     }
 
     document.getElementById('scanList').innerHTML = STATE.scanItems.length
       ? STATE.scanItems.map((awb, i) =>
           `<div class="scan-item"><span>${escH(awb)}</span><span class="scan-item-del" onclick="Scanner.removeItem(${i})">🗑</span></div>`
         ).join('')
-      : `<div class="scan-empty">${(isOb || isIb) && active ? `Scan AWB untuk <b>${escH(active)}</b>` : 'Belum ada AWB di-scan'}</div>`;
+      : `<div class="scan-empty">${isCreate && active ? `Scan AWB untuk <b>${escH(active)}</b>` : 'Belum ada AWB di-scan'}</div>`;
   },
 
   toggleFlash() {
@@ -296,12 +349,13 @@ const Scanner = {
         if (!STATE.obScanMap[active].includes(awb)) STATE.obScanMap[active].push(awb);
       });
       STATE.scanItems = [];
-      await Scanner._stop();
+      // Update UI tanpa keluar dari scanner — kamera tetap jalan
+      Scanner._renderTujTabs();
+      Scanner._updateUI();
       CreatePage.renderObTabs();
       CreatePage.renderObScanList();
-      UI.Toast.success('AWB disimpan ke ' + active);
-      UI.Page.show('pgCreate');
-      return;
+      UI.Toast.success(`✓ AWB disimpan ke "${active}"`);
+      return; // ← TETAP di scanner
     }
 
     if (STATE.scanContext === 'create-ib') {
@@ -312,15 +366,16 @@ const Scanner = {
         if (!STATE.ibScanMap[active].includes(awb)) STATE.ibScanMap[active].push(awb);
       });
       STATE.scanItems = [];
-      await Scanner._stop();
+      // Update UI tanpa keluar dari scanner — kamera tetap jalan
+      Scanner._renderTujTabs();
+      Scanner._updateUI();
       CreatePage.renderIbTabs();
       CreatePage.renderIbScanList();
-      UI.Toast.success('AWB disimpan ke ' + active);
-      UI.Page.show('pgCreate');
-      return;
+      UI.Toast.success(`✓ AWB disimpan ke "${active}"`);
+      return; // ← TETAP di scanner
     }
 
-    // Context: detail — simpan ke server
+    // Context: detail — simpan ke server lalu keluar
     UI.Loading.show('Menyimpan AWB...');
     try {
       const res = await API.post('addAwbToTrack', {
