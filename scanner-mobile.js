@@ -47,9 +47,94 @@ const Scanner = {
     } else {
       ctxBar.style.display = 'none';
     }
+
+    // Render tab tujuan jika context create-ob atau create-ib
+    Scanner._renderTujTabs();
+
     Scanner._updateUI();
     UI.Page.show('pgScan');
     Scanner._start();
+  },
+
+  // ── Render tab tujuan di atas scan list ──
+  _renderTujTabs() {
+    const wrap = document.getElementById('scanTujTabsWrap');
+    if (!wrap) return;
+
+    const isOb = STATE.scanContext === 'create-ob';
+    const isIb = STATE.scanContext === 'create-ib';
+
+    if (!isOb && !isIb) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    const map     = isOb ? STATE.obScanMap : STATE.ibScanMap;
+    const active  = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
+    const keys    = Object.keys(map || {});
+
+    if (!keys.length) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    wrap.style.display = 'block';
+
+    const tabs = keys.map(t => {
+      const cnt    = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
+      const isSel  = t === active;
+      return `<div class="scan-tuj-tab${isSel ? ' active' : ''}" onclick="Scanner._switchTuj('${escQ(t)}')">
+        <span>${escH(t)}</span>
+        <span class="scan-tuj-cnt">${cnt}</span>
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px;font-family:var(--font-head)">
+        Scan ke Tujuan
+      </div>
+      <div class="scan-tuj-tabs">${tabs}</div>
+      ${active ? `<div style="font-size:11px;color:var(--text3);margin-top:6px;letter-spacing:.2px">
+        Aktif: <span style="color:var(--gold2);font-weight:700">${escH(active)}</span>
+        — AWB scan masuk ke tujuan ini
+      </div>` : ''}
+    `;
+  },
+
+  // ── Switch tujuan aktif tanpa menutup scanner ──
+  _switchTuj(tuj) {
+    // Simpan scan saat ini ke tujuan lama sebelum pindah
+    Scanner._flushToActive();
+
+    const isOb = STATE.scanContext === 'create-ob';
+    if (isOb) {
+      STATE.obActiveTuj = tuj;
+      if (!STATE.obScanMap[tuj]) STATE.obScanMap[tuj] = [];
+    } else {
+      STATE.ibActiveTuj = tuj;
+      if (!STATE.ibScanMap[tuj]) STATE.ibScanMap[tuj] = [];
+    }
+
+    // Reset scan items untuk tujuan baru (scan items sebelumnya sudah di-flush)
+    STATE.scanItems = [];
+
+    Scanner._renderTujTabs();
+    Scanner._updateUI();
+    UI.Toast.success('Scan ke: ' + tuj);
+  },
+
+  // ── Flush scanItems ke map tujuan aktif ──
+  _flushToActive() {
+    if (!STATE.scanItems.length) return;
+    const isOb    = STATE.scanContext === 'create-ob';
+    const map     = isOb ? STATE.obScanMap : STATE.ibScanMap;
+    const active  = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
+    if (!active) return;
+    if (!map[active]) map[active] = [];
+    STATE.scanItems.forEach(awb => {
+      if (!map[active].includes(awb)) map[active].push(awb);
+    });
+    STATE.scanItems = [];
   },
 
   async close() {
@@ -66,12 +151,10 @@ const Scanner = {
     STATE.html5QrCode = h5;
     const cfg = { fps: 15, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
 
-    // Jika sudah punya camera ID dari sesi sebelumnya, langsung pakai — kamera nyala instan
     if (Scanner._preferredCamId) {
       h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
         .then(() => STATE.isScannerRunning = true)
         .catch(() => {
-          // Kalau ID lama gagal (misalnya cabut kamera), reset dan coba ulang
           Scanner._preferredCamId = null;
           Scanner._startViaEnumerate(h5, cfg);
         });
@@ -87,7 +170,7 @@ const Scanner = {
         if (!cams?.length) return Scanner._startFacing('environment');
         const back = cams.find(c => /back|rear|env/i.test(c.label));
         const camId = back ? back.id : cams[cams.length - 1].id;
-        Scanner._preferredCamId = camId; // simpan untuk sesi berikutnya
+        Scanner._preferredCamId = camId;
         h5.start(camId, cfg, Scanner._onSuccess, () => {})
           .then(() => STATE.isScannerRunning = true)
           .catch(() => Scanner._startFacing('environment'));
@@ -112,7 +195,6 @@ const Scanner = {
     }
     STATE.isScannerRunning = false;
     STATE.html5QrCode = null;
-    // Pastikan semua track kamera dimatikan
     try {
       const videos = document.querySelectorAll('#reader video');
       videos.forEach(v => { if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; } });
@@ -122,13 +204,9 @@ const Scanner = {
   },
 
   _onSuccess(text) {
-    // Abaikan scan selama freeze berlangsung
     if (Scanner._paused) return;
-
-    // Freeze 300ms — cegah baca barcode yang sama berulang
     Scanner._paused = true;
     setTimeout(() => { Scanner._paused = false; }, 300);
-
     Scanner.addItem(text);
     Scanner.beep();
   },
@@ -137,30 +215,60 @@ const Scanner = {
     awb = awb.trim();
     if (!awb) return;
     if (STATE.scanItems.includes(awb)) { UI.Toast.error('AWB sudah ada'); return; }
+
+    // Untuk mode create, cek duplikat dengan yang sudah ada di map tujuan ini
+    const isOb = STATE.scanContext === 'create-ob';
+    const isIb = STATE.scanContext === 'create-ib';
+    if (isOb || isIb) {
+      const map    = isOb ? STATE.obScanMap : STATE.ibScanMap;
+      const active = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
+      if (active && map[active] && map[active].includes(awb)) {
+        UI.Toast.error('AWB sudah ada di ' + active); return;
+      }
+    }
+
     STATE.scanItems.unshift(awb);
+    Scanner._renderTujTabs(); // update counter di tab
     Scanner._updateUI();
     UI.Toast.success('✓ ' + awb);
   },
 
   removeItem(i) {
     STATE.scanItems.splice(i, 1);
+    Scanner._renderTujTabs();
     Scanner._updateUI();
   },
 
   clearAll() {
     if (!confirm('Hapus semua list scan?')) return;
     STATE.scanItems = [];
+    Scanner._renderTujTabs();
     Scanner._updateUI();
   },
 
   _updateUI() {
+    const isOb   = STATE.scanContext === 'create-ob';
+    const isIb   = STATE.scanContext === 'create-ib';
+    const active = isOb ? STATE.obActiveTuj : isIb ? STATE.ibActiveTuj : null;
+
     document.getElementById('scanCount').innerText  = STATE.scanItems.length;
     document.getElementById('btnSaveScan').disabled = !STATE.scanItems.length;
+
+    // Label tombol simpan
+    const btn = document.getElementById('btnSaveScan');
+    if ((isOb || isIb) && active) {
+      btn.innerText = `Simpan ke "${active}"`;
+    } else if (STATE.scanContext === 'detail') {
+      btn.innerText = 'Simpan & Foto';
+    } else {
+      btn.innerText = 'Simpan & Foto';
+    }
+
     document.getElementById('scanList').innerHTML = STATE.scanItems.length
       ? STATE.scanItems.map((awb, i) =>
           `<div class="scan-item"><span>${escH(awb)}</span><span class="scan-item-del" onclick="Scanner.removeItem(${i})">🗑</span></div>`
         ).join('')
-      : '<div class="scan-empty">Belum ada AWB di-scan</div>';
+      : `<div class="scan-empty">${(isOb || isIb) && active ? `Scan AWB untuk <b>${escH(active)}</b>` : 'Belum ada AWB di-scan'}</div>`;
   },
 
   toggleFlash() {
@@ -181,31 +289,33 @@ const Scanner = {
     if (!STATE.scanItems.length) return;
 
     if (STATE.scanContext === 'create-ob') {
-      if (!STATE.obScanMap[STATE.obActiveTuj]) STATE.obScanMap[STATE.obActiveTuj] = [];
+      const active = STATE.obActiveTuj;
+      if (!active) { UI.Toast.error('Pilih tujuan dulu'); return; }
+      if (!STATE.obScanMap[active]) STATE.obScanMap[active] = [];
       STATE.scanItems.forEach(awb => {
-        if (!STATE.obScanMap[STATE.obActiveTuj].includes(awb))
-          STATE.obScanMap[STATE.obActiveTuj].push(awb);
+        if (!STATE.obScanMap[active].includes(awb)) STATE.obScanMap[active].push(awb);
       });
       STATE.scanItems = [];
       await Scanner._stop();
       CreatePage.renderObTabs();
       CreatePage.renderObScanList();
-      UI.Toast.success('AWB ditambahkan ke ' + STATE.obActiveTuj);
+      UI.Toast.success('AWB disimpan ke ' + active);
       UI.Page.show('pgCreate');
       return;
     }
 
     if (STATE.scanContext === 'create-ib') {
-      if (!STATE.ibScanMap[STATE.ibActiveTuj]) STATE.ibScanMap[STATE.ibActiveTuj] = [];
+      const active = STATE.ibActiveTuj;
+      if (!active) { UI.Toast.error('Pilih tujuan dulu'); return; }
+      if (!STATE.ibScanMap[active]) STATE.ibScanMap[active] = [];
       STATE.scanItems.forEach(awb => {
-        if (!STATE.ibScanMap[STATE.ibActiveTuj].includes(awb))
-          STATE.ibScanMap[STATE.ibActiveTuj].push(awb);
+        if (!STATE.ibScanMap[active].includes(awb)) STATE.ibScanMap[active].push(awb);
       });
       STATE.scanItems = [];
       await Scanner._stop();
       CreatePage.renderIbTabs();
       CreatePage.renderIbScanList();
-      UI.Toast.success('AWB ditambahkan ke ' + STATE.ibActiveTuj);
+      UI.Toast.success('AWB disimpan ke ' + active);
       UI.Page.show('pgCreate');
       return;
     }
