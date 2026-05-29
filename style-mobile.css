@@ -1354,6 +1354,20 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   color: var(--gold2);
   font-weight: 700;
 }
+.scan-combo-opt-notrack {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  background: var(--surface2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+  flex-shrink: 0;
+}
 .scan-combo-svc {
   font-size: 10px;
   color: var(--text3);
