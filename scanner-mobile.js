@@ -34,8 +34,12 @@ const Scanner = {
   open(context, title, ctxLabel = '') {
     STATE.scanContext = context;
     STATE.scanItems = [];
+
+    // Tutup semua SCB dropdown yang mungkin masih terbuka dari halaman sebelumnya
+    Object.keys(STATE.scbReg || {}).forEach(cbId => UI.Scb._close(cbId));
+
     document.getElementById('scanTitle').innerText = title;
-    const ctxBar   = document.getElementById('scanCtxBar');
+    const ctxBar      = document.getElementById('scanCtxBar');
     const ctxLabel_el = document.getElementById('scanCtxLabel');
     if (ctxLabel) {
       ctxBar.style.display = 'flex';
