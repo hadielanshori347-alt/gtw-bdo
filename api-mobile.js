@@ -20,16 +20,106 @@ const API = {
     }).then(r => r.json());
   },
 
-  // Upload foto ke Drive — photoIndex menentukan kolom tujuan (0=kolom pertama, 1=berikutnya, dst)
-  uploadFoto(noTrack, type, base64Data, photoIndex = 0) {
+  // ─────────────────────────────────────────────────────────
+  // Upload foto ke Supabase Storage, lalu update kolom
+  // foto_url / foto_url_2..5 di tracking_header via Supabase REST.
+  //
+  // photoIndex: 0 = foto_url, 1 = foto_url_2, dst
+  // ─────────────────────────────────────────────────────────
+  async uploadFoto(noTrack, type, base64Data, photoIndex = 0) {
+    // Validasi CONFIG
+    if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_KEY) {
+      console.warn('[uploadFoto] SUPABASE_URL / SUPABASE_KEY tidak ada di CONFIG — fallback ke GAS');
+      return API._uploadFotoGas(noTrack, type, base64Data, photoIndex);
+    }
+
+    try {
+      // 1. Konversi base64 → Blob
+      const blob = API._b64ToBlob(base64Data, 'image/jpeg');
+
+      // 2. Buat nama file unik: noTrack_photoIndex_timestamp.jpg
+      const safeTrack = noTrack.replace(/[^a-zA-Z0-9_\-]/g, '_');
+      const fileName  = `${safeTrack}_${photoIndex}_${Date.now()}.jpg`;
+      const filePath  = `fotos/${fileName}`;
+
+      // 3. Upload ke Supabase Storage bucket "gtw-foto"
+      const uploadRes = await fetch(
+        `${CONFIG.SUPABASE_URL}/storage/v1/object/gtw-foto/${filePath}`,
+        {
+          method  : 'POST',
+          headers : {
+            'apikey'        : CONFIG.SUPABASE_KEY,
+            'Authorization' : `Bearer ${CONFIG.SUPABASE_KEY}`,
+            'Content-Type'  : 'image/jpeg',
+            'Cache-Control' : '3600',
+            'x-upsert'      : 'true',
+          },
+          body: blob,
+        }
+      );
+
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text();
+        throw new Error(`Storage upload gagal (${uploadRes.status}): ${errText}`);
+      }
+
+      // 4. Buat public URL
+      const publicUrl = `${CONFIG.SUPABASE_URL}/storage/v1/object/public/gtw-foto/${filePath}`;
+
+      // 5. Update kolom foto_url* di tracking_header via Supabase REST
+      const fotoKey   = photoIndex === 0 ? 'foto_url' : `foto_url_${photoIndex + 1}`;
+      const patchBody = {};
+      patchBody[fotoKey] = publicUrl;
+
+      const patchRes = await fetch(
+        `${CONFIG.SUPABASE_URL}/rest/v1/tracking_header?no_track=eq.${encodeURIComponent(noTrack)}`,
+        {
+          method  : 'PATCH',
+          headers : {
+            'apikey'        : CONFIG.SUPABASE_KEY,
+            'Authorization' : `Bearer ${CONFIG.SUPABASE_KEY}`,
+            'Content-Type'  : 'application/json',
+            'Prefer'        : 'return=minimal',
+          },
+          body: JSON.stringify(patchBody),
+        }
+      );
+
+      if (!patchRes.ok) {
+        const errText = await patchRes.text();
+        throw new Error(`Header PATCH gagal (${patchRes.status}): ${errText}`);
+      }
+
+      return { success: true, url: publicUrl };
+
+    } catch (err) {
+      console.error('[uploadFoto] Supabase error:', err.message);
+      // Fallback ke GAS jika Supabase gagal
+      console.warn('[uploadFoto] Fallback ke GAS...');
+      return API._uploadFotoGas(noTrack, type, base64Data, photoIndex);
+    }
+  },
+
+  // Fallback: upload via Google Apps Script (Drive)
+  _uploadFotoGas(noTrack, type, base64Data, photoIndex = 0) {
     return API.post('uploadFoto', {
       noTrack,
       type,
       base64Data,
-      folderId: CONFIG.DRIVE_FOLDER_ID,
-      photoIndex   // dikirim ke backend agar tahu kolom mana yang diisi
+      folderId   : CONFIG.DRIVE_FOLDER_ID,
+      photoIndex,
     });
-  }
+  },
+
+  // Konversi base64 string → Blob
+  _b64ToBlob(b64, mimeType) {
+    // Hapus prefix "data:image/...;base64," jika ada
+    const pure = b64.includes(',') ? b64.split(',')[1] : b64;
+    const bin  = atob(pure);
+    const arr  = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mimeType });
+  },
 };
 
 // ════════════════════════════════════════════
