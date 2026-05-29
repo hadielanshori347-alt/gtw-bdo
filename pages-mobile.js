@@ -316,6 +316,11 @@ const CreatePage = {
     setTimeout(() => document.getElementById('inpNewIbTuj').focus(), 200);
   },
 
+  // ── Dipanggil dari Scanner — buka modal tambah tujuan IB ──
+  openAddIbTujFromScanner() {
+    CreatePage.openAddIbTujModal();
+  },
+
   closeIbTujModal() { UI.Modal.close('ibTujModal'); },
 
   confirmAddIbTuj() {
@@ -328,6 +333,8 @@ const CreatePage = {
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
     CreatePage._checkForm();
+    // Refresh combobox di scanner jika scanner sedang aktif
+    if (STATE.currentPage === 'pgScan') Scanner.refreshTujCombobox();
   },
 
   _checkIbReady() {
@@ -357,6 +364,11 @@ const CreatePage = {
     setTimeout(() => document.getElementById('inpNewTuj').focus(), 200);
   },
 
+  // ── Dipanggil dari Scanner — buka modal tambah tujuan OB ──
+  openAddTujFromScanner() {
+    CreatePage.openAddTujModal();
+  },
+
   closeTujModal() { UI.Modal.close('tujModal'); },
 
   confirmAddTuj() {
@@ -369,6 +381,27 @@ const CreatePage = {
     CreatePage.renderObTabs();
     CreatePage.renderObScanList();
     CreatePage._checkForm();
+    // Refresh combobox di scanner jika scanner sedang aktif
+    if (STATE.currentPage === 'pgScan') Scanner.refreshTujCombobox();
+  },
+
+  // Scan OB dari detail (rescan)
+  rescanOb() {
+    const svc = UI.Scb.getValue('scbSvc');
+    if (!svc || !STATE.obActiveTuj) { UI.Toast.error('Pilih service & tujuan dulu'); return; }
+    STATE.scanContext = 'create-ob';
+    STATE.scanItems   = [];
+    Scanner.open('create-ob', 'Scan OB', STATE.obActiveTuj);
+  },
+
+  // Scan IB dari detail (rescan)
+  rescanIb() {
+    const svc  = UI.Scb.getValue('scbIbSvc');
+    const from = UI.Scb.getValue('scbIbFrom');
+    if (!svc || !from || !STATE.ibActiveTuj) { UI.Toast.error('Pilih service, from & tujuan dulu'); return; }
+    STATE.scanContext = 'create-ib';
+    STATE.scanItems   = [];
+    Scanner.open('create-ib', 'Scan IB', STATE.ibActiveTuj);
   },
 
   // ── Save — buat tracking dulu, lalu buka scanner ──
