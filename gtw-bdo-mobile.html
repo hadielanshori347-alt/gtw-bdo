@@ -380,12 +380,12 @@
   </div>
   <div class="cam-wrap"><div id="reader"></div></div>
   <div class="cam-err" id="camErr">⚠️ Kamera tidak bisa diakses. Gunakan input manual di bawah.</div>
+
   <!-- Info tujuan aktif — tampil setelah save tracking -->
   <div id="scanTrackInfo" style="display:none;
     background:rgba(255,255,255,.07);
     border-bottom:1px solid rgba(255,255,255,.12);
     padding:9px 16px;
-    display:none;
     flex-shrink:0;">
     <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-head);margin-bottom:3px">Tracking Aktif</div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -395,7 +395,17 @@
       <span style="font-size:11px;color:var(--text3)" id="scanTrackSvc"></span>
     </div>
   </div>
+
+  <!-- ══ COMBOBOX TUJUAN AKTIF DI SCANNER (PATCH BARU) ══ -->
+  <div id="scanTujComboWrap" style="display:none;
+    background:var(--ink2);
+    border-bottom:1px solid var(--border);
+    padding:12px 16px;
+    flex-shrink:0;">
+  </div>
+
   <div class="scroll-content" style="flex:1;overflow-y:auto;padding-bottom:80px">
+    <!-- scanTujTabsWrap dipertahankan tapi disembunyikan saat combobox aktif -->
     <div id="scanTujTabsWrap" style="display:none; margin-bottom:14px; padding:12px 14px; background:var(--surface2); border-radius:var(--r); border:1px solid var(--border);"></div>
     <div class="form-group" style="margin-bottom:12px">
       <label class="form-label">Input Manual AWB</label>
