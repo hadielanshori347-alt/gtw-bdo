@@ -1107,3 +1107,57 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+<style id="scan-tuj-tabs-css">
+/* ─── Scanner — Tujuan Tabs ─── */
+.scan-tuj-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.scan-tuj-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: var(--surface3);
+  color: var(--text2);
+  border: 1.5px solid var(--border);
+  transition: .18s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.scan-tuj-tab:active {
+  opacity: .8;
+  transform: scale(.97);
+}
+.scan-tuj-tab.active {
+  background: rgba(255,255,255,.10);
+  color: #ffffff;
+  border-color: rgba(255,255,255,.35);
+  box-shadow: 0 0 0 2px rgba(255,255,255,.08);
+}
+.scan-tuj-cnt {
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: var(--mono);
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.6;
+}
+.scan-tuj-tab.active .scan-tuj-cnt {
+  background: var(--green);
+  color: #fff;
+}
+</style>
