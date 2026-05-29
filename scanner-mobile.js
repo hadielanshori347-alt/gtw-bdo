@@ -48,7 +48,10 @@ const Scanner = {
       ctxBar.style.display = 'none';
     }
 
-    // Render tab tujuan jika context create-ob atau create-ib
+    // Render combobox tujuan di scanner (untuk mode create-ob / create-ib / detail)
+    Scanner._renderTujCombobox();
+
+    // Render tab tujuan jika context create-ob atau create-ib (TETAP dipertahankan)
     Scanner._renderTujTabs();
 
     Scanner._updateUI();
@@ -56,7 +59,149 @@ const Scanner = {
     Scanner._start();
   },
 
-  // ── Render tab tujuan di atas scan list ──
+  // ══════════════════════════════════════════
+  // COMBOBOX TUJUAN DI SCANNER
+  // ══════════════════════════════════════════
+
+  _renderTujCombobox() {
+    const wrap = document.getElementById('scanTujComboWrap');
+    if (!wrap) return;
+
+    const isOb     = STATE.scanContext === 'create-ob';
+    const isIb     = STATE.scanContext === 'create-ib';
+    const isDetail = STATE.scanContext === 'detail';
+
+    // Untuk mode detail — tampilkan info tracking + tujuan (read-only)
+    if (isDetail) {
+      wrap.style.display = 'block';
+      wrap.innerHTML = `
+        <div class="scan-combo-label">Tujuan Aktif</div>
+        <div class="scan-combo-info">
+          <span class="scan-combo-track">${escH(STATE.currentNoTrack || '—')}</span>
+          <span class="scan-combo-arrow">→</span>
+          <span class="scan-combo-tuj">${escH(STATE.currentTuj || '—')}</span>
+          ${STATE.currentSvc ? `<span class="scan-combo-svc">${escH(STATE.currentSvc)}</span>` : ''}
+        </div>`;
+      return;
+    }
+
+    if (!isOb && !isIb) {
+      wrap.style.display = 'none';
+      return;
+    }
+
+    const map    = isOb ? STATE.obScanMap : STATE.ibScanMap;
+    const active = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
+    const keys   = Object.keys(map || {});
+    const svc    = isOb ? UI.Scb.getValue('scbSvc') : UI.Scb.getValue('scbIbSvc');
+
+    wrap.style.display = 'block';
+
+    if (!keys.length) {
+      wrap.innerHTML = `
+        <div class="scan-combo-label">Tujuan Scan</div>
+        <div class="scan-combo-empty">Belum ada tujuan — tambah dari tombol di bawah</div>`;
+      return;
+    }
+
+    // Render combobox dropdown tujuan
+    const optionsHtml = keys.map(t => {
+      const cnt   = (map[t] || []).length;
+      const isSel = t === active;
+      return `<div class="scan-combo-opt${isSel ? ' active' : ''}" onclick="Scanner._selectTujFromCombo('${escQ(t)}')">
+        <span class="scan-combo-opt-name">${escH(t)}</span>
+        <span class="scan-combo-opt-cnt">${cnt} AWB${STATE.scanItems.length > 0 && isSel ? ' +' + STATE.scanItems.length : ''}</span>
+        ${isSel ? '<span class="scan-combo-opt-check">✓</span>' : ''}
+      </div>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div class="scan-combo-label">Pilih Tujuan${svc ? ` <span class="scan-combo-svc-tag">${escH(svc)}</span>` : ''}</div>
+      <div class="scan-combo-box" id="scanComboBox">
+        <div class="scan-combo-current" onclick="Scanner._toggleComboDropdown()">
+          <span class="scan-combo-current-name">${escH(active || 'Pilih tujuan...')}</span>
+          <span class="scan-combo-current-meta">
+            ${active ? `${(map[active] || []).length + STATE.scanItems.length} AWB` : ''}
+          </span>
+          <span class="scan-combo-chevron" id="scanComboChevron">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </span>
+        </div>
+        <div class="scan-combo-drop" id="scanComboDrop" style="display:none">
+          ${optionsHtml}
+          <div class="scan-combo-opt-add" onclick="Scanner._addTujFromCombo()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            + Tambah Tujuan Lain
+          </div>
+        </div>
+      </div>
+      ${active ? `<div class="scan-combo-hint">AWB scan masuk ke <b>${escH(active)}</b></div>` : ''}`;
+  },
+
+  _toggleComboDropdown() {
+    const drop    = document.getElementById('scanComboDrop');
+    const chevron = document.getElementById('scanComboChevron');
+    if (!drop) return;
+    const isOpen = drop.style.display !== 'none';
+    drop.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+  },
+
+  _selectTujFromCombo(tuj) {
+    // Flush scan items saat ini ke tujuan lama sebelum pindah
+    Scanner._flushToActive();
+
+    const isOb = STATE.scanContext === 'create-ob';
+    if (isOb) {
+      STATE.obActiveTuj = tuj;
+      if (!STATE.obScanMap[tuj]) STATE.obScanMap[tuj] = [];
+    } else {
+      STATE.ibActiveTuj = tuj;
+      if (!STATE.ibScanMap[tuj]) STATE.ibScanMap[tuj] = [];
+    }
+
+    // Reset scanItems untuk tujuan baru
+    STATE.scanItems = [];
+
+    // Tutup dropdown
+    const drop    = document.getElementById('scanComboDrop');
+    const chevron = document.getElementById('scanComboChevron');
+    if (drop)    drop.style.display = 'none';
+    if (chevron) chevron.style.transform = '';
+
+    // Re-render combobox + tabs + list
+    Scanner._renderTujCombobox();
+    Scanner._renderTujTabs();
+    Scanner._updateUI();
+
+    // Sync ke CreatePage tabs juga
+    if (isOb) { CreatePage.renderObTabs(); CreatePage.renderObScanList(); }
+    else       { CreatePage.renderIbTabs(); CreatePage.renderIbScanList(); }
+
+    UI.Toast.success('Scan ke: ' + tuj);
+  },
+
+  _addTujFromCombo() {
+    // Tutup dropdown dulu
+    const drop = document.getElementById('scanComboDrop');
+    if (drop) drop.style.display = 'none';
+
+    // Buka modal tambah tujuan
+    if (STATE.scanContext === 'create-ob') {
+      CreatePage.openAddTujModal();
+    } else {
+      CreatePage.openAddIbTujModal();
+    }
+  },
+
+  // ── Panggil ini setelah tambah tujuan dari modal agar combobox scanner ikut update ──
+  refreshTujCombobox() {
+    Scanner._renderTujCombobox();
+    Scanner._renderTujTabs();
+    Scanner._updateUI();
+  },
+
+  // ── Render tab tujuan di atas scan list (DIPERTAHANKAN) ──
   _renderTujTabs() {
     const wrap = document.getElementById('scanTujTabsWrap');
     if (!wrap) return;
@@ -73,7 +218,14 @@ const Scanner = {
     const active = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
     const keys   = Object.keys(map || {});
 
-    // Selalu tampilkan wrap jika context ob/ib
+    // Sembunyikan wrap tabs jika sudah ada combobox di atas (agar tidak duplikat)
+    // Tetap tampilkan jika tidak ada combobox
+    const hasCombo = !!document.getElementById('scanTujComboWrap');
+    if (hasCombo) {
+      wrap.style.display = 'none';
+      return;
+    }
+
     wrap.style.display = 'block';
 
     if (!keys.length) {
@@ -142,6 +294,7 @@ const Scanner = {
     // Reset scan items untuk tujuan baru (scan items sebelumnya sudah di-flush)
     STATE.scanItems = [];
 
+    Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
     UI.Toast.success('Scan ke: ' + tuj);
@@ -271,13 +424,15 @@ const Scanner = {
     }
 
     STATE.scanItems.unshift(awb);
-    Scanner._renderTujTabs(); // update counter di tab
+    Scanner._renderTujCombobox(); // update counter di combobox
+    Scanner._renderTujTabs();     // update counter di tab (jika ada)
     Scanner._updateUI();
     UI.Toast.success('✓ ' + awb);
   },
 
   removeItem(i) {
     STATE.scanItems.splice(i, 1);
+    Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
   },
@@ -285,6 +440,7 @@ const Scanner = {
   clearAll() {
     if (!confirm('Hapus semua list scan?')) return;
     STATE.scanItems = [];
+    Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
   },
@@ -350,6 +506,7 @@ const Scanner = {
       });
       STATE.scanItems = [];
       // Update UI tanpa keluar dari scanner — kamera tetap jalan
+      Scanner._renderTujCombobox();
       Scanner._renderTujTabs();
       Scanner._updateUI();
       CreatePage.renderObTabs();
@@ -367,6 +524,7 @@ const Scanner = {
       });
       STATE.scanItems = [];
       // Update UI tanpa keluar dari scanner — kamera tetap jalan
+      Scanner._renderTujCombobox();
       Scanner._renderTujTabs();
       Scanner._updateUI();
       CreatePage.renderIbTabs();
