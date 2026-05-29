@@ -126,25 +126,15 @@ const CreatePage = {
     document.getElementById('formIb').style.display        = (t === 'ib') ? '' : 'none';
     document.getElementById('createActions').style.display = 'flex';
 
+    // Render form state tanpa auto-buka scanner
     if (t === 'ob' || t === 'hvs') {
-      // JANGAN reset jika sudah ada nilai sebelumnya — pertahankan state combobox
       CreatePage._checkObForm();
       CreatePage.renderObTabs();
       CreatePage.renderObScanList();
-      // Buka scanner otomatis jika sudah ada tujuan aktif
-      if (STATE.obActiveTuj) {
-        Scanner.open('create-ob', 'Scan AWB', STATE.obActiveTuj);
-      }
     } else {
       CreatePage._checkIbReady();
       CreatePage.renderIbTabs();
       CreatePage.renderIbScanList();
-      // Buka scanner otomatis jika sudah ada tujuan aktif
-      if (STATE.ibActiveTuj) {
-        Scanner.open('create-ib', 'Scan AWB IB', STATE.ibActiveTuj);
-      } else if (UI.Scb.getValue('scbIbFrom') && UI.Scb.getValue('scbIbTuj')) {
-        Scanner.open('create-ib', 'Scan AWB IB', UI.Scb.getValue('scbIbTuj'));
-      }
     }
     CreatePage._checkForm();
   },
@@ -164,10 +154,6 @@ const CreatePage = {
     STATE.obActiveTuj = v;
     CreatePage.renderObTabs();
     CreatePage.renderObScanList();
-    // Buka scanner otomatis setelah pilih tujuan
-    if (v) {
-      setTimeout(() => Scanner.open('create-ob', 'Scan AWB', v), 200);
-    }
     CreatePage._checkForm();
   },
 
@@ -186,8 +172,6 @@ const CreatePage = {
     STATE.obActiveTuj = t;
     CreatePage.renderObTabs();
     CreatePage.renderObScanList();
-    // Buka scanner saat switch tujuan
-    Scanner.open('create-ob', 'Scan AWB', t);
   },
 
   removeObTuj(t) {
@@ -262,8 +246,6 @@ const CreatePage = {
     const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom'));
     if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !hasSvcFrom;
     if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !v;
-    // Buka scanner otomatis setelah pilih tujuan
-    if (v) setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', v), 200);
     CreatePage._checkForm();
   },
 
@@ -282,7 +264,6 @@ const CreatePage = {
     STATE.ibActiveTuj = t;
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
-    Scanner.open('create-ib', 'Scan AWB IB', t);
   },
 
   removeIbTuj(t) {
@@ -347,7 +328,6 @@ const CreatePage = {
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
     CreatePage._checkForm();
-    setTimeout(() => Scanner.open('create-ib', 'Scan AWB IB', tuj), 300);
   },
 
   _checkIbReady() {
@@ -389,11 +369,9 @@ const CreatePage = {
     CreatePage.renderObTabs();
     CreatePage.renderObScanList();
     CreatePage._checkForm();
-    // Buka scanner otomatis setelah tambah tujuan
-    setTimeout(() => Scanner.open('create-ob', 'Scan AWB', tuj), 300);
   },
 
-  // ── Save ──
+  // ── Save — buat tracking dulu, lalu buka scanner ──
   async doSave() {
     if (STATE.createType === 'ob' || STATE.createType === 'hvs') await CreatePage._saveObHvs();
     else await CreatePage._saveIb();
@@ -415,18 +393,26 @@ const CreatePage = {
       const errs = results.filter(r => r.error);
       if (errs.length) { UI.Toast.error('Error: ' + errs[0].error); return; }
       UI.Toast.success(`✅ ${results.length} NO TRACK dibuat`);
+
       STATE.currentNoTrack    = results[0].noTrack || '';
       STATE.currentSvc        = service;
       STATE.currentTuj        = keys[0];
       STATE.currentDetailType = STATE.createType;
       STATE.currentDetailItem = null;
+
+      // Reload list di background
       const listAct = STATE.createType === 'ob' ? 'getObList' : 'getHvsList';
       API.get(listAct).then(r => {
         if (STATE.createType === 'ob') STATE.obData = r.list || [];
         else STATE.hvsData = r.list || [];
         DataLoader.loadScanAwbs();
       }).catch(() => {});
-      Photo.go();
+
+      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
+      STATE.scanContext = 'detail';
+      STATE.scanItems   = [];
+      Scanner.open('detail', STATE.currentNoTrack, '');
+
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
   },
 
@@ -446,13 +432,21 @@ const CreatePage = {
       const errs = results.filter(r => r.error);
       if (errs.length) { UI.Toast.error('Error: ' + errs[0].error); return; }
       UI.Toast.success(`✅ ${results.length} NO TRACK IB dibuat`);
+
       STATE.currentNoTrack    = results[0].noTrack || '';
       STATE.currentSvc        = service;
       STATE.currentTuj        = keys[0];
       STATE.currentDetailType = 'ib';
       STATE.currentDetailItem = null;
+
+      // Reload list di background
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
-      Photo.go();
+
+      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
+      STATE.scanContext = 'detail';
+      STATE.scanItems   = [];
+      Scanner.open('detail', STATE.currentNoTrack, '');
+
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
   },
 
@@ -576,9 +570,6 @@ const DetailPage = {
   },
 
   // Kumpulkan semua URL foto dari item
-  // Backend bisa mengembalikan: foto_url (kolom utama), lalu kolom berikutnya
-  // sebagai foto_url_2 / foto_url2 / foto_url_3 dst tergantung versi backend.
-  // Kita coba semua variant.
   _collectFotoUrls(item) {
     if (!item) return [];
     const urls = [];
