@@ -17,15 +17,21 @@ const UI = {
     }
   },
 
-  // ── Toast ──
+  // ── Toast — posisi atas, tidak blok UI ──
   Toast: {
     _t: null,
     show(msg, type = '') {
       const el = document.getElementById('gtoast');
-      el.innerText = msg; el.className = type;
+      el.innerText = msg;
+      el.className = type;
       el.style.display = 'block';
+      // Trigger animasi slide-down
+      requestAnimationFrame(() => el.classList.add('visible'));
       clearTimeout(UI.Toast._t);
-      UI.Toast._t = setTimeout(() => el.style.display = 'none', CONFIG.TOAST_DURATION);
+      UI.Toast._t = setTimeout(() => {
+        el.classList.remove('visible');
+        setTimeout(() => { el.style.display = 'none'; }, 200);
+      }, CONFIG.TOAST_DURATION);
     },
     success(msg) { UI.Toast.show(msg, 'success'); },
     error(msg)   { UI.Toast.show(msg, 'error');   },
@@ -180,7 +186,6 @@ const FotoFull = {
     const ctr  = document.getElementById('fotoFullCounter');
     const dots = document.getElementById('fotoFullDots');
 
-    // Resolve thumbnail url
     const url = urls[idx] || '';
     img.src = url.includes('thumbnail') ? url : (() => {
       const m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
