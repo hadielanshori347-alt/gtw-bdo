@@ -60,7 +60,7 @@ const Scanner = {
   },
 
   // ══════════════════════════════════════════
-  // COMBOBOX TUJUAN DI SCANNER
+  // TAB TUJUAN DI SCANNER (GANTI COMBOBOX → TAB HORIZONTAL)
   // ══════════════════════════════════════════
 
   _renderTujCombobox() {
@@ -71,13 +71,13 @@ const Scanner = {
     const isIb     = STATE.scanContext === 'create-ib';
     const isDetail = STATE.scanContext === 'detail';
 
-    // ── Context DETAIL: combobox interaktif jika multi-track, info biasa jika single ──
+    // ── Context DETAIL ──
     if (isDetail) {
       const tracks = STATE.createdTracks || [];
       wrap.style.display = 'block';
 
-      // Jika tidak ada multi-track, tampilkan info read-only biasa
       if (!tracks.length) {
+        // Single track — info bar sederhana
         wrap.innerHTML = `
           <div class="scan-combo-label">Tujuan Aktif</div>
           <div class="scan-combo-info">
@@ -89,32 +89,24 @@ const Scanner = {
         return;
       }
 
-      // Multi-track: tampilkan combobox interaktif
-      const optionsHtml = tracks.map(t => {
-        const isSel = t.noTrack === STATE.currentNoTrack;
-        return `<div class="scan-combo-opt${isSel ? ' active' : ''}" onclick="Scanner._selectDetailTrack('${escQ(t.noTrack)}','${escQ(t.tujuan)}')">
-          <span class="scan-combo-opt-name">${escH(t.tujuan)}</span>
-          <span class="scan-combo-opt-cnt scan-combo-opt-notrack">${escH(t.noTrack)}</span>
-          ${isSel ? '<span class="scan-combo-opt-check">✓</span>' : ''}
+      // Multi-track — tab horizontal
+      const svc = STATE.currentSvc || '';
+      const tabsHtml = tracks.map(t => {
+        const isActive = t.noTrack === STATE.currentNoTrack;
+        return `<div class="scan-tuj-tab${isActive ? ' active' : ''}"
+          onclick="Scanner._selectDetailTrack('${escQ(t.noTrack)}','${escQ(t.tujuan)}')">
+          <span>${escH(t.tujuan)}</span>
         </div>`;
       }).join('');
 
-      const activeTuj = STATE.currentTuj || '—';
       wrap.innerHTML = `
-        <div class="scan-combo-label">Pilih Tujuan${STATE.currentSvc ? ` <span class="scan-combo-svc-tag">${escH(STATE.currentSvc)}</span>` : ''}</div>
-        <div class="scan-combo-box" id="scanComboBox">
-          <div class="scan-combo-current" onclick="Scanner._toggleComboDropdown()">
-            <span class="scan-combo-current-name">${escH(activeTuj)}</span>
-            <span class="scan-combo-current-meta" style="font-size:10px;color:var(--text3);font-family:var(--mono)">${escH(STATE.currentNoTrack || '')}</span>
-            <span class="scan-combo-chevron" id="scanComboChevron">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
-          </div>
-          <div class="scan-combo-drop" id="scanComboDrop" style="display:none">
-            ${optionsHtml}
-          </div>
+        <div class="scan-combo-label" style="margin-bottom:8px">
+          Pilih Tujuan${svc ? ` <span class="scan-combo-svc-tag">${escH(svc)}</span>` : ''}
         </div>
-        <div class="scan-combo-hint">AWB scan masuk ke <b>${escH(activeTuj)}</b></div>`;
+        <div class="scan-tuj-tabs" style="margin-bottom:6px">${tabsHtml}</div>
+        <div style="font-size:11px;color:var(--text3)">
+          AWB scan masuk ke <b style="color:var(--gold2)">${escH(STATE.currentTuj || '—')}</b>
+        </div>`;
       return;
     }
 
@@ -137,38 +129,38 @@ const Scanner = {
       return;
     }
 
-    // Render combobox dropdown tujuan
-    const optionsHtml = keys.map(t => {
-      const cnt   = (map[t] || []).length;
-      const isSel = t === active;
-      return `<div class="scan-combo-opt${isSel ? ' active' : ''}" onclick="Scanner._selectTujFromCombo('${escQ(t)}')">
-        <span class="scan-combo-opt-name">${escH(t)}</span>
-        <span class="scan-combo-opt-cnt">${cnt} AWB${STATE.scanItems.length > 0 && isSel ? ' +' + STATE.scanItems.length : ''}</span>
-        ${isSel ? '<span class="scan-combo-opt-check">✓</span>' : ''}
+    // Tab horizontal — klik langsung pindah tujuan tanpa dropdown
+    const tabsHtml = keys.map(t => {
+      const cnt    = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
+      const isActive = t === active;
+      return `<div class="scan-tuj-tab${isActive ? ' active' : ''}"
+        onclick="Scanner._selectTujFromCombo('${escQ(t)}')">
+        <span>${escH(t)}</span>
+        <span class="scan-tuj-cnt">${cnt}</span>
       </div>`;
     }).join('');
 
     wrap.innerHTML = `
-      <div class="scan-combo-label">Pilih Tujuan${svc ? ` <span class="scan-combo-svc-tag">${escH(svc)}</span>` : ''}</div>
-      <div class="scan-combo-box" id="scanComboBox">
-        <div class="scan-combo-current" onclick="Scanner._toggleComboDropdown()">
-          <span class="scan-combo-current-name">${escH(active || 'Pilih tujuan...')}</span>
-          <span class="scan-combo-current-meta">
-            ${active ? `${(map[active] || []).length + STATE.scanItems.length} AWB` : ''}
-          </span>
-          <span class="scan-combo-chevron" id="scanComboChevron">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-        </div>
-        <div class="scan-combo-drop" id="scanComboDrop" style="display:none">
-          ${optionsHtml}
-          <div class="scan-combo-opt-add" onclick="Scanner._addTujFromCombo()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            + Tambah Tujuan Lain
-          </div>
-        </div>
+      <div class="scan-combo-label" style="margin-bottom:8px">
+        Pilih Tujuan${svc ? ` <span class="scan-combo-svc-tag">${escH(svc)}</span>` : ''}
       </div>
-      ${active ? `<div class="scan-combo-hint">AWB scan masuk ke <b>${escH(active)}</b></div>` : ''}`;
+      <div class="scan-tuj-tabs" style="flex-wrap:wrap;gap:8px;margin-bottom:6px">${tabsHtml}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        ${active ? `<div style="font-size:11px;color:var(--text3)">AWB scan masuk ke <b style="color:var(--gold2)">${escH(active)}</b></div>` : '<div></div>'}
+        <button style="
+          display:inline-flex;align-items:center;gap:5px;
+          background:rgba(255,255,255,.07);color:#e8e8e8;
+          padding:5px 12px;border-radius:8px;
+          font-size:10px;font-weight:700;
+          cursor:pointer;white-space:nowrap;
+          border:1px solid rgba(255,255,255,.18);
+          text-transform:uppercase;letter-spacing:.3px;
+          font-family:var(--font-head);"
+          onclick="${isOb ? 'CreatePage.openAddTujFromScanner()' : 'CreatePage.openAddIbTujFromScanner()'}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Tujuan
+        </button>
+      </div>`;
   },
 
   _toggleComboDropdown() {
@@ -196,13 +188,13 @@ const Scanner = {
     // Reset scanItems untuk tujuan baru
     STATE.scanItems = [];
 
-    // Tutup dropdown
+    // Tutup dropdown (legacy — tidak ada lagi tapi dibiarkan aman)
     const drop    = document.getElementById('scanComboDrop');
     const chevron = document.getElementById('scanComboChevron');
     if (drop)    drop.style.display = 'none';
     if (chevron) chevron.style.transform = '';
 
-    // Re-render combobox + tabs + list
+    // Re-render tab + list
     Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
@@ -215,7 +207,7 @@ const Scanner = {
   },
 
   _addTujFromCombo() {
-    // Tutup dropdown dulu
+    // Tutup dropdown dulu (legacy)
     const drop = document.getElementById('scanComboDrop');
     if (drop) drop.style.display = 'none';
 
@@ -229,12 +221,6 @@ const Scanner = {
 
   // ── BARU: Pilih tujuan/track di mode detail ──
   _selectDetailTrack(noTrack, tujuan) {
-    // Tutup dropdown
-    const drop    = document.getElementById('scanComboDrop');
-    const chevron = document.getElementById('scanComboChevron');
-    if (drop)    drop.style.display = 'none';
-    if (chevron) chevron.style.transform = '';
-
     // Jika ada AWB yang belum disimpan, konfirmasi dulu
     if (STATE.scanItems.length) {
       const ok = confirm(`Ada ${STATE.scanItems.length} AWB belum disimpan.\nPindah tujuan dan buang AWB ini?`);
@@ -246,14 +232,14 @@ const Scanner = {
     STATE.currentNoTrack = noTrack;
     STATE.currentTuj     = tujuan;
 
-    // Re-render combobox & update UI
+    // Re-render tab & update UI
     Scanner._renderTujCombobox();
     Scanner._updateUI();
 
     UI.Toast.success('Scan ke: ' + tujuan);
   },
 
-  // ── Panggil ini setelah tambah tujuan dari modal agar combobox scanner ikut update ──
+  // ── Panggil ini setelah tambah tujuan dari modal agar tab scanner ikut update ──
   refreshTujCombobox() {
     Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
@@ -278,7 +264,6 @@ const Scanner = {
     const keys   = Object.keys(map || {});
 
     // Sembunyikan wrap tabs jika sudah ada combobox di atas (agar tidak duplikat)
-    // Tetap tampilkan jika tidak ada combobox
     const hasCombo = !!document.getElementById('scanTujComboWrap');
     if (hasCombo) {
       wrap.style.display = 'none';
@@ -483,7 +468,7 @@ const Scanner = {
     }
 
     STATE.scanItems.unshift(awb);
-    Scanner._renderTujCombobox(); // update counter di combobox
+    Scanner._renderTujCombobox(); // update counter di tab
     Scanner._renderTujTabs();     // update counter di tab (jika ada)
     Scanner._updateUI();
     UI.Toast.success('✓ ' + awb);
@@ -604,7 +589,7 @@ const Scanner = {
       if (res.error) { UI.Toast.error('Gagal: ' + res.error); return; }
       UI.Toast.success(`✅ ${res.added} AWB disimpan`);
       STATE.scanItems = [];
-      // Re-render combobox agar counter ter-update, TIDAK keluar dari scanner
+      // Re-render tab agar counter ter-update, TIDAK keluar dari scanner
       Scanner._renderTujCombobox();
       Scanner._updateUI();
       // Reload data detail di background
