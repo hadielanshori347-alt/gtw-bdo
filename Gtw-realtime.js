@@ -1,39 +1,18 @@
-/* =============================================================
-   GTW BDO — gtw-realtime.js v3.0
-   Supabase Realtime WebSocket (instant) + Polling fallback.
-
-   PERUBAHAN v3.0 vs v2.0:
-   • Supabase Realtime WebSocket → update INSTAN tanpa polling
-   • Subscribe tracking_header + tracking_scan sekaligus
-   • Polling tetap jalan sebagai fallback (5s aktif / 60s background)
-   • Jika Supabase WS disconnect → fallback ke polling otomatis
-   • Polling PAUSE saat WS aktif & connected (hemat bandwidth)
-   • Reconnect otomatis dengan exponential backoff
-   • Indikator: WS = hijau pulsing, Polling = biru, Error = merah
-
-   CARA PASANG (tidak ada yang berubah dari v2.0):
-
-   ── index.html (desktop) ──────────────────────────────────
      <script src="gtw-realtime.js"></script>
      <script>GtwRealtime.init({ platform: 'desktop' });</script>
 
-   ── Outbound-Monitor.html (React) ─────────────────────────
      <script src="gtw-realtime.js"></script>
      GtwRealtime.init({ platform: 'monitor', monitorRefresh: loadAll });
      return () => GtwRealtime.stop();
 
-   ── gtw-bdo-mobile.html (mobile) ─────────────────────────
      <script src="gtw-realtime.js"></script>
      <script>GtwRealtime.init({ platform: 'mobile' });</script>
 
-   ── Setelah save berhasil ─────────────────────────────────
      if (window.GtwRealtime) GtwRealtime.refresh();
-   ============================================================ */
 
 (function (global) {
   'use strict';
 
-  /* ── Konfigurasi ────────────────────────────────────────── */
   var CFG = {
     platform        : 'desktop',
     intervalActive  : 5000,    // polling fallback: 5 detik aktif
@@ -43,11 +22,9 @@
     debug           : false,
   };
 
-  /* ── Supabase credentials (dibaca dari CONFIG global) ───── */
   var SB_URL = '';
   var SB_KEY = '';
 
-  /* ── Internal state ─────────────────────────────────────── */
   var _timer          = null;
   var _countdownTimer = null;
   var _hashOb         = 0;
@@ -62,7 +39,6 @@
   var _nextPollAt     = null;
   var _initialized    = false;
 
-  /* WebSocket Realtime */
   var _ws             = null;
   var _wsConnected    = false;
   var _wsRetry        = 0;
@@ -74,7 +50,6 @@
   var COOLDOWN_MS     = 60000;
   var FETCH_TIMEOUT   = 8000;
 
-  /* ── Util ───────────────────────────────────────────────── */
   function log() {
     if (!CFG.debug) return;
     var a = Array.prototype.slice.call(arguments);
@@ -135,7 +110,6 @@
     return fetchWithTimeout(url.toString(), FETCH_TIMEOUT);
   }
 
-  /* ── Deteksi form terbuka ───────────────────────────────── */
   function _isFormOpen() {
     if (CFG.platform === 'desktop') {
       if (document.querySelectorAll('.form-panel-body.open').length  > 0) return true;
@@ -150,7 +124,6 @@
     return false;
   }
 
-  /* ── Apply update ke masing-masing platform ─────────────── */
   function _applyUpdate(ob, hvs, ib) {
     if (CFG.platform === 'monitor') {
       if (typeof CFG.monitorRefresh === 'function') CFG.monitorRefresh();
@@ -187,7 +160,6 @@
     }
   }
 
-  /* ── Polling (fallback) ─────────────────────────────────── */
   function _doPoll() {
     if (_isFetching)    { log('masih fetching — skip'); return; }
     if (_cooldownTimer) { log('cooldown aktif — skip'); return; }
@@ -274,13 +246,6 @@
     }
   }
 
-  /* ── Supabase Realtime WebSocket ────────────────────────── */
-  /*
-     Supabase Realtime v2 menggunakan Phoenix WebSocket protocol.
-     Kita subscribe ke channel postgres_changes untuk kedua tabel.
-     Tidak butuh library — cukup raw WebSocket.
-  */
-
   function _wsUrl() {
     if (!SB_URL || !SB_KEY) return '';
     // https://xyz.supabase.co → wss://xyz.supabase.co/realtime/v1/websocket
@@ -339,8 +304,6 @@
   }
 
   function _wsJoin() {
-    /* Join channel realtime:*  ─ subscribe INSERT/UPDATE/DELETE
-       pada tracking_header dan tracking_scan */
     var ref = String(_wsRef++);
     var joinMsg = JSON.stringify({
       topic   : 'realtime:*',
@@ -365,13 +328,11 @@
     var msg;
     try { msg = JSON.parse(raw); } catch(e) { return; }
 
-    /* Phoenix heartbeat reply */
     if (msg.event === 'phx_reply' && msg.payload && msg.payload.status === 'ok') {
       log('WS: phx_reply ok ref=' + msg.ref);
       return;
     }
 
-    /* Postgres change event */
     if (msg.event === 'postgres_changes') {
       var payload = msg.payload || {};
       var tbl = (payload.table || (payload.data && payload.data.table) || '');
@@ -381,21 +342,18 @@
       return;
     }
 
-    /* system event */
     if (msg.event === 'system') {
       log('WS: system:', msg.payload && msg.payload.message);
       return;
     }
   }
 
-  /* Debounce: kalau banyak perubahan sekaligus, cukup 1 reload */
   var _wsChangeDebounce = null;
   function _wsOnChange() {
     if (_wsChangeDebounce) clearTimeout(_wsChangeDebounce);
     _wsChangeDebounce = setTimeout(function() {
       _wsChangeDebounce = null;
       log('WS: change detected → reload data');
-      /* Hentikan polling yang sedang dijadwalkan, lalu poll sekarang */
       _stopPollTimer();
       _doPoll();
     }, 300); // 300ms debounce
@@ -437,12 +395,11 @@
     } else if (state === 'connecting') {
       _setIndicator('fetching');
     } else {
-      /* disconnected — tunjukkan polling mode */
+    
       _setIndicator('live');
     }
   }
 
-  /* ── BroadcastChannel (multi-tab) ───────────────────────── */
   function _initBroadcast() {
     if (typeof BroadcastChannel === 'undefined') return;
     try {
@@ -467,14 +424,12 @@
     } catch(e) {}
   }
 
-  /* ── Event listeners ────────────────────────────────────── */
   function _bindAutoEvents() {
     document.addEventListener('visibilitychange', function() {
       if (!document.hidden) {
         log('tab aktif kembali → poll segera');
         if (!_wsConnected) _setIndicator('live');
         _doPoll();
-        /* Reconnect WS jika terputus saat background */
         if (!_wsConnected && !_wsRetryTimer) _wsConnect();
       } else {
         log('tab background → perpanjang interval');
@@ -512,7 +467,6 @@
     });
   }
 
-  /* ── Indikator LIVE ─────────────────────────────────────── */
   function _injectCSS() {
     if (document.getElementById('gtw-rt3-css')) return;
     var s = document.createElement('style');
@@ -537,17 +491,17 @@
         'background:#22c55e;flex-shrink:0;',
         'transition:background .3s;',
       '}',
-      /* WS live — hijau pulsing */
+     
       '#gtw-rt3.s-ws-live .rt3-dot{',
         'background:#22c55e;',
         'animation:rt3pulse 2s ease-in-out infinite;',
       '}',
-      /* Polling live — biru pulsing */
+     
       '#gtw-rt3.s-live .rt3-dot{',
         'background:#60a5fa;',
         'animation:rt3pulse2 3s ease-in-out infinite;',
       '}',
-      /* Fetching — biru spin */
+     
       '#gtw-rt3.s-fetching .rt3-dot{background:#60a5fa;animation:rt3spin 1s linear infinite;}',
       '#gtw-rt3.s-error .rt3-dot{background:#ef4444;animation:none;}',
       '#gtw-rt3.s-offline .rt3-dot{background:#f59e0b;animation:none;}',
@@ -656,11 +610,8 @@
     el.textContent    = sec + 's';
   }
 
-  /* ── PUBLIC API ─────────────────────────────────────────── */
+ 
   global.GtwRealtime = {
-    /**
-     * Init. Parameter sama dengan v2.0, tidak ada breaking change.
-     */
     init: function(options) {
       if (_initialized) return;
       options = options || {};
@@ -673,7 +624,7 @@
         _initBroadcast();
         _bindAutoEvents();
 
-        /* Poll pertama setelah 1.5 detik */
+       
         setTimeout(function() {
           _doPoll();
           _startPollTimer();
@@ -698,7 +649,6 @@
       }
     },
 
-    /** Hentikan semua */
     stop: function() {
       _stopPollTimer();
       if (_countdownTimer)  { clearInterval(_countdownTimer);  _countdownTimer  = null; }
@@ -713,14 +663,12 @@
       log('dihentikan');
     },
 
-    /** Manual refresh (panggil setelah save berhasil) */
     refresh: function() {
       log('manual refresh');
       _stopPollTimer();
       _doPoll();
     },
 
-    /** Status untuk debugging */
     status: function() {
       return {
         wsConnected  : _wsConnected,
