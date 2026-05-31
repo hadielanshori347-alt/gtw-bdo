@@ -1398,24 +1398,17 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 .dash-card {
   border-radius: 20px;
-  padding: 24px 16px 20px;
+  padding: 20px 12px 16px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center;
   cursor: pointer;
   border: 1px solid var(--border2);
   transition: .18s;
-  min-height: 140px;
+  aspect-ratio: 1 / 1;   /* ← kotak sempurna */
   position: relative; overflow: hidden;
 }
-.dash-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  opacity: .06;
-  transition: opacity .18s;
-}
-.dash-card:active { transform: scale(.96); opacity: .9; }
-.dash-card:active::before { opacity: .12; }
+.dash-card:active { transform: scale(.93); opacity: .85; }
 
 .dash-scan   { background: var(--blue-l);   border-color: rgba(59,130,246,.3); }
 .dash-search { background: var(--purple-l); border-color: rgba(139,92,246,.3); }
@@ -1427,55 +1420,16 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .dash-harian .dash-icon { color: var(--orange);  }
 .dash-semua  .dash-icon { color: var(--green);   }
 
-.dash-icon { margin-bottom: 12px; }
+.dash-icon { margin-bottom: 10px; }
 .dash-label {
-  font-size: 13px; font-weight: 800;
+  font-size: 11px; font-weight: 800;
   font-family: var(--font-head);
   letter-spacing: .5px;
   text-transform: uppercase;
   color: var(--text);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 .dash-sub {
   font-size: 10px; color: var(--text3);
-  font-weight: 500; letter-spacing: .3px;
-}
-
-/* ─── Scan Menu Modal Buttons ─── */
-.scan-menu-btn {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px; border-radius: 14px;
-  border: 1.5px solid var(--border2);
-  background: var(--surface2);
-  cursor: pointer; transition: .18s;
-  width: 100%; text-align: left;
-}
-.scan-menu-btn:active { transform: scale(.98); opacity: .85; }
-.scan-menu-ob  { border-color: rgba(59,130,246,.35);  background: var(--blue-l); }
-.scan-menu-hvs { border-color: rgba(139,92,246,.35);  background: var(--purple-l); }
-.scan-menu-ib  { border-color: rgba(16,185,129,.35);  background: var(--green-l); }
-.smb-icon { font-size: 28px; flex-shrink: 0; }
-.smb-title {
-  font-size: 14px; font-weight: 800;
-  font-family: var(--font-head);
-  color: var(--text); letter-spacing: .5px;
-  text-transform: uppercase; margin-bottom: 3px;
-}
-.smb-sub { font-size: 11px; color: var(--text3); }
-
-/* ─── Data List Modal Tabs ─── */
-.dl-tab {
-  flex: 1; text-align: center;
-  padding: 12px 0;
-  font-size: 11px; font-weight: 700;
-  color: var(--text3);
-  border-bottom: 2px solid transparent;
-  cursor: pointer; transition: .18s;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-family: var(--font-head);
-}
-.dl-tab.active {
-  color: #ffffff;
-  border-bottom-color: #ffffff;
+  font-weight: 500; letter-spacing: .2px;
 }
