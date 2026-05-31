@@ -605,6 +605,50 @@
   <div class="foto-full-dots" id="fotoFullDots"></div>
 </div>
 
+<!-- ═══ SCAN MENU MODAL ═══ -->
+<div class="modal-ov" id="scanMenuModal">
+  <div class="modal-sheet">
+    <div class="modal-hdr">
+      <div class="modal-title">Pilih Tipe Scan</div>
+      <button class="modal-close" onclick="document.getElementById('scanMenuModal').classList.remove('open')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+      <button class="scan-menu-btn scan-menu-ob" onclick="HomePage.selectScanType('ob')">
+        <span class="smb-icon">🚛</span>
+        <div><div class="smb-title">OB BDO</div><div class="smb-sub">Outbound reguler</div></div>
+      </button>
+      <button class="scan-menu-btn scan-menu-hvs" onclick="HomePage.selectScanType('hvs')">
+        <span class="smb-icon">📦</span>
+        <div><div class="smb-title">OB HVS</div><div class="smb-sub">Outbound high value</div></div>
+      </button>
+      <button class="scan-menu-btn scan-menu-ib" onclick="HomePage.selectScanType('ib')">
+        <span class="smb-icon">📥</span>
+        <div><div class="smb-title">IB HVS</div><div class="smb-sub">Inbound high value</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DATA LIST MODAL ═══ -->
+<div class="modal-ov" id="dataListModal" style="align-items:stretch">
+  <div class="modal-sheet" style="max-height:92vh;border-radius:20px 20px 0 0">
+    <div class="modal-hdr">
+      <div class="modal-title" id="dataListTitle">Data</div>
+      <button class="modal-close" onclick="document.getElementById('dataListModal').classList.remove('open')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0">
+      <div class="dl-tab active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
+      <div class="dl-tab"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
+      <div class="dl-tab"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
+    </div>
+    <div class="modal-body" style="padding:12px" id="dataListBody"></div>
+  </div>
+</div>
+
 <!-- Scripts -->
 <script src="config-mobile.js"></script>
 <script src="api-mobile.js"></script>
