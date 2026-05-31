@@ -1,15 +1,3 @@
-     <script src="gtw-realtime.js"></script>
-     <script>GtwRealtime.init({ platform: 'desktop' });</script>
-
-     <script src="gtw-realtime.js"></script>
-     GtwRealtime.init({ platform: 'monitor', monitorRefresh: loadAll });
-     return () => GtwRealtime.stop();
-
-     <script src="gtw-realtime.js"></script>
-     <script>GtwRealtime.init({ platform: 'mobile' });</script>
-
-     if (window.GtwRealtime) GtwRealtime.refresh();
-
 (function (global) {
   'use strict';
 
@@ -44,7 +32,7 @@
   var _wsRetry        = 0;
   var _wsRetryTimer   = null;
   var _wsHeartbeat    = null;
-  var _wsRef          = null; // ref unik join
+  var _wsRef          = null;
 
   var MAX_FAIL        = 5;
   var COOLDOWN_MS     = 60000;
@@ -71,17 +59,18 @@
 
   function resolveSupabase() {
     if (typeof CONFIG !== 'undefined') {
-      SB_URL = CONFIG.SUPABASE_URL || '';
-      SB_KEY = CONFIG.SUPABASE_KEY || '';
+      // FIX: trim() untuk antisipasi trailing space di config
+      SB_URL = (CONFIG.SUPABASE_URL || '').trim();
+      SB_KEY = (CONFIG.SUPABASE_KEY || '').trim();
     }
     // fallback: coba ambil dari meta tag jika ada
     if (!SB_URL) {
       var m = document.querySelector('meta[name="supabase-url"]');
-      if (m) SB_URL = m.content;
+      if (m) SB_URL = (m.content || '').trim();
     }
     if (!SB_KEY) {
       var k = document.querySelector('meta[name="supabase-key"]');
-      if (k) SB_KEY = k.content;
+      if (k) SB_KEY = (k.content || '').trim();
     }
   }
 
@@ -119,7 +108,9 @@
     if (CFG.platform === 'mobile') {
       if (typeof STATE === 'undefined') return false;
       var pg = STATE.currentPage || '';
-      return (pg === 'pgCreate' || pg === 'pgScan' || pg === 'pgPhoto');
+      // FIX: hanya skip saat pgScan & pgPhoto — pgCreate tetap di-poll
+      // agar data baru dari web/desktop langsung masuk tanpa harus refresh manual
+      return (pg === 'pgScan' || pg === 'pgPhoto');
     }
     return false;
   }
@@ -248,7 +239,6 @@
 
   function _wsUrl() {
     if (!SB_URL || !SB_KEY) return '';
-    // https://xyz.supabase.co → wss://xyz.supabase.co/realtime/v1/websocket
     var base = SB_URL.replace(/^http/, 'ws');
     return base + '/realtime/v1/websocket?apikey=' + SB_KEY + '&vsn=1.0.0';
   }
@@ -256,7 +246,7 @@
   var _WS_RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
 
   function _wsConnect() {
-    if (_ws && (_ws.readyState === 0 || _ws.readyState === 1)) return; // already open/connecting
+    if (_ws && (_ws.readyState === 0 || _ws.readyState === 1)) return;
     var url = _wsUrl();
     if (!url) { log('WS: Supabase URL/KEY tidak ada — skip'); return; }
 
@@ -279,7 +269,6 @@
       _setIndicatorWs('connected');
       _wsJoin();
       _wsStartHeartbeat();
-      /* Saat WS aktif: perpanjang interval polling */
       _scheduleNext();
     };
 
@@ -289,13 +278,11 @@
       _wsStopHeartbeat();
       _setIndicatorWs('disconnected');
       _wsScheduleReconnect();
-      /* Fallback ke polling cepat saat WS mati */
       _scheduleNext(CFG.intervalActive);
     };
 
     _ws.onerror = function(e) {
       log('WS: error', e);
-      /* onclose akan dipanggil setelah onerror */
     };
 
     _ws.onmessage = function(ev) {
@@ -337,7 +324,6 @@
       var payload = msg.payload || {};
       var tbl = (payload.table || (payload.data && payload.data.table) || '');
       log('WS: postgres_changes → table=' + tbl, 'event=', payload.type || payload.eventType);
-      /* Trigger reload data dari GAS (tetap via GAS agar cache invalidate) */
       _wsOnChange();
       return;
     }
@@ -356,7 +342,7 @@
       log('WS: change detected → reload data');
       _stopPollTimer();
       _doPoll();
-    }, 300); // 300ms debounce
+    }, 300);
   }
 
   function _wsSend(data) {
@@ -371,7 +357,7 @@
       var ref = String(_wsRef++);
       _wsSend(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: ref }));
       log('WS: heartbeat sent');
-    }, 25000); // tiap 25 detik (Supabase timeout 60 detik)
+    }, 25000);
   }
 
   function _wsStopHeartbeat() {
@@ -395,7 +381,6 @@
     } else if (state === 'connecting') {
       _setIndicator('fetching');
     } else {
-    
       _setIndicator('live');
     }
   }
@@ -491,17 +476,14 @@
         'background:#22c55e;flex-shrink:0;',
         'transition:background .3s;',
       '}',
-     
       '#gtw-rt3.s-ws-live .rt3-dot{',
         'background:#22c55e;',
         'animation:rt3pulse 2s ease-in-out infinite;',
       '}',
-     
       '#gtw-rt3.s-live .rt3-dot{',
         'background:#60a5fa;',
         'animation:rt3pulse2 3s ease-in-out infinite;',
       '}',
-     
       '#gtw-rt3.s-fetching .rt3-dot{background:#60a5fa;animation:rt3spin 1s linear infinite;}',
       '#gtw-rt3.s-error .rt3-dot{background:#ef4444;animation:none;}',
       '#gtw-rt3.s-offline .rt3-dot{background:#f59e0b;animation:none;}',
@@ -610,7 +592,6 @@
     el.textContent    = sec + 's';
   }
 
- 
   global.GtwRealtime = {
     init: function(options) {
       if (_initialized) return;
@@ -624,11 +605,9 @@
         _initBroadcast();
         _bindAutoEvents();
 
-       
         setTimeout(function() {
           _doPoll();
           _startPollTimer();
-          /* Init WebSocket Realtime */
           if (SB_URL && SB_KEY) {
             _wsConnect();
           } else {
