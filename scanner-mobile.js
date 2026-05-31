@@ -425,10 +425,13 @@ const Scanner = {
 
   _onSuccess(text) {
     if (Scanner._paused) return;
+    const now = Date.now();
+    if (Scanner._lastScan && now - Scanner._lastScan < 1500) return;
+    Scanner._lastScan = now;
     Scanner._paused = true;
-    setTimeout(() => { Scanner._paused = false; }, 300);
-    Scanner.addItem(text);
+    setTimeout(() => { Scanner._paused = false; }, 1500);
     Scanner.beep();
+    Scanner.addItem(text);
   },
 
   addItem(awb) {
