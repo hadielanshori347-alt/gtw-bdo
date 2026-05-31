@@ -1002,8 +1002,8 @@ function App() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  async function loadAll() {
-    setLoadingOb(true); setLoadingHvs(true); setLoadingIb(true);
+  async function loadAll(silent = false) {
+    if (!silent) { setLoadingOb(true); setLoadingHvs(true); setLoadingIb(true); }
     const [md, ob] = await Promise.all([gasGet("getMasterData"), gasGet("getObList")]);
     const combined = [...(md.obIncharges || []), ...(md.ibIncharges || [])].filter((v, i, a) => a.indexOf(v) === i).sort();
     setAllIncharges(combined);
@@ -1015,14 +1015,14 @@ function App() {
 
   async function handleRefresh() {
     setRefreshing(true);
-    await loadAll();
+    await loadAll(false);
     setRefreshing(false);
     showToast("Data diperbarui ✓");
   }
 
   React.useEffect(() => {
-    loadAll();
-    GtwRealtime.init({ platform: 'monitor', monitorRefresh: loadAll });
+    loadAll(false);
+    GtwRealtime.init({ platform: 'monitor', monitorRefresh: () => loadAll(true) });
     return () => GtwRealtime.stop();
   }, []);
 
