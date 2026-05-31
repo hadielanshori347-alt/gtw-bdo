@@ -61,6 +61,7 @@ Scanner.open = function(context, title, ctxLabel) {
     STATE.scanItems = [];
     document.getElementById('scanTitle').innerText = title || STATE.currentNoTrack;
     document.getElementById('scanCtxBar').style.display = 'none';
+    Scanner._renderTujCombobox();
     Scanner._updateUI();
     UI.Page.show('pgScan');
     Scanner._start();
