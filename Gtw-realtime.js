@@ -59,11 +59,9 @@
 
   function resolveSupabase() {
     if (typeof CONFIG !== 'undefined') {
-      // FIX: trim() untuk antisipasi trailing space di config
       SB_URL = (CONFIG.SUPABASE_URL || '').trim();
       SB_KEY = (CONFIG.SUPABASE_KEY || '').trim();
     }
-    // fallback: coba ambil dari meta tag jika ada
     if (!SB_URL) {
       var m = document.querySelector('meta[name="supabase-url"]');
       if (m) SB_URL = (m.content || '').trim();
@@ -108,8 +106,6 @@
     if (CFG.platform === 'mobile') {
       if (typeof STATE === 'undefined') return false;
       var pg = STATE.currentPage || '';
-      // FIX: hanya skip saat pgScan & pgPhoto — pgCreate tetap di-poll
-      // agar data baru dari web/desktop langsung masuk tanpa harus refresh manual
       return (pg === 'pgScan' || pg === 'pgPhoto');
     }
     return false;
@@ -214,7 +210,6 @@
   function _scheduleNext(overrideMs) {
     if (_timer) { clearTimeout(_timer); _timer = null; }
     if (_cooldownTimer) return;
-    /* Saat WS aktif: poll lebih jarang (hanya sebagai safety net) */
     var iv = overrideMs !== undefined
       ? overrideMs
       : (_wsConnected
@@ -452,126 +447,117 @@
     });
   }
 
+  // ── DIUBAH: tidak buat elemen baru, pakai dot yang sudah ada di topbar ──
   function _injectCSS() {
     if (document.getElementById('gtw-rt3-css')) return;
     var s = document.createElement('style');
     s.id  = 'gtw-rt3-css';
     s.textContent = [
-      '#gtw-rt3{',
-        'position:fixed;bottom:14px;right:14px;',
-        'display:flex;align-items:center;gap:7px;',
-        'background:rgba(10,15,28,.88);',
-        'border:1px solid rgba(255,255,255,.1);',
-        'border-radius:999px;',
-        'padding:6px 13px 6px 10px;',
-        'font:600 11px/1 "DM Sans","Plus Jakarta Sans","Segoe UI",sans-serif;',
-        'color:#94a3b8;',
-        'box-shadow:0 4px 20px rgba(0,0,0,.4);',
-        'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
-        'z-index:99999;user-select:none;cursor:default;',
-        'transition:border-color .4s,box-shadow .4s;',
-      '}',
-      '#gtw-rt3 .rt3-dot{',
-        'width:8px;height:8px;border-radius:50%;',
-        'background:#22c55e;flex-shrink:0;',
-        'transition:background .3s;',
-      '}',
-      '#gtw-rt3.s-ws-live .rt3-dot{',
-        'background:#22c55e;',
-        'animation:rt3pulse 2s ease-in-out infinite;',
-      '}',
-      '#gtw-rt3.s-live .rt3-dot{',
-        'background:#60a5fa;',
-        'animation:rt3pulse2 3s ease-in-out infinite;',
-      '}',
-      '#gtw-rt3.s-fetching .rt3-dot{background:#60a5fa;animation:rt3spin 1s linear infinite;}',
-      '#gtw-rt3.s-error .rt3-dot{background:#ef4444;animation:none;}',
-      '#gtw-rt3.s-offline .rt3-dot{background:#f59e0b;animation:none;}',
-      '#gtw-rt3.s-standby .rt3-dot{background:#64748b;animation:none;}',
-      '#gtw-rt3 .rt3-lbl{color:#e2e8f0;font-size:11px;font-weight:700;letter-spacing:.3px;}',
-      '#gtw-rt3 .rt3-time{color:#475569;font-size:10px;margin-left:1px;font-variant-numeric:tabular-nums;}',
-      '#gtw-rt3 .rt3-cd{',
-        'color:#1e40af;font-size:9px;font-weight:700;',
-        'background:rgba(96,165,250,.12);',
-        'border-radius:4px;padding:1px 5px;',
-        'font-variant-numeric:tabular-nums;letter-spacing:.3px;',
-      '}',
-      '#gtw-rt3 .rt3-ws{',
-        'font-size:9px;font-weight:700;',
-        'background:rgba(34,197,94,.13);',
-        'color:#4ade80;',
-        'border-radius:4px;padding:1px 5px;letter-spacing:.3px;',
-      '}',
-      '#gtw-rt3.s-updated{',
-        'border-color:rgba(34,197,94,.5);',
-        'box-shadow:0 0 0 3px rgba(34,197,94,.12),0 4px 20px rgba(0,0,0,.4);',
-      '}',
+      // Sembunyikan elemen lama jika ada
+      '#gtw-rt3{ display:none !important; }',
+
+      // Animasi untuk dot di topbar
       '@keyframes rt3pulse{',
-        '0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.5);}',
+        '0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,.6);}',
         '50%{box-shadow:0 0 0 5px rgba(34,197,94,0);}',
       '}',
       '@keyframes rt3pulse2{',
-        '0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.4);}',
+        '0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.5);}',
         '50%{box-shadow:0 0 0 5px rgba(96,165,250,0);}',
       '}',
       '@keyframes rt3spin{',
-        '0%{box-shadow:2px 0 0 0 rgba(96,165,250,.8);}',
-        '25%{box-shadow:0 2px 0 0 rgba(96,165,250,.8);}',
-        '50%{box-shadow:-2px 0 0 0 rgba(96,165,250,.8);}',
-        '75%{box-shadow:0 -2px 0 0 rgba(96,165,250,.8);}',
-        '100%{box-shadow:2px 0 0 0 rgba(96,165,250,.8);}',
+        '0%{box-shadow:2px 0 0 0 rgba(96,165,250,.9);}',
+        '25%{box-shadow:0 2px 0 0 rgba(96,165,250,.9);}',
+        '50%{box-shadow:-2px 0 0 0 rgba(96,165,250,.9);}',
+        '75%{box-shadow:0 -2px 0 0 rgba(96,165,250,.9);}',
+        '100%{box-shadow:2px 0 0 0 rgba(96,165,250,.9);}',
+      '}',
+      '@keyframes rt3flash{',
+        '0%,100%{opacity:1;}',
+        '50%{opacity:.3;}',
+      '}',
+
+      // State class untuk ic-dot & sidebar-ic-dot
+      '.rt3-ws-live{',
+        'background:#22c55e !important;',
+        'animation:rt3pulse 2s ease-in-out infinite !important;',
+      '}',
+      '.rt3-live{',
+        'background:#60a5fa !important;',
+        'animation:rt3pulse2 3s ease-in-out infinite !important;',
+      '}',
+      '.rt3-fetching{',
+        'background:#60a5fa !important;',
+        'animation:rt3spin 1s linear infinite !important;',
+      '}',
+      '.rt3-error{',
+        'background:#ef4444 !important;',
+        'animation:rt3flash 1s ease-in-out infinite !important;',
+      '}',
+      '.rt3-offline{',
+        'background:#f59e0b !important;',
+        'animation:none !important;',
+      '}',
+      '.rt3-standby{',
+        'background:#64748b !important;',
+        'animation:none !important;',
       '}',
     ].join('');
     document.head.appendChild(s);
   }
 
+  // ── DIUBAH: pakai dot topbar, tidak buat elemen floating baru ──
   function _createIndicator() {
-    if (document.getElementById('gtw-rt3')) {
-      _indEl = document.getElementById('gtw-rt3');
-      return;
-    }
     _injectCSS();
-    var el = document.createElement('div');
-    el.id        = 'gtw-rt3';
-    el.className = 's-live';
-    el.innerHTML = [
-      '<span class="rt3-dot"></span>',
-      '<span class="rt3-lbl" id="gtw-rt3-lbl">LIVE</span>',
-      '<span class="rt3-ws" id="gtw-rt3-ws" style="display:none">WS</span>',
-      '<span class="rt3-time" id="gtw-rt3-time">—</span>',
-      '<span class="rt3-cd" id="gtw-rt3-cd" style="display:none">—</span>',
-    ].join('');
-    document.body.appendChild(el);
-    _indEl = el;
+    // _indEl dipakai sebagai dummy agar fungsi lain tidak error
+    _indEl = document.getElementById('icDot') || document.body;
   }
 
   var _statusMap = {
-    'ws-live'  : { cls: 's-ws-live',  lbl: 'LIVE',    ws: true  },
-    'live'     : { cls: 's-live',     lbl: 'LIVE',    ws: false },
-    'fetching' : { cls: 's-fetching', lbl: 'SYNC...',  ws: false },
-    'error'    : { cls: 's-error',    lbl: 'ERROR',   ws: false },
-    'offline'  : { cls: 's-offline',  lbl: 'OFFLINE', ws: false },
-    'standby'  : { cls: 's-standby',  lbl: 'PAUSE',   ws: false },
+    'ws-live'  : { cls: 'rt3-ws-live',  color: '#22c55e' },
+    'live'     : { cls: 'rt3-live',     color: '#60a5fa' },
+    'fetching' : { cls: 'rt3-fetching', color: '#60a5fa' },
+    'error'    : { cls: 'rt3-error',    color: '#ef4444' },
+    'offline'  : { cls: 'rt3-offline',  color: '#f59e0b' },
+    'standby'  : { cls: 'rt3-standby',  color: '#64748b' },
   };
 
+  var _dotClasses = ['rt3-ws-live','rt3-live','rt3-fetching','rt3-error','rt3-offline','rt3-standby'];
+
+  // ── DIUBAH: update warna dot di topbar & sidebar ──
   function _setIndicator(s) {
-    if (!_indEl) return;
-    var m   = _statusMap[s] || _statusMap['live'];
-    _indEl.className = m.cls;
-    var lbl = document.getElementById('gtw-rt3-lbl');
-    if (lbl) lbl.textContent = m.lbl;
-    var wsBadge = document.getElementById('gtw-rt3-ws');
-    if (wsBadge) wsBadge.style.display = m.ws ? 'inline-block' : 'none';
+    var m = _statusMap[s] || _statusMap['live'];
+
+    // Dot di topbar appbar (mobile & desktop)
+    var icDot = document.getElementById('icDot');
+    if (icDot) {
+      _dotClasses.forEach(function(c) { icDot.classList.remove(c); });
+      icDot.classList.add(m.cls);
+    }
+
+    // Dot di sidebar
+    var sidebarDot = document.getElementById('sidebarIcDot');
+    if (sidebarDot) {
+      _dotClasses.forEach(function(c) { sidebarDot.classList.remove(c); });
+      sidebarDot.classList.add(m.cls);
+    }
   }
 
+  // ── DIUBAH: flash pada ic-widget bukan elemen lama ──
   function _flashIndicator() {
-    if (!_indEl) return;
-    _indEl.classList.add('s-updated');
+    var icWidget = document.getElementById('icDot');
+    if (!icWidget) return;
+    // Flash sekali — scale up sebentar
+    icWidget.style.transition = 'transform .15s';
+    icWidget.style.transform  = 'scale(1.8)';
     setTimeout(function() {
-      if (_indEl) _indEl.classList.remove('s-updated');
-    }, 1500);
+      icWidget.style.transform = '';
+      setTimeout(function() { icWidget.style.transition = ''; }, 200);
+    }, 200);
   }
 
+  // _updateTimeLabel & _updateCountdown tetap ada tapi tidak tampil
+  // (elemen #gtw-rt3-time & #gtw-rt3-cd tidak ada, fungsi gracefully skip)
   function _updateTimeLabel() {
     var el = document.getElementById('gtw-rt3-time');
     if (!el || !_lastSync) return;
