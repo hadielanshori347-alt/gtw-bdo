@@ -90,11 +90,11 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   UI.Scb.init('scbTuj',    'inpTuj',    'dropTuj',    [], v => {
     CreatePage.onTujSelect(v);
-  }, true);
+  }, false);
 
   UI.Scb.init('scbIbSvc',  'inpIbSvc',  'dropIbSvc',  [], v => {
     CreatePage.onIbSvcSelect(v);
-  }, true);
+  }, false);
 
   UI.Scb.init('scbIbFrom', 'inpIbFrom', 'dropIbFrom', [], v => {
     CreatePage.onIbFromSelect(v);
@@ -102,7 +102,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   UI.Scb.init('scbIbTuj',  'inpIbTuj',  'dropIbTuj',  [], v => {
     CreatePage.onIbTujSelect(v);
-  }, true);
+  }, false);
 
   UI.Scb.init('scbNewTuj',   'inpNewTuj',   'dropNewTuj',   [], () => {}, false);
   UI.Scb.init('scbNewIbTuj', 'inpNewIbTuj', 'dropNewIbTuj', [], () => {}, false);
