@@ -522,6 +522,27 @@ const Scanner = {
     if (inp.value.trim()) { Scanner.addItem(inp.value); inp.value = ''; }
   },
 
+  // ── Helper: reload list & update home setelah save AWB ──
+  _reloadListAfterSave() {
+    const type = STATE.currentDetailType || STATE.createType || 'ob';
+    const act  = type === 'ob' ? 'getObList' : type === 'hvs' ? 'getHvsList' : 'getIbList';
+    API.get(act).then(r => {
+      const list = r.list || [];
+      if (type === 'ob')       STATE.obData  = list;
+      else if (type === 'hvs') STATE.hvsData = list;
+      else                     STATE.ibData  = list;
+      // Update currentDetailItem jika sedang di detail page
+      if (STATE.currentNoTrack) {
+        const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
+        if (fresh) STATE.currentDetailItem = fresh;
+      }
+      // Update home stats & list langsung tanpa tunggu GtwRealtime
+      HomePage.render();
+      HomePage.updateStats();
+      DataLoader.loadScanAwbs();
+    }).catch(() => {});
+  },
+
   async saveAndNext() {
     if (!STATE.scanItems.length &&
         !Object.values(STATE.detailScanMap || {}).some(a => a.length)) return;
@@ -598,20 +619,23 @@ const Scanner = {
       Scanner._renderTujCombobox();
       Scanner._updateUI();
 
-      // Reload data di background (non-blocking)
+      // ── FIX: Langsung reload list & update home tanpa nunggu GtwRealtime ──
+      Scanner._reloadListAfterSave();
+
+      // Reload detail page juga (non-blocking)
       DetailPage.reloadData();
 
       // Hitung index foto berikutnya lalu langsung ke halaman foto
       STATE.photoStartIndex = 0;
       try {
-        var _item = STATE.currentDetailItem;
+        const _item = STATE.currentDetailItem;
         if (_item) STATE.photoStartIndex = DetailPage._collectFotoUrls(_item).length;
       } catch(e2) {}
 
       await Scanner._stop();
       Photo.go();
 
-   } catch(e) {
+    } catch(e) {
       UI.Loading.hide();
       UI.Toast.error('Error: ' + e.message);
     }
