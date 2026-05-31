@@ -640,11 +640,22 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0">
+
+    <!-- Switch Harian / Semua -->
+    <div style="padding:10px 14px 0;flex-shrink:0">
+      <div class="dl-switch">
+        <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">Harian</div>
+        <div class="dl-switch-opt" id="dlSwitchSemua" onclick="HomePage.switchDataMode('semua')">Semua</div>
+      </div>
+    </div>
+
+    <!-- Tab OB / HVS / IB -->
+    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;margin-top:10px">
       <div class="dl-tab active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
       <div class="dl-tab"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
       <div class="dl-tab"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
     </div>
+
     <div class="modal-body" style="padding:12px" id="dataListBody"></div>
   </div>
 </div>
