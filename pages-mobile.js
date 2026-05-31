@@ -1,87 +1,33 @@
 // ════════════════════════════════════════════
-// HOME PAGE — Dashboard
+// HOME PAGE
 // ════════════════════════════════════════════
 const HomePage = {
-
-  _todayStr() {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  },
-
   filteredData(arr) {
     return STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : arr;
   },
 
-  // Filter hanya data hari ini berdasarkan created_date
-  todayData(arr) {
-    const today = HomePage._todayStr();
-    return HomePage.filteredData(arr).filter(d => (d.created_date || '').startsWith(today));
-  },
-
   updateStats() {
     const arr  = STATE.currentTab === 'ob' ? STATE.obData : STATE.currentTab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    const data = HomePage.todayData(arr);
-    const totalAwb = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
-    const selesai  = data.filter(x => x.status === 'SELESAI').length;
-    const proses   = data.length - selesai;
-
-    document.getElementById('statAwb').innerText     = totalAwb;
-    document.getElementById('statSelesai').innerText  = selesai;
-    document.getElementById('statProses').innerText   = proses;
-
-    // Progress bar
-    const total = data.length || 1;
-    const pct   = Math.round((selesai / total) * 100);
-    const pb    = document.getElementById('homeProgressBar');
-    const pl    = document.getElementById('homeProgressLabel');
-    if (pb) pb.style.width = pct + '%';
-    if (pl) pl.innerText   = `${selesai} / ${data.length} selesai (${pct}%)`;
-
-    // Bar mini per tujuan
-    HomePage._renderTujBar(data);
-  },
-
-  _renderTujBar(data) {
-    const el = document.getElementById('homeTujBar');
-    if (!el) return;
-    if (!data.length) { el.innerHTML = ''; return; }
-
-    // Hitung AWB per tujuan
-    const map = {};
-    data.forEach(d => {
-      const t = d.tujuan || '—';
-      if (!map[t]) map[t] = 0;
-      map[t] += (+d.total_awb || 0);
-    });
-
-    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
-    const max     = entries[0]?.[1] || 1;
-
-    el.innerHTML = entries.map(([tuj, cnt]) => {
-      const pct = Math.round((cnt / max) * 100);
-      return `
-        <div style="margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.2px">${escH(tuj)}</span>
-            <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${cnt} AWB</span>
-          </div>
-          <div style="height:5px;background:var(--surface3);border-radius:99px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:var(--blue);border-radius:99px;transition:width .4s"></div>
-          </div>
-        </div>`;
-    }).join('');
+    const data = HomePage.filteredData(arr);
+    const total  = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
+    const selesai = data.filter(x => x.status === 'SELESAI').length;
+    document.getElementById('statAwb').innerText    = total;
+    document.getElementById('statSelesai').innerText = selesai;
+    document.getElementById('statProses').innerText  = data.length - selesai;
   },
 
   render() {
     const arr  = STATE.currentTab === 'ob' ? STATE.obData : STATE.currentTab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    const data = HomePage.todayData(arr);
+    const allData = HomePage.filteredData(arr);
+    // Hanya tampilkan yang masih On Proses — yang SELESAI disembunyikan dari list
+    const data = allData.filter(d => d.status !== 'SELESAI');
     const el   = document.getElementById('homeList');
 
     if (!data.length) {
-      el.innerHTML = '<div class="scan-empty" style="margin-top:8px">Belum ada data hari ini</div>';
+      const adaSelesai = allData.length > 0;
+      el.innerHTML = adaSelesai
+        ? '<div class="scan-empty" style="margin-top:24px">✅ Semua data sudah selesai</div>'
+        : '<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>';
       return;
     }
 
@@ -180,6 +126,7 @@ const CreatePage = {
     document.getElementById('formIb').style.display        = (t === 'ib') ? '' : 'none';
     document.getElementById('createActions').style.display = 'flex';
 
+    // Render form state tanpa auto-buka scanner
     if (t === 'ob' || t === 'hvs') {
       CreatePage._checkObForm();
       CreatePage.renderObTabs();
@@ -192,6 +139,7 @@ const CreatePage = {
     CreatePage._checkForm();
   },
 
+  // ── OB/HVS Logic ──
   onSvcSelect(v) {
     const has = !!v;
     UI.Scb.setDisabled('scbTuj', !has);
@@ -264,6 +212,7 @@ const CreatePage = {
     document.getElementById('btnSave').disabled = !(STATE.globalIncharge && hasSvc && hasTuj);
   },
 
+  // ── IB Logic — multi-tujuan (mirip OB) ──
   onIbSvcSelect(v) {
     const has = !!v;
     UI.Scb.setDisabled('scbIbFrom', !has);
@@ -293,6 +242,7 @@ const CreatePage = {
     STATE.ibActiveTuj = v;
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
+    // Enable tombol tambah tujuan lain & rescan
     const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom'));
     if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !hasSvcFrom;
     if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !v;
@@ -320,6 +270,7 @@ const CreatePage = {
     delete STATE.ibScanMap[t];
     const k = Object.keys(STATE.ibScanMap);
     STATE.ibActiveTuj = k.length ? k[0] : '';
+    // Sync scbIbTuj combobox ke tujuan aktif
     UI.Scb.setValue('scbIbTuj', STATE.ibActiveTuj);
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
@@ -353,6 +304,7 @@ const CreatePage = {
     document.getElementById('ibTotalLabel').innerText = t + ' AWB total';
   },
 
+  // ── Add Tujuan IB Modal ──
   openAddIbTujModal() {
     const hasSvcFrom = !!(UI.Scb.getValue('scbIbSvc') && UI.Scb.getValue('scbIbFrom'));
     if (!hasSvcFrom) { UI.Toast.error('Pilih SERVICE & FROM dulu'); return; }
@@ -364,7 +316,11 @@ const CreatePage = {
     setTimeout(() => document.getElementById('inpNewIbTuj').focus(), 200);
   },
 
-  openAddIbTujFromScanner() { CreatePage.openAddIbTujModal(); },
+  // ── Dipanggil dari Scanner — buka modal tambah tujuan IB ──
+  openAddIbTujFromScanner() {
+    CreatePage.openAddIbTujModal();
+  },
+
   closeIbTujModal() { UI.Modal.close('ibTujModal'); },
 
   confirmAddIbTuj() {
@@ -377,6 +333,7 @@ const CreatePage = {
     CreatePage.renderIbTabs();
     CreatePage.renderIbScanList();
     CreatePage._checkForm();
+    // Refresh combobox di scanner jika scanner sedang aktif
     if (STATE.currentPage === 'pgScan') Scanner.refreshTujCombobox();
   },
 
@@ -397,6 +354,7 @@ const CreatePage = {
     }
   },
 
+  // ── Add Tujuan Modal ──
   openAddTujModal() {
     if (!UI.Scb.getValue('scbSvc')) { UI.Toast.error('Pilih SERVICE dulu'); return; }
     document.getElementById('inpNewTuj').value = '';
@@ -406,7 +364,11 @@ const CreatePage = {
     setTimeout(() => document.getElementById('inpNewTuj').focus(), 200);
   },
 
-  openAddTujFromScanner() { CreatePage.openAddTujModal(); },
+  // ── Dipanggil dari Scanner — buka modal tambah tujuan OB ──
+  openAddTujFromScanner() {
+    CreatePage.openAddTujModal();
+  },
+
   closeTujModal() { UI.Modal.close('tujModal'); },
 
   confirmAddTuj() {
@@ -419,9 +381,11 @@ const CreatePage = {
     CreatePage.renderObTabs();
     CreatePage.renderObScanList();
     CreatePage._checkForm();
+    // Refresh combobox di scanner jika scanner sedang aktif
     if (STATE.currentPage === 'pgScan') Scanner.refreshTujCombobox();
   },
 
+  // Scan OB dari detail (rescan)
   rescanOb() {
     const svc = UI.Scb.getValue('scbSvc');
     if (!svc || !STATE.obActiveTuj) { UI.Toast.error('Pilih service & tujuan dulu'); return; }
@@ -430,6 +394,7 @@ const CreatePage = {
     Scanner.open('create-ob', 'Scan OB', STATE.obActiveTuj);
   },
 
+  // Scan IB dari detail (rescan)
   rescanIb() {
     const svc  = UI.Scb.getValue('scbIbSvc');
     const from = UI.Scb.getValue('scbIbFrom');
@@ -439,6 +404,7 @@ const CreatePage = {
     Scanner.open('create-ib', 'Scan IB', STATE.ibActiveTuj);
   },
 
+  // ── Save — buat tracking dulu, lalu buka scanner ──
   async doSave() {
     if (STATE.createType === 'ob' || STATE.createType === 'hvs') await CreatePage._saveObHvs();
     else await CreatePage._saveIb();
@@ -466,8 +432,14 @@ const CreatePage = {
       STATE.currentTuj        = keys[0];
       STATE.currentDetailType = STATE.createType;
       STATE.currentDetailItem = null;
-      STATE.createdTracks     = results.map((r, i) => ({ noTrack: r.noTrack || '', tujuan: keys[i] || '' }));
 
+      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      STATE.createdTracks = results.map((r, i) => ({
+        noTrack: r.noTrack || '',
+        tujuan:  keys[i]  || ''
+      }));
+
+      // Reload list di background
       const listAct = STATE.createType === 'ob' ? 'getObList' : 'getHvsList';
       API.get(listAct).then(r => {
         if (STATE.createType === 'ob') STATE.obData = r.list || [];
@@ -475,6 +447,7 @@ const CreatePage = {
         DataLoader.loadScanAwbs();
       }).catch(() => {});
 
+      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
       STATE.scanContext = 'detail';
       STATE.scanItems   = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
@@ -504,10 +477,17 @@ const CreatePage = {
       STATE.currentTuj        = keys[0];
       STATE.currentDetailType = 'ib';
       STATE.currentDetailItem = null;
-      STATE.createdTracks     = results.map((r, i) => ({ noTrack: r.noTrack || '', tujuan: keys[i] || '' }));
 
+      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      STATE.createdTracks = results.map((r, i) => ({
+        noTrack: r.noTrack || '',
+        tujuan:  keys[i]  || ''
+      }));
+
+      // Reload list di background
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
 
+      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
       STATE.scanContext = 'detail';
       STATE.scanItems   = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
@@ -551,6 +531,7 @@ const DetailPage = {
     STATE.currentNoTrack    = noTrack;
     STATE.currentSvc        = item.service;
     STATE.currentTuj        = item.tujuan;
+    // Reset createdTracks saat buka detail dari list (bukan dari create)
     STATE.createdTracks     = [];
     DetailPage._render(item, type);
     UI.Page.show('pgDetail');
@@ -561,6 +542,7 @@ const DetailPage = {
     document.getElementById('detailTitle').innerText = item.no_track;
     const isSelesai = item.status === 'SELESAI';
     const pb = document.getElementById('detailPhotoBox');
+    // Kumpulkan semua URL foto (support multi-kolom: foto_url, foto_url2, foto_url3, dst)
     const fotoUrls = DetailPage._collectFotoUrls(item);
     if (fotoUrls.length > 0) {
       pb.innerHTML = DetailPage._renderSlider(fotoUrls);
@@ -609,6 +591,7 @@ const DetailPage = {
 
   close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
 
+  // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
   async tambahFoto() {
     if (!STATE.currentDetailItem) return;
     UI.Loading.show('Memeriksa foto...');
@@ -620,28 +603,43 @@ const DetailPage = {
       const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
       if (fresh) {
         STATE.currentDetailItem = fresh;
+        // update state array juga
         const arr = STATE.currentDetailType === 'ob' ? STATE.obData
                   : STATE.currentDetailType === 'hvs' ? STATE.hvsData : STATE.ibData;
         const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
         if (idx !== -1) arr[idx] = fresh;
       }
-    } catch(e) {}
+    } catch(e) { /* gagal reload, pakai state lokal */ }
     UI.Loading.hide();
+    // Hitung index foto berikutnya dari data fresh
     STATE.photoStartIndex = DetailPage._collectFotoUrls(STATE.currentDetailItem).length;
     Photo.go();
   },
 
+  // Kumpulkan semua URL foto dari item
   _collectFotoUrls(item) {
     if (!item) return [];
     const urls = [];
     const add = u => { if (u && typeof u === 'string' && u.trim() && !urls.includes(u.trim())) urls.push(u.trim()); };
+
+    // Kolom utama
     add(item.foto_url);
+
+    // Variant dengan underscore: foto_url_2 … foto_url_9
     for (let i = 2; i <= 9; i++) add(item['foto_url_' + i]);
+
+    // Variant tanpa underscore: foto_url2 … foto_url9
     for (let i = 2; i <= 9; i++) add(item['foto_url' + i]);
-    if (item.foto_urls && Array.isArray(item.foto_urls)) item.foto_urls.forEach(u => add(u));
+
+    // Array foto_urls dari multi-upload sesi (state lokal)
+    if (item.foto_urls && Array.isArray(item.foto_urls)) {
+      item.foto_urls.forEach(u => add(u));
+    }
+
     return urls;
   },
 
+  // Render slider foto — swipe kiri/kanan untuk pindah foto
   _renderSlider(urls) {
     if (urls.length === 1) {
       return `<div class="foto-slider">
@@ -651,8 +649,8 @@ const DetailPage = {
           onerror="this.src='';this.alt='Foto gagal dimuat'">
       </div>`;
     }
-    const dots = urls.map((_, i) => `<span class="foto-dot${i===0?' active':''}" onclick="DetailPage._slideTo(${i})"></span>`).join('');
-    const imgs = urls.map((u, i) =>
+    const dots  = urls.map((_, i) => `<span class="foto-dot${i===0?' active':''}" onclick="DetailPage._slideTo(${i})"></span>`).join('');
+    const imgs  = urls.map((u, i) =>
       `<img class="foto-slide${i===0?' active':''}" src="${DetailPage._thumb(u)}" data-idx="${i}"
         onclick="FotoFull.open(${JSON.stringify(urls)},${i})"
         onerror="this.src='';this.alt='Foto ${i+1} gagal dimuat'">`
@@ -682,8 +680,8 @@ const DetailPage = {
   },
 
   _slideTo(idx) {
-    const slides  = document.querySelectorAll('#fotoSlider .foto-slide');
-    const dots    = document.querySelectorAll('#fotoDots .foto-dot');
+    const slides = document.querySelectorAll('#fotoSlider .foto-slide');
+    const dots   = document.querySelectorAll('#fotoDots .foto-dot');
     const counter = document.getElementById('fotoCounter');
     slides.forEach((s, i) => s.classList.toggle('active', i === idx));
     dots.forEach((d, i)   => d.classList.toggle('active', i === idx));
@@ -691,7 +689,7 @@ const DetailPage = {
     DetailPage._slideIdx = idx;
   },
 
-  photoClick() {},
+  photoClick() { /* deprecated — diganti tambahFoto() */ },
 
   async onFileChange(e) {
     const file = e.target.files[0];
@@ -880,6 +878,7 @@ const IcModal = {
     IcModal.close();
     DataLoader._buildCbOptions();
     HomePage.render(); HomePage.updateStats();
+    // Update sidebar incharge label
     document.getElementById('sidebarIcName').innerText = v || '—';
     CreatePage._updateWarn();
   }
