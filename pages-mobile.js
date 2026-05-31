@@ -1,72 +1,184 @@
 // ════════════════════════════════════════════
-// HOME PAGE
+// HOME PAGE — Dashboard 2x2 Grid
 // ════════════════════════════════════════════
 const HomePage = {
-  filteredData(arr) {
-    return STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : arr;
+
+  render() {
+    const el = document.getElementById('homeList');
+    el.innerHTML = `
+      <div class="dash-grid">
+
+        <div class="dash-card dash-scan" onclick="HomePage.openScanMenu()">
+          <div class="dash-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </div>
+          <div class="dash-label">Scan AWB</div>
+          <div class="dash-sub">Tambah data baru</div>
+        </div>
+
+        <div class="dash-card dash-search" onclick="switchNav('search')">
+          <div class="dash-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <div class="dash-label">Cari AWB</div>
+          <div class="dash-sub">Lacak nomor resi</div>
+        </div>
+
+        <div class="dash-card dash-harian" onclick="HomePage.openDataList('harian')">
+          <div class="dash-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <div class="dash-label">Data Harian</div>
+          <div class="dash-sub" id="dashHarianSub">Hari ini</div>
+        </div>
+
+        <div class="dash-card dash-semua" onclick="HomePage.openDataList('semua')">
+          <div class="dash-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </div>
+          <div class="dash-label">Semua Data</div>
+          <div class="dash-sub" id="dashSemuaSub">Semua tanggal</div>
+        </div>
+
+      </div>`;
+
+    HomePage.updateStats();
   },
 
   updateStats() {
-    const arr  = STATE.currentTab === 'ob' ? STATE.obData : STATE.currentTab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    const data = HomePage.filteredData(arr);
-    const total  = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
-    const selesai = data.filter(x => x.status === 'SELESAI').length;
-    document.getElementById('statAwb').innerText    = total;
-    document.getElementById('statSelesai').innerText = selesai;
-    document.getElementById('statProses').innerText  = data.length - selesai;
+    const today = new Date().toISOString().slice(0, 10);
+    const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
+    const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
+
+    const harian = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
+    const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
+
+    document.getElementById('statAwb').innerText     = totalAwb;
+    document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
+    document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
+
+    const hSub = document.getElementById('dashHarianSub');
+    const sSub = document.getElementById('dashSemuaSub');
+    if (hSub) hSub.innerText = harian.length + ' tracking';
+    if (sSub) sSub.innerText = filtered.length + ' tracking';
   },
 
-  render() {
-    const arr  = STATE.currentTab === 'ob' ? STATE.obData : STATE.currentTab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    const allData = HomePage.filteredData(arr);
-    // Hanya tampilkan yang masih On Proses — yang SELESAI disembunyikan dari list
-    const data = allData.filter(d => d.status !== 'SELESAI');
-    const el   = document.getElementById('homeList');
+  switchTab(t) {
+    STATE.currentTab = t;
+    // Sync sidebar button active state
+    ['ob','hvs','ib'].forEach(x => {
+      document.getElementById('sbn' + x.charAt(0).toUpperCase() + x.slice(1))
+        ?.classList.toggle('active', x === t);
+    });
+  },
 
+  // ── Scan Menu — pilih OB / HVS / IB ──
+  openScanMenu() {
+    if (!STATE.globalIncharge) { UI.Toast.error('Pilih Incharge dulu'); IcModal.open(); return; }
+    document.getElementById('scanMenuModal').classList.add('open');
+  },
+
+  selectScanType(t) {
+    document.getElementById('scanMenuModal').classList.remove('open');
+    STATE.createType = t;
+    CreatePage.open();
+    // Auto-select type setelah open
+    setTimeout(() => CreatePage.selectType(t), 80);
+  },
+
+  // ── Data List — buka modal list data ──
+  openDataList(mode) {
+    STATE.dataListMode = mode;
+    STATE.dataListTab  = STATE.currentTab || 'ob';
+    HomePage._renderDataList();
+    document.getElementById('dataListModal').classList.add('open');
+  },
+
+  _renderDataList() {
+    const mode  = STATE.dataListMode;
+    const tab   = STATE.dataListTab;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const arr = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
+    let data  = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
+
+    if (mode === 'harian') {
+      data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
+    }
+    // mode === 'semua' → tampilkan semua
+
+    // Update tab buttons
+    ['ob','hvs','ib'].forEach(x => {
+      document.getElementById('dlTab' + x.toUpperCase())
+        ?.classList.toggle('active', x === tab);
+    });
+
+    // Update title
+    document.getElementById('dataListTitle').innerText =
+      mode === 'harian' ? 'Data Harian' : 'Semua Data';
+
+    const el = document.getElementById('dataListBody');
     if (!data.length) {
-      const adaSelesai = allData.length > 0;
-      el.innerHTML = adaSelesai
-        ? '<div class="scan-empty" style="margin-top:24px">✅ Semua data sudah selesai</div>'
-        : '<div class="scan-empty" style="margin-top:24px">Tidak ada data</div>';
+      el.innerHTML = `<div class="scan-empty" style="padding:32px">
+        ${mode === 'harian' ? 'Tidak ada data hari ini' : 'Tidak ada data'}
+      </div>`;
       return;
     }
 
     el.innerHTML = data.map(d => {
-      const typeKey  = STATE.currentTab;
       const isProses = d.status !== 'SELESAI';
       const badge    = isProses
         ? '<span class="badge badge-proses">● On Proses</span>'
         : '<span class="badge badge-selesai">✓ Selesai</span>';
       const tujLabel = (d.from ? `Dari: ${d.from} → ` : '') + d.tujuan;
-      const svcBadge = typeKey === 'hvs'
+      const svcBadge = tab === 'hvs'
         ? `<span class="badge badge-purple">${escH(d.service)}</span>`
         : `<span class="badge badge-blue">${escH(d.service)}</span>`;
 
-      return `
-        <div class="card" onclick="DetailPage.open('${typeKey}','${escQ(d.no_track)}')">
-          <div class="card-inner">
-            <div class="card-top">
-              <div class="card-no">${escH(d.no_track)}</div>
-              ${badge}
-            </div>
-            <div class="card-sub">${svcBadge} ${escH(tujLabel)}</div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
-              <span class="badge badge-awb">${d.total_awb} AWB</span>
-              <span style="font-size:11px;color:var(--text3)">${escH(d.created_date)}</span>
-            </div>
-            ${isProses ? `<div style="margin-top:10px"><button class="btn-selesai" onclick="event.stopPropagation();HomePage.quickSelesai('${typeKey}','${escQ(d.no_track)}')">✓ Selesai</button></div>` : ''}
+      return `<div class="card" onclick="HomePage._openDetail('${tab}','${escQ(d.no_track)}')">
+        <div class="card-inner">
+          <div class="card-top">
+            <div class="card-no">${escH(d.no_track)}</div>
+            ${badge}
           </div>
-        </div>`;
+          <div class="card-sub">${svcBadge} ${escH(tujLabel)}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <span class="badge badge-awb">${d.total_awb} AWB</span>
+            <span style="font-size:11px;color:var(--text3)">${escH(d.created_date)}</span>
+          </div>
+          ${isProses ? `<div style="margin-top:10px"><button class="btn-selesai" onclick="event.stopPropagation();HomePage.quickSelesai('${tab}','${escQ(d.no_track)}')">✓ Selesai</button></div>` : ''}
+        </div>
+      </div>`;
     }).join('');
   },
 
-  switchTab(t) {
-    STATE.currentTab = t;
-    ['ob', 'hvs', 'ib'].forEach(x => {
-      document.getElementById('homeTab' + x.charAt(0).toUpperCase() + x.slice(1))?.classList.toggle('active', x === t);
-    });
-    HomePage.render();
-    HomePage.updateStats();
+  _openDetail(type, noTrack) {
+    document.getElementById('dataListModal').classList.remove('open');
+    setTimeout(() => DetailPage.open(type, noTrack), 180);
+  },
+
+  switchDataListTab(t) {
+    STATE.dataListTab = t;
+    STATE.currentTab  = t;
+    HomePage._renderDataList();
   },
 
   async quickSelesai(type, noTrack) {
@@ -80,7 +192,8 @@ const HomePage = {
         const arr  = type === 'ob' ? STATE.obData : type === 'hvs' ? STATE.hvsData : STATE.ibData;
         const item = arr.find(d => d.no_track === noTrack);
         if (item) item.status = 'SELESAI';
-        HomePage.render(); HomePage.updateStats();
+        HomePage._renderDataList();
+        HomePage.updateStats();
         UI.Toast.success('Status → SELESAI');
       } else UI.Toast.error('Gagal: ' + (res.error || ''));
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
