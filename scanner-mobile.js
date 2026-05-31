@@ -597,10 +597,18 @@ const Scanner = {
 
       Scanner._renderTujCombobox();
       Scanner._updateUI();
+
+      // Reload data di background (non-blocking)
       DetailPage.reloadData();
+
+      // Hitung index foto berikutnya lalu langsung ke halaman foto
+      STATE.photoStartIndex = 0;
+      try {
+        var _item = STATE.currentDetailItem;
+        if (_item) STATE.photoStartIndex = DetailPage._collectFotoUrls(_item).length;
+      } catch(e2) {}
+
+      await Scanner._stop();
+      Photo.go();
+
     } catch(e) {
-      UI.Loading.hide();
-      UI.Toast.error('Error: ' + e.message);
-    }
-  }
-};
