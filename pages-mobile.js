@@ -420,7 +420,7 @@ const CreatePage = {
     const action = STATE.createType === 'ob' ? 'saveOb' : 'saveHvs';
     try {
       const results = await Promise.all(keys.map(tuj =>
-        API.post(action, { incharge: STATE.globalIncharge, service, tujuan: tuj, awbList: STATE.obScanMap[tuj] || [] })
+        API.post(action, { incharge: STATE.globalIncharge, service, tujuan: tuj, awbList: [] })
       ));
       UI.Loading.hide();
       const errs = results.filter(r => r.error);
@@ -433,11 +433,18 @@ const CreatePage = {
       STATE.currentDetailType = STATE.createType;
       STATE.currentDetailItem = null;
 
-      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      // Simpan semua track yang dibuat
       STATE.createdTracks = results.map((r, i) => ({
         noTrack: r.noTrack || '',
         tujuan:  keys[i]  || ''
       }));
+
+      // ── FIX: Pre-populate detailScanMap dengan noTrack dari createdTracks
+      // agar scanner mode detail tahu ke noTrack mana tiap tujuan di-assign
+      STATE.detailScanMap = {};
+      STATE.createdTracks.forEach(t => {
+        STATE.detailScanMap[t.noTrack] = [];
+      });
 
       // Reload list di background
       const listAct = STATE.createType === 'ob' ? 'getObList' : 'getHvsList';
@@ -447,7 +454,7 @@ const CreatePage = {
         DataLoader.loadScanAwbs();
       }).catch(() => {});
 
-      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
+      // Buka scanner mode detail — flow sama seperti OB
       STATE.scanContext = 'detail';
       STATE.scanItems   = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
@@ -465,7 +472,7 @@ const CreatePage = {
     UI.Loading.show('Menyimpan...');
     try {
       const results = await Promise.all(keys.map(tujuan =>
-        API.post('saveIb', { incharge: STATE.globalIncharge, service, from, tujuan, awbList: STATE.ibScanMap[tujuan] || [] })
+        API.post('saveIb', { incharge: STATE.globalIncharge, service, from, tujuan, awbList: [] })
       ));
       UI.Loading.hide();
       const errs = results.filter(r => r.error);
@@ -478,16 +485,23 @@ const CreatePage = {
       STATE.currentDetailType = 'ib';
       STATE.currentDetailItem = null;
 
-      // ── BARU: Simpan semua track yang dibuat agar combobox scanner bisa tampilkan semua tujuan ──
+      // Simpan semua track yang dibuat
       STATE.createdTracks = results.map((r, i) => ({
         noTrack: r.noTrack || '',
         tujuan:  keys[i]  || ''
       }));
 
+      // ── FIX: Pre-populate detailScanMap dengan noTrack dari createdTracks
+      // agar scanner mode detail tahu ke noTrack mana tiap tujuan di-assign
+      STATE.detailScanMap = {};
+      STATE.createdTracks.forEach(t => {
+        STATE.detailScanMap[t.noTrack] = [];
+      });
+
       // Reload list di background
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
 
-      // Tracking sudah dibuat — langsung buka scanner untuk input AWB
+      // Buka scanner mode detail — flow sama seperti OB
       STATE.scanContext = 'detail';
       STATE.scanItems   = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
