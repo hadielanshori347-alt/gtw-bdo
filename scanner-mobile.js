@@ -611,4 +611,9 @@ const Scanner = {
       await Scanner._stop();
       Photo.go();
 
-    } catch(e) {
+   } catch(e) {
+      UI.Loading.hide();
+      UI.Toast.error('Error: ' + e.message);
+    }
+  },
+};
