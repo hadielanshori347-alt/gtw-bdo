@@ -219,6 +219,62 @@
 .qr-empty p { font-size: 12.5px; line-height: 1.8; color: var(--qr-muted); }
 .qr-empty strong { color: var(--qr-accent2); }
 
+/* ── RESPONSIVE MOBILE ── */
+@media (max-width: 640px) {
+  #page-qr {
+    margin: -18px -12px;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  /* Paste panel */
+  .qr-paste-body { padding: 12px; }
+  .qr-paste-hdr { padding: 10px 12px; }
+  .qr-paste-hdr-title { font-size: 12px; }
+  .qr-paste-textarea {
+    font-size: 13px;
+    min-height: 72px;
+    padding: 26px 10px 8px;
+  }
+
+  /* Kolom selector — stack vertikal */
+  .qr-col-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .qr-col-select-wrap { width: 100%; }
+  .qr-col-select { width: 100%; min-width: unset; font-size: 13px; padding: 8px 28px 8px 10px; }
+  .qr-col-input-wrap { width: 100%; }
+  .qr-col-input-label { font-size: 11px; }
+  .qr-col-input { width: 60px; font-size: 13px; padding: 7px 8px; }
+  .qr-col-hint { font-size: 11px; }
+
+  /* Hint & actions */
+  .qr-paste-hint { font-size: 10.5px; gap: 5px; }
+  .qr-paste-actions { gap: 6px; }
+  .qr-btn { padding: 9px 14px; font-size: 12.5px; border-radius: 8px; }
+  .qr-btn .material-icons-round { font-size: 15px; }
+
+  /* Stats bar */
+  .qr-stats-bar { gap: 12px; padding: 8px 12px; font-size: 11px; }
+
+  /* Result toolbar */
+  .qr-result-toolbar { padding: 8px 10px; gap: 6px; flex-wrap: wrap; }
+  .qr-result-title { font-size: 12.5px; width: 100%; }
+  .qr-search-box { flex: 1; }
+  .qr-search-box input { width: 100%; font-size: 13px; }
+
+  /* Table — QR lebih besar, kolom lain tetap scroll */
+  .qr-table-wrap { -webkit-overflow-scrolling: touch; }
+  .qr-table { font-size: 12px; }
+  .qr-table th { padding: 7px 8px; font-size: 9.5px; }
+  .qr-table td { padding: 6px 8px; }
+  .qr-img-cell { padding: 4px 6px !important; }
+  .qr-img-cell img { width: 80px !important; height: 80px !important; }
+
+  /* Empty state */
+  .qr-empty { padding: 36px 16px; }
+  .qr-empty .material-icons-round { font-size: 36px; }
+  .qr-empty p { font-size: 12px; }
+}
+
 @media print {
   .sidebar,.topbar,.qr-paste-panel,.qr-result-toolbar { display: none !important; }
   #page-qr { display: block !important; background: #fff !important; }
@@ -368,6 +424,55 @@
   var _qrFiltered = [];
   var _qrCol      = 'all'; // 'all' | 0 | 1 | 2 ...
   var _qrMaxCols  = 0;
+  /* ── Supabase Sync ── */
+  var _qrSbUrl = '';
+  var _qrSbKey = '';
+
+  function _qrResolveSupabase() {
+    if (_qrSbUrl && _qrSbKey) return;
+    if (typeof CONFIG !== 'undefined') {
+      _qrSbUrl = (CONFIG.SUPABASE_URL || '').trim();
+      _qrSbKey = (CONFIG.SUPABASE_KEY || '').trim();
+    }
+  }
+
+  function _qrSaveToSupabase(rows, maxCols) {
+    _qrResolveSupabase();
+    if (!_qrSbUrl || !_qrSbKey) return;
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions', {
+      method: 'POST',
+      headers: {
+        'Content-Type'  : 'application/json',
+        'apikey'        : _qrSbKey,
+        'Authorization' : 'Bearer ' + _qrSbKey,
+        'Prefer'        : 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        session_key : 'default',
+        rows        : rows,
+        max_cols    : maxCols,
+        updated_at  : new Date().toISOString(),
+      }),
+    }).then(function(r) {
+      if (!r.ok) console.warn('[QR] Supabase save error', r.status);
+    }).catch(function(e) {
+      console.warn('[QR] Supabase save failed', e.message);
+    });
+  }
+
+  function _qrClearSupabase() {
+    _qrResolveSupabase();
+    if (!_qrSbUrl || !_qrSbKey) return;
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.default', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type'  : 'application/json',
+        'apikey'        : _qrSbKey,
+        'Authorization' : 'Bearer ' + _qrSbKey,
+      },
+      body: JSON.stringify({ rows: [], max_cols: 0, updated_at: new Date().toISOString() }),
+    }).catch(function(e) { console.warn('[QR] Supabase clear failed', e.message); });
+  }
 
   window._qrTogglePaste = function() {
     var body = document.getElementById('qrPasteBody');
@@ -475,6 +580,7 @@
     document.getElementById('qrTableCount').textContent  = '— '+_qrRows.length+' baris';
     _qrFiltered = _qrRows;
     _qrRender(_qrFiltered, _qrMaxCols);
+    _qrSaveToSupabase(_qrRows, _qrMaxCols);
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display = 'none';
@@ -529,6 +635,7 @@
   window._qrClear = function() {
     document.getElementById('qrPasteTA').value = '';
     _qrRows=[]; _qrFiltered=[]; _qrCol='all'; _qrMaxCols=0;
+    _qrClearSupabase();
     document.getElementById('qrStatsBar').style.display = 'none';
     document.getElementById('qrPrintBtn').style.display = 'none';
     document.getElementById('qrTableCount').textContent = '';
