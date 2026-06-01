@@ -297,6 +297,7 @@
     var pg = document.createElement('div');
     pg.className = 'page hidden';
     pg.id = 'pgQr';
+    pg.style.cssText = 'flex-direction:column;height:100%;overflow:hidden;background:#0d1117;';
     pg.innerHTML = `
       <div class="appbar">
         <button class="hamburger" onclick="UI.Sidebar.toggle()" aria-label="Menu"><span></span></button>
@@ -475,23 +476,36 @@
   window.QrMobile = {
 
     open: function() {
-      /* Sembunyikan semua page */
-      document.querySelectorAll('.page').forEach(function(p) {
-        p.classList.add('hidden');
-        p.style.display = '';
+      /* Pakai switchNav kalau ada, lalu tampilkan pgQr */
+      /* Sembunyikan semua page pakai cara yang sama dengan app mobile */
+      var pages = ['pgHome','pgSearch','pgCreate','pgScan','pgPhoto','pgDetail'];
+      pages.forEach(function(id) {
+        var p = document.getElementById(id);
+        if (p) { p.classList.add('hidden'); p.style.display = ''; }
       });
-      /* Nonaktifkan semua nav */
+
+      /* Nonaktifkan semua sidebar nav */
       document.querySelectorAll('.sidebar-item').forEach(function(b) { b.classList.remove('active'); });
+      ['sbnHome','sbnSearch','sbnOb','sbnHvs','sbnIb'].forEach(function(id) {
+        var b = document.getElementById(id); if (b) b.classList.remove('active');
+      });
 
+      /* Tampilkan pgQr */
       var pg = document.getElementById('pgQr');
-      if (pg) { pg.classList.remove('hidden'); }
+      if (pg) {
+        pg.classList.remove('hidden');
+        pg.style.display = 'flex';
+        pg.style.flexDirection = 'column';
+        pg.style.height = '100%';
+        pg.style.position = 'relative';
+      }
 
+      /* Aktifkan nav QR */
       var btn = document.getElementById('sbnQr');
       if (btn) btn.classList.add('active');
 
-      /* Update judul appbar kalau ada */
-      var title = document.querySelector('#pgQr .appbar-title');
-      if (title) title.textContent = 'QR Table';
+      /* Tutup sidebar kalau ada */
+      try { if (typeof UI !== 'undefined' && UI.Sidebar) UI.Sidebar.close(); } catch(e) {}
     },
 
     setCol: function(val) {
