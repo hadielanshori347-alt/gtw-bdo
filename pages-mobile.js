@@ -104,14 +104,22 @@ const HomePage = {
     setTimeout(() => CreatePage.selectType(t), 80);
   },
 
-  // ── Data List — buka modal list data ──
+ switchDataMode(mode) {
+    STATE.dataListMode = mode;
+    document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
+    document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
+    HomePage._renderDataList();
+  },
+
   openDataList(mode) {
     STATE.dataListMode = mode;
     STATE.dataListTab  = STATE.currentTab || 'ob';
+    document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
+    document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
     HomePage._renderDataList();
     document.getElementById('dataListModal').classList.add('open');
   },
-
+  
   _renderDataList() {
     const mode  = STATE.dataListMode;
     const tab   = STATE.dataListTab;
