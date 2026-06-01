@@ -1,82 +1,101 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.0
+   GTW BDO — qr-page.js v1.1 (Dark Theme)
    Halaman QR Table: paste data dari web lain → tabel + QR
    ============================================================ */
 
 (function () {
   'use strict';
 
-  /* ── Inject CSS ── */
   function injectCSS() {
     if (document.getElementById('_qrPageCSS')) return;
     var s = document.createElement('style');
     s.id = '_qrPageCSS';
     s.textContent = `
 
+/* ══ DARK VARS ══ */
+#page-qr {
+  --qr-bg:       #0d1117;
+  --qr-surface:  #161b22;
+  --qr-surface2: #1c2128;
+  --qr-surface3: #21262d;
+  --qr-border:   #30363d;
+  --qr-border2:  #3d444d;
+  --qr-text:     #e6edf3;
+  --qr-muted:    #7d8590;
+  --qr-accent:   #2f81f7;
+  --qr-accent2:  #58a6ff;
+  --qr-green:    #3fb950;
+  --qr-orange:   #d29922;
+  --qr-cyan:     #39c5cf;
+}
+
 /* ══ PAGE WRAPPER ══ */
 #page-qr {
   display: none;
   flex-direction: column;
   gap: 14px;
+  background: var(--qr-bg);
+  min-height: calc(100vh - 52px);
+  margin: -18px -20px;
+  padding: 18px 20px;
 }
 
-/* ══ PASTE ZONE ══ */
+/* ══ PASTE PANEL ══ */
 .qr-paste-panel {
-  background: var(--surface);
-  border: 1px solid var(--surface-3);
-  border-radius: var(--r2);
-  box-shadow: var(--shadow-xs);
+  background: var(--qr-surface);
+  border: 1px solid var(--qr-border);
+  border-radius: 12px;
   overflow: hidden;
 }
 .qr-paste-hdr {
-  background: var(--ink);
-  padding: 11px 18px;
+  background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+  border-bottom: 1px solid var(--qr-border);
+  padding: 12px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
-  border-radius: var(--r2) var(--r2) 0 0;
 }
 .qr-paste-hdr-title {
-  color: rgba(255,255,255,.9);
+  color: var(--qr-text);
   font-weight: 600;
   font-size: 12.5px;
   display: flex;
   align-items: center;
   gap: 8px;
-  letter-spacing: -.01em;
 }
-.qr-paste-hdr-title .material-icons-round { font-size: 16px; color: rgba(255,255,255,.55); }
+.qr-paste-hdr-title .material-icons-round {
+  font-size: 16px;
+  color: var(--qr-accent2);
+}
 
-.qr-paste-body {
-  padding: 16px 18px;
-}
+.qr-paste-body { padding: 16px 18px; }
 
 .qr-paste-area-wrap {
   position: relative;
-  border: 1.5px dashed var(--surface-3);
-  border-radius: var(--r);
-  transition: border-color .2s, background .2s;
-  background: var(--surface-1);
+  border: 1.5px dashed var(--qr-border2);
+  border-radius: 8px;
+  background: var(--qr-surface2);
   margin-bottom: 12px;
+  transition: border-color .2s, background .2s;
 }
 .qr-paste-area-wrap.focused {
-  border-color: var(--accent-mid);
-  background: var(--accent-faint);
+  border-color: var(--qr-accent);
+  background: rgba(47,129,247,.06);
 }
 .qr-paste-area-label {
   position: absolute;
   top: 10px; left: 12px;
   font-size: 9.5px;
   font-weight: 700;
-  color: var(--ink-faint);
+  color: var(--qr-muted);
   text-transform: uppercase;
   letter-spacing: 1.5px;
   pointer-events: none;
   transition: color .2s;
 }
-.qr-paste-area-wrap.focused .qr-paste-area-label { color: var(--accent); }
+.qr-paste-area-wrap.focused .qr-paste-area-label { color: var(--qr-accent2); }
 
 .qr-paste-textarea {
   width: 100%;
@@ -85,61 +104,82 @@
   border: none;
   outline: none;
   resize: vertical;
-  font-family: var(--mono);
+  font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  color: var(--ink);
+  color: var(--qr-text);
   line-height: 1.65;
   padding: 28px 12px 10px;
-  caret-color: var(--accent);
+  caret-color: var(--qr-accent2);
 }
-.qr-paste-textarea::placeholder { color: var(--ink-ghost); }
+.qr-paste-textarea::placeholder { color: var(--qr-border2); }
 
 .qr-paste-hint {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: var(--ink-faint);
-  margin-bottom: 10px;
+  color: var(--qr-muted);
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 .qr-paste-hint kbd {
-  background: var(--surface-2);
-  border: 1px solid var(--surface-3);
+  background: var(--qr-surface3);
+  border: 1px solid var(--qr-border2);
   border-radius: 4px;
   padding: 1px 6px;
-  font-family: var(--mono);
+  font-family: 'JetBrains Mono', monospace;
   font-size: 10.5px;
-  color: var(--ink-mid);
+  color: var(--qr-text);
 }
 
-.qr-paste-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.qr-paste-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.qr-btn {
+  display: inline-flex;
   align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all .15s;
+  white-space: nowrap;
 }
+.qr-btn .material-icons-round { font-size: 14px; }
+.qr-btn-primary {
+  background: var(--qr-accent);
+  color: #fff;
+}
+.qr-btn-primary:hover { background: #388bfd; }
+.qr-btn-outline {
+  background: transparent;
+  border: 1px solid var(--qr-border2);
+  color: var(--qr-muted);
+}
+.qr-btn-outline:hover { border-color: var(--qr-accent2); color: var(--qr-accent2); }
 
 /* ══ STATS BAR ══ */
 .qr-stats-bar {
   display: flex;
-  gap: 18px;
+  gap: 20px;
   padding: 8px 18px;
-  background: var(--accent-faint);
-  border-top: 1px solid var(--accent-light);
+  background: rgba(47,129,247,.08);
+  border-top: 1px solid rgba(47,129,247,.2);
   font-size: 11.5px;
-  color: var(--ink-low);
-  font-family: var(--mono);
+  color: var(--qr-muted);
+  font-family: 'JetBrains Mono', monospace;
   flex-wrap: wrap;
 }
-.qr-stats-bar strong { color: var(--accent); font-weight: 700; }
+.qr-stats-bar strong { color: var(--qr-accent2); font-weight: 700; }
 
-/* ══ RESULT TABLE ══ */
+/* ══ RESULT PANEL ══ */
 .qr-result-panel {
-  background: var(--surface);
-  border: 1px solid var(--surface-3);
-  border-radius: var(--r2);
-  box-shadow: var(--shadow-xs);
+  background: var(--qr-surface);
+  border: 1px solid var(--qr-border);
+  border-radius: 12px;
   overflow: hidden;
 }
 .qr-result-toolbar {
@@ -147,50 +187,73 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  border-bottom: 1px solid var(--surface-2);
+  border-bottom: 1px solid var(--qr-border);
+  background: var(--qr-surface2);
   flex-wrap: wrap;
 }
 .qr-result-title {
   font-weight: 700;
   font-size: 13px;
-  color: var(--ink);
+  color: var(--qr-text);
   flex: 1;
-  letter-spacing: -.01em;
 }
-.qr-table-wrap {
-  overflow-x: auto;
+.qr-search-box {
+  display: flex;
+  align-items: center;
+  background: var(--qr-surface3);
+  border: 1px solid var(--qr-border);
+  border-radius: 7px;
+  padding: 5px 10px;
+  gap: 6px;
+  transition: border-color .15s;
 }
+.qr-search-box:focus-within { border-color: var(--qr-accent); }
+.qr-search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 12px;
+  width: 160px;
+  color: var(--qr-text);
+  font-family: inherit;
+}
+.qr-search-box input::placeholder { color: var(--qr-border2); }
+.qr-search-box .material-icons-round { font-size: 14px; color: var(--qr-muted); }
+
+/* ══ TABLE ══ */
+.qr-table-wrap { overflow-x: auto; }
 .qr-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 12.5px;
 }
-.qr-table thead tr { background: var(--surface-1); }
+.qr-table thead tr { background: var(--qr-surface2); }
 .qr-table th {
   padding: 9px 12px;
   text-align: left;
   font-weight: 700;
   font-size: 10px;
-  color: var(--ink-low);
+  color: var(--qr-muted);
   text-transform: uppercase;
   letter-spacing: .8px;
   white-space: nowrap;
-  border-bottom: 1px solid var(--surface-3);
+  border-bottom: 1px solid var(--qr-border);
 }
 .qr-table th.qr-th-qr { width: 72px; text-align: center; }
 .qr-table td {
   padding: 8px 12px;
-  border-bottom: 1px solid var(--surface-2);
+  border-bottom: 1px solid var(--qr-border);
   vertical-align: middle;
+  color: var(--qr-text);
 }
 .qr-table tr:last-child td { border-bottom: none; }
-.qr-table tbody tr:hover td { background: var(--accent-faint); }
+.qr-table tbody tr:hover td { background: rgba(47,129,247,.07); }
 
 .qr-img-cell { text-align: center; padding: 6px 8px !important; }
 .qr-img-cell img {
   display: block;
   margin: 0 auto;
-  border: 1px solid var(--surface-3);
+  border: 1px solid var(--qr-border2);
   border-radius: 4px;
   background: #fff;
   image-rendering: pixelated;
@@ -199,31 +262,30 @@
 .qr-cell-code {
   display: inline-flex;
   align-items: center;
-  background: var(--accent-faint);
-  color: var(--accent);
-  border: 1px solid var(--accent-light);
+  background: rgba(47,129,247,.12);
+  color: var(--qr-accent2);
+  border: 1px solid rgba(47,129,247,.25);
   border-radius: 4px;
   padding: 2px 8px;
-  font-family: var(--mono);
+  font-family: 'JetBrains Mono', monospace;
   font-size: 11.5px;
   font-weight: 600;
-  letter-spacing: .3px;
 }
 .qr-cell-code.green {
-  background: var(--green-light);
-  color: var(--green);
-  border-color: #A7F3D0;
+  background: rgba(63,185,80,.12);
+  color: var(--qr-green);
+  border-color: rgba(63,185,80,.25);
 }
 .qr-cell-code.orange {
-  background: var(--orange-light);
-  color: var(--orange);
-  border-color: #FDE68A;
+  background: rgba(210,153,34,.12);
+  color: var(--qr-orange);
+  border-color: rgba(210,153,34,.25);
 }
 
 .qr-row-num {
-  color: var(--ink-faint);
+  color: var(--qr-muted);
   font-size: 10px;
-  font-family: var(--mono);
+  font-family: 'JetBrains Mono', monospace;
   text-align: center;
   min-width: 28px;
 }
@@ -232,45 +294,36 @@
 .qr-empty {
   padding: 52px 24px;
   text-align: center;
-  color: var(--ink-faint);
 }
 .qr-empty .material-icons-round {
   font-size: 42px;
-  color: var(--ink-ghost);
+  color: var(--qr-border2);
   display: block;
   margin-bottom: 10px;
 }
 .qr-empty p {
   font-size: 12.5px;
   line-height: 1.8;
-  color: var(--ink-low);
+  color: var(--qr-muted);
 }
-.qr-empty strong { color: var(--accent); }
+.qr-empty strong { color: var(--qr-accent2); }
 
-/* ══ PRINT / DOWNLOAD ══ */
 @media print {
   .sidebar, .topbar, .qr-paste-panel, .qr-result-toolbar { display: none !important; }
-  #page-qr { display: block !important; }
-  .qr-result-panel { box-shadow: none; border: none; }
+  #page-qr { display: block !important; background: #fff !important; }
 }
-
     `;
     document.head.appendChild(s);
   }
 
-  /* ── Inject halaman ke DOM ── */
   function injectPage() {
     if (document.getElementById('page-qr')) return;
-
-    /* Tambah ke #mainContent */
     var content = document.getElementById('mainContent');
     if (!content) return;
-
     var div = document.createElement('div');
     div.id = 'page-qr';
     div.style.display = 'none';
     div.innerHTML = `
-      <!-- PASTE PANEL -->
       <div class="qr-paste-panel">
         <div class="qr-paste-hdr" onclick="_qrTogglePaste()">
           <div class="qr-paste-hdr-title">
@@ -278,31 +331,27 @@
             Paste Data → Generate QR
           </div>
           <span class="material-icons-round" id="qrPasteIcon"
-            style="color:rgba(255,255,255,.4);font-size:18px">expand_more</span>
+            style="color:rgba(255,255,255,.35);font-size:18px">expand_more</span>
         </div>
         <div class="qr-paste-body" id="qrPasteBody">
           <div class="qr-paste-area-wrap" id="qrPasteWrap">
             <span class="qr-paste-area-label">▸ Area Paste Data</span>
-            <textarea
-              class="qr-paste-textarea"
-              id="qrPasteTA"
+            <textarea class="qr-paste-textarea" id="qrPasteTA"
               placeholder="Klik di sini lalu Ctrl+V — paste tabel dari web / spreadsheet lain&#10;&#10;Setiap baris = 1 QR Code&#10;Kolom dipisah Tab, baris dipisah Enter"></textarea>
           </div>
           <div class="qr-paste-hint">
             <kbd>Ctrl</kbd>+<kbd>V</kbd> paste dari web / spreadsheet
-            &nbsp;·&nbsp;
-            Kolom dipisah <kbd>Tab</kbd>
-            &nbsp;·&nbsp;
-            QR otomatis per baris
+            &nbsp;·&nbsp; Kolom dipisah <kbd>Tab</kbd>
+            &nbsp;·&nbsp; QR otomatis per baris
           </div>
           <div class="qr-paste-actions">
-            <button class="btn btn-primary btn-sm" onclick="_qrGenerate()">
+            <button class="qr-btn qr-btn-primary" onclick="_qrGenerate()">
               <span class="material-icons-round">qr_code</span> Generate QR
             </button>
-            <button class="btn btn-outline btn-sm" onclick="_qrClear()">
+            <button class="qr-btn qr-btn-outline" onclick="_qrClear()">
               <span class="material-icons-round">clear</span> Clear
             </button>
-            <button class="btn btn-outline btn-sm" onclick="_qrPrint()" id="qrPrintBtn" style="display:none">
+            <button class="qr-btn qr-btn-outline" onclick="window.print()" id="qrPrintBtn" style="display:none">
               <span class="material-icons-round">print</span> Print
             </button>
           </div>
@@ -314,14 +363,13 @@
         </div>
       </div>
 
-      <!-- RESULT TABLE -->
       <div class="qr-result-panel" id="qrResultPanel">
         <div class="qr-result-toolbar">
           <div class="qr-result-title">
             QR Table
-            <span style="color:var(--ink-low);font-weight:400" id="qrTableCount"></span>
+            <span style="color:#7d8590;font-weight:400" id="qrTableCount"></span>
           </div>
-          <div class="search-box">
+          <div class="qr-search-box">
             <span class="material-icons-round">search</span>
             <input id="qrSearch" placeholder="Cari data..." oninput="_qrFilterTable()">
           </div>
@@ -339,20 +387,15 @@
     content.appendChild(div);
   }
 
-  /* ── Inject nav item ke sidebar ── */
   function injectNav() {
     if (document.getElementById('nav-qr')) return;
     var nav = document.querySelector('.sidebar-nav');
     if (!nav) return;
-
-    /* Tambah divider + label baru */
     var divider = document.createElement('div');
     divider.className = 'nav-divider';
-
     var label = document.createElement('div');
     label.className = 'nav-section-label';
     label.textContent = 'Tools';
-
     var item = document.createElement('div');
     item.className = 'nav-item';
     item.id = 'nav-qr';
@@ -370,19 +413,15 @@
       <span class="nav-label">QR Table</span>
       <span class="nav-active-dot"></span>
     `;
-
     nav.appendChild(divider);
     nav.appendChild(label);
     nav.appendChild(item);
   }
 
-  /* ── Patch switchPage agar mengenali 'qr' ── */
   function patchSwitchPage() {
     var _orig = window.switchPage;
     window.switchPage = function (page) {
       if (page !== 'qr') { _orig(page); return; }
-
-      /* Sembunyikan semua halaman */
       var all = ['ob','hvs','ib','manifest','obib','search','qr'];
       all.forEach(function (p) {
         var el = document.getElementById('page-' + p);
@@ -390,21 +429,14 @@
         var n = document.getElementById('nav-' + p);
         if (n) n.classList.remove('active');
       });
-
-      var target = document.getElementById('page-qr');
-      if (target) {
-        target.style.display = 'flex';
-        requestAnimationFrame(function () {
-          target.style.display = 'flex';
-        });
-      }
+      requestAnimationFrame(function () {
+        var target = document.getElementById('page-qr');
+        if (target) target.style.display = 'flex';
+      });
       var navEl = document.getElementById('nav-qr');
       if (navEl) navEl.classList.add('active');
-
       var titleEl = document.getElementById('topbarTitle');
       if (titleEl) titleEl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris</span>';
-
-      /* Focus textarea */
       setTimeout(function () {
         var ta = document.getElementById('qrPasteTA');
         if (ta) ta.focus();
@@ -412,11 +444,8 @@
     };
   }
 
-  /* ── State ── */
-  var _qrRows    = [];   // semua rows parsed
-  var _qrFiltered = [];  // setelah filter pencarian
+  var _qrRows = [], _qrFiltered = [];
 
-  /* ── Toggle paste panel ── */
   window._qrTogglePaste = function () {
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
@@ -426,40 +455,34 @@
     if (icon) icon.innerText = isOpen ? 'expand_more' : 'expand_less';
   };
 
-  /* ── Parse textarea ── */
   function _parse(raw) {
     return raw.trim().split('\n')
       .map(function (r) { return r.split('\t').map(function (c) { return c.trim(); }); })
       .filter(function (r) { return r.some(function (c) { return c.length > 0; }); });
   }
 
-  /* ── QR URL via api.qrserver.com ── */
   function _qrUrl(text, size) {
-    size = size || 72;
-    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size +
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size||72) + 'x' + (size||72) +
       '&data=' + encodeURIComponent(text);
   }
 
-  /* ── Deteksi apakah nilai terlihat seperti kode/ID ── */
   function _isCode(val) {
     return /^(BAG|BDO|GTW|CGK|HVS|OB|IB|[A-Z]{2,}-[A-Z0-9\-]{3,})/i.test(val) ||
            /^[A-Z0-9\-]{8,}$/.test(val);
   }
 
+  function _escH(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
   function _cellHtml(val) {
-    if (!val) return '<span style="color:var(--ink-ghost)">—</span>';
-    if (_isCode(val)) return '<span class="qr-cell-code">' + _escH(val) + '</span>';
-    /* Deteksi status */
+    if (!val) return '<span style="color:#3d444d">—</span>';
     if (/selesai/i.test(val)) return '<span class="qr-cell-code green">' + _escH(val) + '</span>';
     if (/proses/i.test(val)) return '<span class="qr-cell-code orange">' + _escH(val) + '</span>';
-    return _escH(val);
+    if (_isCode(val)) return '<span class="qr-cell-code">' + _escH(val) + '</span>';
+    return '<span style="color:#e6edf3">' + _escH(val) + '</span>';
   }
 
-  function _escH(s) {
-    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  /* ── Generate ── */
   window._qrGenerate = function () {
     var raw = (document.getElementById('qrPasteTA').value || '').trim();
     if (!raw) {
@@ -467,24 +490,16 @@
       return;
     }
     _qrRows = _parse(raw);
-    if (!_qrRows.length) {
-      if (typeof toast === 'function') toast('Tidak ada data yang dapat diproses', 'error');
-      return;
-    }
-
-    /* Stats */
-    var maxCols = Math.max.apply(null, _qrRows.map(function (r) { return r.length; }));
+    if (!_qrRows.length) return;
+    var maxCols = Math.max.apply(null, _qrRows.map(function(r){return r.length;}));
     document.getElementById('qrStatRows').textContent = _qrRows.length;
     document.getElementById('qrStatCols').textContent = maxCols;
     document.getElementById('qrStatQr').textContent   = _qrRows.length;
     document.getElementById('qrStatsBar').style.display = 'flex';
     document.getElementById('qrPrintBtn').style.display  = '';
     document.getElementById('qrTableCount').textContent  = '— ' + _qrRows.length + ' baris';
-
     _qrFiltered = _qrRows;
     _qrRender(_qrRows, maxCols);
-
-    /* Collapse paste panel setelah generate */
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display = 'none';
@@ -492,97 +507,63 @@
   };
 
   function _qrRender(rows, maxCols) {
-    if (!maxCols) maxCols = Math.max.apply(null, rows.map(function (r) { return r.length; }));
+    if (!maxCols) maxCols = Math.max.apply(null, rows.map(function(r){return r.length;}));
     var wrap = document.getElementById('qrTableWrap');
     if (!rows.length) {
       wrap.innerHTML = '<div class="qr-empty"><span class="material-icons-round">qr_code</span><p>Tidak ada data</p></div>';
       return;
     }
-
-    /* Header */
-    var thCols = '<th class="qr-th-qr">QR</th><th style="min-width:28px">#</th>';
-    for (var i = 0; i < maxCols; i++) {
-      thCols += '<th>Kol ' + (i + 1) + '</th>';
-    }
-
-    /* Rows */
-    var tbodyHtml = rows.map(function (row, ri) {
-      /* Gabung semua kolom jadi satu string untuk isi QR */
-      var qrContent = row.filter(function (c) { return c; }).join(' | ');
+    var thCols = '<th class="qr-th-qr">QR</th><th style="min-width:28px;color:#7d8590">#</th>';
+    for (var i = 0; i < maxCols; i++) thCols += '<th>Kol ' + (i+1) + '</th>';
+    var tbodyHtml = rows.map(function(row, ri) {
+      var qrContent = row.filter(function(c){return c;}).join(' | ');
       var imgHtml = qrContent
         ? '<img src="' + _qrUrl(qrContent) + '" width="64" height="64" loading="lazy" alt="QR">'
-        : '<span style="color:var(--ink-ghost);font-size:11px">—</span>';
-
+        : '<span style="color:#3d444d;font-size:11px">—</span>';
       var tds = '<td class="qr-img-cell">' + imgHtml + '</td>';
-      tds += '<td class="qr-row-num">' + (ri + 1) + '</td>';
-      for (var ci = 0; ci < maxCols; ci++) {
-        tds += '<td>' + _cellHtml(row[ci] || '') + '</td>';
-      }
-      return '<tr style="animation:fp2ItemIn .2s ease ' + Math.min(ri * 20, 400) + 'ms both">' + tds + '</tr>';
+      tds += '<td class="qr-row-num">' + (ri+1) + '</td>';
+      for (var ci = 0; ci < maxCols; ci++) tds += '<td>' + _cellHtml(row[ci]||'') + '</td>';
+      return '<tr style="animation:fp2ItemIn .2s ease ' + Math.min(ri*20,400) + 'ms both">' + tds + '</tr>';
     }).join('');
-
     wrap.innerHTML =
-      '<table class="qr-table">' +
-        '<thead><tr>' + thCols + '</tr></thead>' +
-        '<tbody>' + tbodyHtml + '</tbody>' +
-      '</table>';
+      '<table class="qr-table"><thead><tr>' + thCols + '</tr></thead><tbody>' + tbodyHtml + '</tbody></table>';
   }
 
-  /* ── Filter ── */
   window._qrFilterTable = function () {
     if (!_qrRows.length) return;
-    var q = (document.getElementById('qrSearch').value || '').toLowerCase();
-    var maxCols = Math.max.apply(null, _qrRows.map(function (r) { return r.length; }));
-    if (!q) {
-      _qrFiltered = _qrRows;
-    } else {
-      _qrFiltered = _qrRows.filter(function (row) {
-        return row.some(function (c) { return c.toLowerCase().indexOf(q) !== -1; });
-      });
-    }
+    var q = (document.getElementById('qrSearch').value||'').toLowerCase();
+    var maxCols = Math.max.apply(null, _qrRows.map(function(r){return r.length;}));
+    _qrFiltered = q
+      ? _qrRows.filter(function(row){ return row.some(function(c){ return c.toLowerCase().indexOf(q)!==-1; }); })
+      : _qrRows;
     document.getElementById('qrTableCount').textContent = '— ' + _qrFiltered.length + ' baris';
     _qrRender(_qrFiltered, maxCols);
   };
 
-  /* ── Clear ── */
   window._qrClear = function () {
     document.getElementById('qrPasteTA').value = '';
-    _qrRows    = [];
-    _qrFiltered = [];
-    document.getElementById('qrStatsBar').style.display  = 'none';
-    document.getElementById('qrPrintBtn').style.display  = 'none';
-    document.getElementById('qrTableCount').textContent  = '';
+    _qrRows = []; _qrFiltered = [];
+    document.getElementById('qrStatsBar').style.display = 'none';
+    document.getElementById('qrPrintBtn').style.display = 'none';
+    document.getElementById('qrTableCount').textContent = '';
     document.getElementById('qrTableWrap').innerHTML =
-      '<div class="qr-empty">' +
-        '<span class="material-icons-round">qr_code</span>' +
-        '<p>Paste data dari web lain di atas<br>' +
-        'lalu klik <strong>Generate QR</strong><br>' +
-        'Setiap baris otomatis mendapat QR Code</p>' +
-      '</div>';
-    /* Buka kembali paste panel */
+      '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
+      '<p>Paste data dari web lain di atas<br>lalu klik <strong>Generate QR</strong><br>Setiap baris otomatis mendapat QR Code</p></div>';
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display = '';
     if (icon) icon.innerText = 'expand_less';
   };
 
-  /* ── Print ── */
-  window._qrPrint = function () {
-    window.print();
-  };
-
-  /* ── Bind textarea events ── */
   function bindEvents() {
     var ta   = document.getElementById('qrPasteTA');
     var wrap = document.getElementById('qrPasteWrap');
     if (!ta || !wrap) return;
-
-    ta.addEventListener('focus',  function () { wrap.classList.add('focused'); });
-    ta.addEventListener('blur',   function () { wrap.classList.remove('focused'); });
-    ta.addEventListener('paste',  function () { setTimeout(window._qrGenerate, 120); });
+    ta.addEventListener('focus', function(){ wrap.classList.add('focused'); });
+    ta.addEventListener('blur',  function(){ wrap.classList.remove('focused'); });
+    ta.addEventListener('paste', function(){ setTimeout(window._qrGenerate, 120); });
   }
 
-  /* ── INIT ── */
   function init() {
     injectCSS();
     injectPage();
@@ -592,7 +573,7 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { setTimeout(init, 500); });
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 500); });
   } else {
     setTimeout(init, 500);
   }
