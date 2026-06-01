@@ -1,6 +1,7 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.4
-   + Fix Supabase upsert: cek row dulu, lalu POST/PATCH
+   GTW BDO — qr-page.js v1.5
+   Fix: upsert pakai Prefer: resolution=merge-duplicates
+        (tidak perlu cek row dulu, lebih reliable)
    ============================================================ */
 
 (function () {
@@ -221,26 +222,15 @@
 
 /* ── RESPONSIVE MOBILE ── */
 @media (max-width: 640px) {
-  #page-qr {
-    margin: -18px -12px;
-    padding: 12px;
-    gap: 10px;
-  }
+  #page-qr { margin: -18px -12px; padding: 12px; gap: 10px; }
   .qr-paste-body { padding: 12px; }
   .qr-paste-hdr { padding: 10px 12px; }
-  .qr-paste-hdr-title { font-size: 12px; }
-  .qr-paste-textarea {
-    font-size: 13px;
-    min-height: 72px;
-    padding: 26px 10px 8px;
-  }
+  .qr-paste-textarea { font-size: 13px; min-height: 72px; padding: 26px 10px 8px; }
   .qr-col-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .qr-col-select-wrap { width: 100%; }
   .qr-col-select { width: 100%; min-width: unset; font-size: 13px; padding: 8px 28px 8px 10px; }
   .qr-col-input-wrap { width: 100%; }
-  .qr-col-input-label { font-size: 11px; }
   .qr-col-input { width: 60px; font-size: 13px; padding: 7px 8px; }
-  .qr-col-hint { font-size: 11px; }
   .qr-paste-hint { font-size: 10.5px; gap: 5px; }
   .qr-paste-actions { gap: 6px; }
   .qr-btn { padding: 9px 14px; font-size: 12.5px; border-radius: 8px; }
@@ -257,7 +247,6 @@
   .qr-img-cell { padding: 4px 6px !important; }
   .qr-img-cell img { width: 80px !important; height: 80px !important; }
   .qr-empty { padding: 36px 16px; }
-  .qr-empty .material-icons-round { font-size: 36px; }
   .qr-empty p { font-size: 12px; }
 }
 
@@ -297,7 +286,6 @@
             &nbsp;·&nbsp; QR otomatis per baris
           </div>
 
-          <!-- KOLOM QR SELECTOR -->
           <div class="qr-col-row">
             <span class="qr-col-label">Kolom QR:</span>
             <div class="qr-col-select-wrap">
@@ -423,80 +411,49 @@
     }
   }
 
-  /* ── FIXED: Supabase upsert — cek dulu, baru POST/PATCH ── */
-  function _qrSaveToSupabase(rows, maxCols) {
+  /* ── FIX: Supabase upsert pakai Prefer: resolution=merge-duplicates ── */
+  function _qrUpsert(rows, maxCols) {
     _qrResolveSupabase();
     if (!_qrSbUrl || !_qrSbKey) {
       console.warn('[QR] Supabase config tidak ditemukan');
       return;
     }
 
-    var headers = {
-      'apikey'        : _qrSbKey,
-      'Authorization' : 'Bearer ' + _qrSbKey,
-    };
-
-    // Step 1: Cek apakah row 'default' sudah ada
-    fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.default&select=id', {
-      headers: headers,
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(existing) {
-      var exists  = existing && existing.length > 0;
-      var method  = exists ? 'PATCH' : 'POST';
-      var url     = _qrSbUrl + '/rest/v1/qr_sessions' +
-                    (exists ? '?session_key=eq.default' : '');
-
-      var body = {
-        rows       : rows,
-        max_cols   : maxCols,
-        updated_at : new Date().toISOString(),
-      };
-      if (!exists) body.session_key = 'default';
-
-      return fetch(url, {
-        method  : method,
-        headers : Object.assign({}, headers, { 'Content-Type': 'application/json' }),
-        body    : JSON.stringify(body),
-      });
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions', {
+      method  : 'POST',
+      headers : {
+        'apikey'        : _qrSbKey,
+        'Authorization' : 'Bearer ' + _qrSbKey,
+        'Content-Type'  : 'application/json',
+        'Prefer'        : 'resolution=merge-duplicates',  // ← upsert via unique index
+      },
+      body: JSON.stringify({
+        session_key : 'default',
+        rows        : rows,
+        max_cols    : maxCols,
+        updated_at  : new Date().toISOString(),
+      }),
     })
     .then(function(r) {
       if (!r.ok) {
         r.text().then(function(t) {
-          console.warn('[QR] Supabase save error', r.status, t);
+          console.warn('[QR] upsert error', r.status, t);
         });
       } else {
-        console.log('[QR] Supabase saved OK ✓');
+        console.log('[QR] upsert OK ✓ rows=' + rows.length);
       }
     })
     .catch(function(e) {
-      console.warn('[QR] Supabase save failed:', e.message);
+      console.warn('[QR] upsert failed:', e.message);
     });
   }
 
-  /* ── FIXED: Supabase clear ── */
-  function _qrClearSupabase() {
-    _qrResolveSupabase();
-    if (!_qrSbUrl || !_qrSbKey) return;
+  function _qrSaveToSupabase(rows, maxCols) {
+    _qrUpsert(rows, maxCols);
+  }
 
-    fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.default', {
-      method : 'PATCH',
-      headers: {
-        'Content-Type'  : 'application/json',
-        'apikey'        : _qrSbKey,
-        'Authorization' : 'Bearer ' + _qrSbKey,
-      },
-      body: JSON.stringify({
-        rows       : [],
-        max_cols   : 0,
-        updated_at : new Date().toISOString(),
-      }),
-    })
-    .then(function(r) {
-      if (!r.ok) r.text().then(function(t){ console.warn('[QR] Clear error', r.status, t); });
-      else console.log('[QR] Supabase cleared OK ✓');
-    })
-    .catch(function(e) { console.warn('[QR] Supabase clear failed:', e.message); });
+  function _qrClearSupabase() {
+    _qrUpsert([], 0);
   }
 
   /* ── Toggle paste panel ── */
@@ -605,7 +562,7 @@
     _qrFiltered = _qrRows;
     _qrRender(_qrFiltered, _qrMaxCols);
 
-    // ✓ Simpan ke Supabase dengan logika upsert yang benar
+    // Simpan ke Supabase — upsert langsung
     _qrSaveToSupabase(_qrRows, _qrMaxCols);
 
     var body = document.getElementById('qrPasteBody');
