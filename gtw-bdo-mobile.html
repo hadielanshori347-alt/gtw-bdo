@@ -634,6 +634,7 @@
 <!-- ═══ DATA LIST MODAL ═══ -->
 <div class="modal-ov" id="dataListModal" style="align-items:stretch">
   <div class="modal-sheet" style="max-height:92vh;border-radius:20px 20px 0 0">
+
     <div class="modal-hdr">
       <div class="modal-title" id="dataListTitle">Data</div>
       <button class="modal-close" onclick="document.getElementById('dataListModal').classList.remove('open')">
@@ -641,19 +642,19 @@
       </button>
     </div>
 
-   <!-- Switch Harian / Semua -->
-<div style="padding:10px 14px 0;flex-shrink:0">
-  <div class="dl-switch">
-    <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">📅 Harian</div>
-    <div class="dl-switch-opt" id="dlSwitchSemua" onclick="HomePage.switchDataMode('semua')">📋 Semua</div>
-  </div>
-</div>
+    <!-- Switch Harian / Semua -->
+    <div style="padding:10px 14px 0;flex-shrink:0">
+      <div class="dl-switch">
+        <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">📅 Harian</div>
+        <div class="dl-switch-opt" id="dlSwitchSemua" onclick="HomePage.switchDataMode('semua')">📋 Semua</div>
+      </div>
+    </div>
 
-    <!-- Tab OB / HVS / IB -->
-    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;margin-top:10px">
-      <div class="dl-tab active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
-      <div class="dl-tab"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
-      <div class="dl-tab"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
+    <!-- Tab OB / HVS / IB — 3 tombol pill -->
+    <div class="dl-tabs-pill">
+      <div class="dl-tab-pill active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
+      <div class="dl-tab-pill"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
+      <div class="dl-tab-pill"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
     </div>
 
     <div class="modal-body" style="padding:12px" id="dataListBody"></div>
