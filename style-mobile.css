@@ -1392,23 +1392,23 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 /* ─── Dashboard Grid ─── */
 .dash-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 4px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 8px;
 }
 .dash-card {
-  border-radius: 20px;
-  padding: 20px 12px 16px;
+  border-radius: 18px;
+  padding: 14px 8px 12px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center;
   cursor: pointer;
   border: 1px solid var(--border2);
   transition: .18s;
-  aspect-ratio: 1 / 1;   /* ← kotak sempurna */
+  aspect-ratio: 1 / 1;
   position: relative; overflow: hidden;
 }
-.dash-card:active { transform: scale(.93); opacity: .85; }
+.dash-card:active { transform: scale(.90); opacity: .85; }
 
 .dash-scan   { background: var(--blue-l);   border-color: rgba(59,130,246,.3); }
 .dash-search { background: var(--purple-l); border-color: rgba(139,92,246,.3); }
@@ -1416,20 +1416,21 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .dash-semua  { background: var(--green-l);  border-color: rgba(16,185,129,.3); }
 
 .dash-scan   .dash-icon { color: var(--blue);   }
-.dash-search .dash-icon { color: var(--purple);  }
-.dash-harian .dash-icon { color: var(--orange);  }
-.dash-semua  .dash-icon { color: var(--green);   }
+.dash-search .dash-icon { color: var(--purple); }
+.dash-harian .dash-icon { color: var(--orange); }
+.dash-semua  .dash-icon { color: var(--green);  }
 
-.dash-icon { margin-bottom: 10px; }
+.dash-icon { margin-bottom: 8px; }
 .dash-label {
-  font-size: 11px; font-weight: 800;
+  font-size: 9px; font-weight: 800;
   font-family: var(--font-head);
-  letter-spacing: .5px;
+  letter-spacing: .3px;
   text-transform: uppercase;
   color: var(--text);
-  margin-bottom: 3px;
+  margin-bottom: 2px;
+  line-height: 1.3;
 }
 .dash-sub {
-  font-size: 10px; color: var(--text3);
-  font-weight: 500; letter-spacing: .2px;
+  font-size: 8px; color: var(--text3);
+  font-weight: 500;
 }
