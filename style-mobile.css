@@ -1393,12 +1393,12 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .dash-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  gap: 8px;
   margin-top: 8px;
 }
 .dash-card {
-  border-radius: 18px;
-  padding: 14px 8px 12px;
+  border-radius: 16px;
+  padding: 10px 6px 10px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   text-align: center;
@@ -1408,7 +1408,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   aspect-ratio: 1 / 1;
   position: relative; overflow: hidden;
 }
-.dash-card:active { transform: scale(.90); opacity: .85; }
+.dash-card:active { transform: scale(.88); opacity: .85; }
 
 .dash-scan   { background: var(--blue-l);   border-color: rgba(59,130,246,.3); }
 .dash-search { background: var(--purple-l); border-color: rgba(139,92,246,.3); }
@@ -1420,19 +1420,46 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .dash-harian .dash-icon { color: var(--orange); }
 .dash-semua  .dash-icon { color: var(--green);  }
 
-.dash-icon { margin-bottom: 8px; }
+.dash-icon { margin-bottom: 6px; line-height: 1; }
 .dash-label {
-  font-size: 9px; font-weight: 800;
+  font-size: 8px; font-weight: 800;
   font-family: var(--font-head);
-  letter-spacing: .3px;
+  letter-spacing: .2px;
   text-transform: uppercase;
   color: var(--text);
   margin-bottom: 2px;
-  line-height: 1.3;
+  line-height: 1.2;
 }
 .dash-sub {
-  font-size: 8px; color: var(--text3);
+  font-size: 7px; color: var(--text3);
   font-weight: 500;
+}
+
+/* ─── Data List Tab Buttons (3 tombol pill) ─── */
+.dl-tabs-pill {
+  display: flex;
+  gap: 6px;
+  padding: 10px 14px 0;
+  flex-shrink: 0;
+}
+.dl-tab-pill {
+  flex: 1; text-align: center;
+  padding: 9px 0;
+  border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+  font-family: var(--font-head);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--text3);
+  cursor: pointer; transition: .18s;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.dl-tab-pill:active { transform: scale(.96); }
+.dl-tab-pill.active {
+  background: var(--surface3);
+  color: #ffffff;
+  border-color: rgba(255,255,255,.3);
 }
 
 /* ─── Data List Switch ─── */
