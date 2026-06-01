@@ -93,29 +93,37 @@
   font-size: 10px; font-weight: 700; color: var(--qr-muted);
   text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
 }
-.qr-col-tabs {
-  display: flex; gap: 5px; flex-wrap: wrap; flex: 1;
+.qr-col-select-wrap {
+  display: flex; align-items: center; gap: 6px; flex: 1; flex-wrap: wrap;
 }
-.qr-col-tab {
-  padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
-  cursor: pointer; border: 1px solid var(--qr-border2); color: var(--qr-muted);
-  background: var(--qr-surface3); transition: all .15s; white-space: nowrap;
-  font-family: 'JetBrains Mono', monospace;
+.qr-col-select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--qr-surface3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8590'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border: 1px solid var(--qr-border2); border-radius: 6px;
+  color: var(--qr-text); font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 600; padding: 5px 28px 5px 10px;
+  cursor: pointer; outline: none; min-width: 130px;
+  transition: border-color .15s;
 }
-.qr-col-tab:hover { border-color: var(--qr-accent2); color: var(--qr-accent2); }
-.qr-col-tab.active {
-  background: rgba(47,129,247,.18); color: var(--qr-accent2);
-  border-color: var(--qr-accent); box-shadow: 0 0 0 2px rgba(47,129,247,.2);
+.qr-col-select:focus { border-color: var(--qr-accent); }
+.qr-col-select option { background: var(--qr-surface2); color: var(--qr-text); }
+.qr-col-input-wrap {
+  display: flex; align-items: center; gap: 5px;
 }
-.qr-col-tab.all {
-  background: rgba(63,185,80,.12); color: var(--qr-green);
-  border-color: rgba(63,185,80,.3);
+.qr-col-input-label {
+  font-size: 10px; color: var(--qr-muted); white-space: nowrap;
 }
-.qr-col-tab.all.active {
-  background: rgba(63,185,80,.22); box-shadow: 0 0 0 2px rgba(63,185,80,.2);
+.qr-col-input {
+  width: 52px; background: var(--qr-surface3); border: 1px solid var(--qr-border2);
+  border-radius: 6px; color: var(--qr-text); font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 600; padding: 5px 8px; outline: none;
+  text-align: center; transition: border-color .15s;
 }
+.qr-col-input:focus { border-color: var(--qr-accent); }
+.qr-col-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 .qr-col-hint {
   font-size: 11px; color: var(--qr-muted); font-family: 'JetBrains Mono', monospace;
+  width: 100%;
 }
 
 .qr-paste-hint {
