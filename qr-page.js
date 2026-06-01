@@ -1,6 +1,6 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.1 (Dark Theme)
-   Halaman QR Table: paste data dari web lain → tabel + QR
+   GTW BDO — qr-page.js v1.2
+   + Pilih kolom QR (dark theme)
    ============================================================ */
 
 (function () {
@@ -11,25 +11,20 @@
     var s = document.createElement('style');
     s.id = '_qrPageCSS';
     s.textContent = `
-
-/* ══ DARK VARS ══ */
 #page-qr {
-  --qr-bg:       #0d1117;
-  --qr-surface:  #161b22;
-  --qr-surface2: #1c2128;
-  --qr-surface3: #21262d;
-  --qr-border:   #30363d;
-  --qr-border2:  #3d444d;
-  --qr-text:     #e6edf3;
-  --qr-muted:    #7d8590;
-  --qr-accent:   #2f81f7;
-  --qr-accent2:  #58a6ff;
-  --qr-green:    #3fb950;
-  --qr-orange:   #d29922;
-  --qr-cyan:     #39c5cf;
+  --qr-bg:      #0d1117;
+  --qr-surface: #161b22;
+  --qr-surface2:#1c2128;
+  --qr-surface3:#21262d;
+  --qr-border:  #30363d;
+  --qr-border2: #3d444d;
+  --qr-text:    #e6edf3;
+  --qr-muted:   #7d8590;
+  --qr-accent:  #2f81f7;
+  --qr-accent2: #58a6ff;
+  --qr-green:   #3fb950;
+  --qr-orange:  #d29922;
 }
-
-/* ══ PAGE WRAPPER ══ */
 #page-qr {
   display: none;
   flex-direction: column;
@@ -40,7 +35,7 @@
   padding: 18px 20px;
 }
 
-/* ══ PASTE PANEL ══ */
+/* PASTE PANEL */
 .qr-paste-panel {
   background: var(--qr-surface);
   border: 1px solid var(--qr-border);
@@ -48,28 +43,17 @@
   overflow: hidden;
 }
 .qr-paste-hdr {
-  background: linear-gradient(135deg, #161b22 0%, #1c2128 100%);
+  background: linear-gradient(135deg,#161b22 0%,#1c2128 100%);
   border-bottom: 1px solid var(--qr-border);
   padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; user-select: none;
 }
 .qr-paste-hdr-title {
-  color: var(--qr-text);
-  font-weight: 600;
-  font-size: 12.5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  color: var(--qr-text); font-weight: 600; font-size: 12.5px;
+  display: flex; align-items: center; gap: 8px;
 }
-.qr-paste-hdr-title .material-icons-round {
-  font-size: 16px;
-  color: var(--qr-accent2);
-}
-
+.qr-paste-hdr-title .material-icons-round { font-size: 16px; color: var(--qr-accent2); }
 .qr-paste-body { padding: 16px 18px; }
 
 .qr-paste-area-wrap {
@@ -85,231 +69,150 @@
   background: rgba(47,129,247,.06);
 }
 .qr-paste-area-label {
-  position: absolute;
-  top: 10px; left: 12px;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--qr-muted);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  pointer-events: none;
-  transition: color .2s;
+  position: absolute; top: 10px; left: 12px;
+  font-size: 9.5px; font-weight: 700; color: var(--qr-muted);
+  text-transform: uppercase; letter-spacing: 1.5px;
+  pointer-events: none; transition: color .2s;
 }
 .qr-paste-area-wrap.focused .qr-paste-area-label { color: var(--qr-accent2); }
-
 .qr-paste-textarea {
-  width: 100%;
-  min-height: 88px;
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: vertical;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  color: var(--qr-text);
-  line-height: 1.65;
-  padding: 28px 12px 10px;
+  width: 100%; min-height: 88px; background: transparent;
+  border: none; outline: none; resize: vertical;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: var(--qr-text); line-height: 1.65; padding: 28px 12px 10px;
   caret-color: var(--qr-accent2);
 }
 .qr-paste-textarea::placeholder { color: var(--qr-border2); }
 
+/* KOLOM QR SELECTOR */
+.qr-col-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; flex-wrap: wrap;
+}
+.qr-col-label {
+  font-size: 10px; font-weight: 700; color: var(--qr-muted);
+  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+}
+.qr-col-tabs {
+  display: flex; gap: 5px; flex-wrap: wrap; flex: 1;
+}
+.qr-col-tab {
+  padding: 4px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--qr-border2); color: var(--qr-muted);
+  background: var(--qr-surface3); transition: all .15s; white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+.qr-col-tab:hover { border-color: var(--qr-accent2); color: var(--qr-accent2); }
+.qr-col-tab.active {
+  background: rgba(47,129,247,.18); color: var(--qr-accent2);
+  border-color: var(--qr-accent); box-shadow: 0 0 0 2px rgba(47,129,247,.2);
+}
+.qr-col-tab.all {
+  background: rgba(63,185,80,.12); color: var(--qr-green);
+  border-color: rgba(63,185,80,.3);
+}
+.qr-col-tab.all.active {
+  background: rgba(63,185,80,.22); box-shadow: 0 0 0 2px rgba(63,185,80,.2);
+}
+.qr-col-hint {
+  font-size: 11px; color: var(--qr-muted); font-family: 'JetBrains Mono', monospace;
+}
+
 .qr-paste-hint {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--qr-muted);
-  margin-bottom: 12px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; font-size: 11px;
+  color: var(--qr-muted); margin-bottom: 12px; flex-wrap: wrap;
 }
 .qr-paste-hint kbd {
-  background: var(--qr-surface3);
-  border: 1px solid var(--qr-border2);
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  color: var(--qr-text);
+  background: var(--qr-surface3); border: 1px solid var(--qr-border2);
+  border-radius: 4px; padding: 1px 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--qr-text);
 }
-
 .qr-paste-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
 .qr-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  transition: all .15s;
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: none; font-family: inherit; transition: all .15s; white-space: nowrap;
 }
 .qr-btn .material-icons-round { font-size: 14px; }
-.qr-btn-primary {
-  background: var(--qr-accent);
-  color: #fff;
-}
+.qr-btn-primary { background: var(--qr-accent); color: #fff; }
 .qr-btn-primary:hover { background: #388bfd; }
-.qr-btn-outline {
-  background: transparent;
-  border: 1px solid var(--qr-border2);
-  color: var(--qr-muted);
-}
+.qr-btn-outline { background: transparent; border: 1px solid var(--qr-border2); color: var(--qr-muted); }
 .qr-btn-outline:hover { border-color: var(--qr-accent2); color: var(--qr-accent2); }
 
-/* ══ STATS BAR ══ */
+/* STATS */
 .qr-stats-bar {
-  display: flex;
-  gap: 20px;
-  padding: 8px 18px;
-  background: rgba(47,129,247,.08);
-  border-top: 1px solid rgba(47,129,247,.2);
-  font-size: 11.5px;
-  color: var(--qr-muted);
-  font-family: 'JetBrains Mono', monospace;
-  flex-wrap: wrap;
+  display: flex; gap: 20px; padding: 8px 18px;
+  background: rgba(47,129,247,.08); border-top: 1px solid rgba(47,129,247,.2);
+  font-size: 11.5px; color: var(--qr-muted);
+  font-family: 'JetBrains Mono', monospace; flex-wrap: wrap;
 }
 .qr-stats-bar strong { color: var(--qr-accent2); font-weight: 700; }
 
-/* ══ RESULT PANEL ══ */
+/* RESULT */
 .qr-result-panel {
-  background: var(--qr-surface);
-  border: 1px solid var(--qr-border);
-  border-radius: 12px;
-  overflow: hidden;
+  background: var(--qr-surface); border: 1px solid var(--qr-border);
+  border-radius: 12px; overflow: hidden;
 }
 .qr-result-toolbar {
-  padding: 10px 16px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  border-bottom: 1px solid var(--qr-border);
-  background: var(--qr-surface2);
-  flex-wrap: wrap;
+  padding: 10px 16px; display: flex; align-items: center; gap: 9px;
+  border-bottom: 1px solid var(--qr-border); background: var(--qr-surface2); flex-wrap: wrap;
 }
-.qr-result-title {
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--qr-text);
-  flex: 1;
-}
+.qr-result-title { font-weight: 700; font-size: 13px; color: var(--qr-text); flex: 1; }
 .qr-search-box {
-  display: flex;
-  align-items: center;
-  background: var(--qr-surface3);
-  border: 1px solid var(--qr-border);
-  border-radius: 7px;
-  padding: 5px 10px;
-  gap: 6px;
-  transition: border-color .15s;
+  display: flex; align-items: center; background: var(--qr-surface3);
+  border: 1px solid var(--qr-border); border-radius: 7px; padding: 5px 10px;
+  gap: 6px; transition: border-color .15s;
 }
 .qr-search-box:focus-within { border-color: var(--qr-accent); }
 .qr-search-box input {
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 12px;
-  width: 160px;
-  color: var(--qr-text);
-  font-family: inherit;
+  border: none; outline: none; background: transparent; font-size: 12px;
+  width: 160px; color: var(--qr-text); font-family: inherit;
 }
 .qr-search-box input::placeholder { color: var(--qr-border2); }
 .qr-search-box .material-icons-round { font-size: 14px; color: var(--qr-muted); }
 
-/* ══ TABLE ══ */
+/* TABLE */
 .qr-table-wrap { overflow-x: auto; }
-.qr-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
+.qr-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .qr-table thead tr { background: var(--qr-surface2); }
 .qr-table th {
-  padding: 9px 12px;
-  text-align: left;
-  font-weight: 700;
-  font-size: 10px;
-  color: var(--qr-muted);
-  text-transform: uppercase;
-  letter-spacing: .8px;
-  white-space: nowrap;
-  border-bottom: 1px solid var(--qr-border);
+  padding: 9px 12px; text-align: left; font-weight: 700; font-size: 10px;
+  color: var(--qr-muted); text-transform: uppercase; letter-spacing: .8px;
+  white-space: nowrap; border-bottom: 1px solid var(--qr-border);
 }
 .qr-table th.qr-th-qr { width: 72px; text-align: center; }
+.qr-table th.qr-th-active { color: var(--qr-accent2) !important; }
 .qr-table td {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--qr-border);
-  vertical-align: middle;
-  color: var(--qr-text);
+  padding: 8px 12px; border-bottom: 1px solid var(--qr-border);
+  vertical-align: middle; color: var(--qr-text);
 }
 .qr-table tr:last-child td { border-bottom: none; }
 .qr-table tbody tr:hover td { background: rgba(47,129,247,.07); }
+.qr-td-active { background: rgba(47,129,247,.05) !important; }
 
 .qr-img-cell { text-align: center; padding: 6px 8px !important; }
 .qr-img-cell img {
-  display: block;
-  margin: 0 auto;
-  border: 1px solid var(--qr-border2);
-  border-radius: 4px;
-  background: #fff;
-  image-rendering: pixelated;
+  display: block; margin: 0 auto; border: 1px solid var(--qr-border2);
+  border-radius: 4px; background: #fff; image-rendering: pixelated;
 }
-
 .qr-cell-code {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(47,129,247,.12);
-  color: var(--qr-accent2);
-  border: 1px solid rgba(47,129,247,.25);
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11.5px;
-  font-weight: 600;
+  display: inline-flex; align-items: center;
+  background: rgba(47,129,247,.12); color: var(--qr-accent2);
+  border: 1px solid rgba(47,129,247,.25); border-radius: 4px;
+  padding: 2px 8px; font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px; font-weight: 600;
 }
-.qr-cell-code.green {
-  background: rgba(63,185,80,.12);
-  color: var(--qr-green);
-  border-color: rgba(63,185,80,.25);
-}
-.qr-cell-code.orange {
-  background: rgba(210,153,34,.12);
-  color: var(--qr-orange);
-  border-color: rgba(210,153,34,.25);
-}
+.qr-cell-code.green { background: rgba(63,185,80,.12); color: var(--qr-green); border-color: rgba(63,185,80,.25); }
+.qr-cell-code.orange { background: rgba(210,153,34,.12); color: var(--qr-orange); border-color: rgba(210,153,34,.25); }
+.qr-row-num { color: var(--qr-muted); font-size: 10px; font-family: 'JetBrains Mono', monospace; text-align: center; min-width: 28px; }
 
-.qr-row-num {
-  color: var(--qr-muted);
-  font-size: 10px;
-  font-family: 'JetBrains Mono', monospace;
-  text-align: center;
-  min-width: 28px;
-}
-
-/* ══ EMPTY STATE ══ */
-.qr-empty {
-  padding: 52px 24px;
-  text-align: center;
-}
-.qr-empty .material-icons-round {
-  font-size: 42px;
-  color: var(--qr-border2);
-  display: block;
-  margin-bottom: 10px;
-}
-.qr-empty p {
-  font-size: 12.5px;
-  line-height: 1.8;
-  color: var(--qr-muted);
-}
+.qr-empty { padding: 52px 24px; text-align: center; }
+.qr-empty .material-icons-round { font-size: 42px; color: var(--qr-border2); display: block; margin-bottom: 10px; }
+.qr-empty p { font-size: 12.5px; line-height: 1.8; color: var(--qr-muted); }
 .qr-empty strong { color: var(--qr-accent2); }
 
 @media print {
-  .sidebar, .topbar, .qr-paste-panel, .qr-result-toolbar { display: none !important; }
+  .sidebar,.topbar,.qr-paste-panel,.qr-result-toolbar { display: none !important; }
   #page-qr { display: block !important; background: #fff !important; }
 }
     `;
@@ -330,8 +233,7 @@
             <span class="material-icons-round">qr_code_scanner</span>
             Paste Data → Generate QR
           </div>
-          <span class="material-icons-round" id="qrPasteIcon"
-            style="color:rgba(255,255,255,.35);font-size:18px">expand_more</span>
+          <span class="material-icons-round" id="qrPasteIcon" style="color:rgba(255,255,255,.35);font-size:18px">expand_more</span>
         </div>
         <div class="qr-paste-body" id="qrPasteBody">
           <div class="qr-paste-area-wrap" id="qrPasteWrap">
@@ -344,6 +246,16 @@
             &nbsp;·&nbsp; Kolom dipisah <kbd>Tab</kbd>
             &nbsp;·&nbsp; QR otomatis per baris
           </div>
+
+          <!-- KOLOM QR SELECTOR -->
+          <div class="qr-col-row">
+            <span class="qr-col-label">Kolom QR:</span>
+            <div class="qr-col-tabs" id="qrColTabs">
+              <span class="qr-col-tab all active" data-col="all" onclick="_qrSetCol('all')">Semua Kolom</span>
+            </div>
+            <span class="qr-col-hint" id="qrColHint">QR = semua kolom digabung</span>
+          </div>
+
           <div class="qr-paste-actions">
             <button class="qr-btn qr-btn-primary" onclick="_qrGenerate()">
               <span class="material-icons-round">qr_code</span> Generate QR
@@ -359,11 +271,11 @@
         <div class="qr-stats-bar" id="qrStatsBar" style="display:none">
           <span>Baris: <strong id="qrStatRows">0</strong></span>
           <span>Kolom: <strong id="qrStatCols">0</strong></span>
-          <span>QR dibuat: <strong id="qrStatQr">0</strong></span>
+          <span>QR dari: <strong id="qrStatCol">Semua</strong></span>
         </div>
       </div>
 
-      <div class="qr-result-panel" id="qrResultPanel">
+      <div class="qr-result-panel">
         <div class="qr-result-toolbar">
           <div class="qr-result-title">
             QR Table
@@ -422,84 +334,108 @@
     var _orig = window.switchPage;
     window.switchPage = function (page) {
       if (page !== 'qr') { _orig(page); return; }
-      var all = ['ob','hvs','ib','manifest','obib','search','qr'];
-      all.forEach(function (p) {
-        var el = document.getElementById('page-' + p);
-        if (el) el.style.display = 'none';
-        var n = document.getElementById('nav-' + p);
-        if (n) n.classList.remove('active');
+      ['ob','hvs','ib','manifest','obib','search','qr'].forEach(function(p) {
+        var el = document.getElementById('page-'+p); if (el) el.style.display = 'none';
+        var n  = document.getElementById('nav-'+p);  if (n)  n.classList.remove('active');
       });
-      requestAnimationFrame(function () {
-        var target = document.getElementById('page-qr');
-        if (target) target.style.display = 'flex';
+      requestAnimationFrame(function() {
+        var t = document.getElementById('page-qr'); if (t) t.style.display = 'flex';
       });
-      var navEl = document.getElementById('nav-qr');
-      if (navEl) navEl.classList.add('active');
-      var titleEl = document.getElementById('topbarTitle');
-      if (titleEl) titleEl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris</span>';
-      setTimeout(function () {
-        var ta = document.getElementById('qrPasteTA');
-        if (ta) ta.focus();
-      }, 120);
+      var nav = document.getElementById('nav-qr'); if (nav) nav.classList.add('active');
+      var ttl = document.getElementById('topbarTitle');
+      if (ttl) ttl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris</span>';
+      setTimeout(function(){ var ta=document.getElementById('qrPasteTA'); if(ta) ta.focus(); }, 120);
     };
   }
 
-  var _qrRows = [], _qrFiltered = [];
+  /* ── State ── */
+  var _qrRows     = [];
+  var _qrFiltered = [];
+  var _qrCol      = 'all'; // 'all' | 0 | 1 | 2 ...
+  var _qrMaxCols  = 0;
 
-  window._qrTogglePaste = function () {
+  window._qrTogglePaste = function() {
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (!body) return;
-    var isOpen = body.style.display !== 'none';
-    body.style.display = isOpen ? 'none' : '';
-    if (icon) icon.innerText = isOpen ? 'expand_more' : 'expand_less';
+    var open = body.style.display !== 'none';
+    body.style.display = open ? 'none' : '';
+    if (icon) icon.innerText = open ? 'expand_more' : 'expand_less';
   };
+
+  /* Pilih kolom QR */
+  window._qrSetCol = function(col) {
+    _qrCol = col === 'all' ? 'all' : parseInt(col);
+    /* Update tab active */
+    document.querySelectorAll('.qr-col-tab').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.col == col);
+    });
+    /* Update hint */
+    var hint = document.getElementById('qrColHint');
+    if (hint) hint.textContent = col === 'all' ? 'QR = semua kolom digabung' : 'QR = Kolom ' + (parseInt(col)+1);
+    /* Re-render kalau data sudah ada */
+    if (_qrRows.length) {
+      _qrFiltered = _qrRows;
+      document.getElementById('qrStatCol').textContent = col === 'all' ? 'Semua' : 'Kol ' + (parseInt(col)+1);
+      _qrRender(_qrFiltered, _qrMaxCols);
+    }
+  };
+
+  /* Rebuild tab kolom setelah parse */
+  function _buildColTabs(maxCols) {
+    var container = document.getElementById('qrColTabs');
+    if (!container) return;
+    var html = '<span class="qr-col-tab all' + (_qrCol === 'all' ? ' active' : '') +
+      '" data-col="all" onclick="_qrSetCol(\'all\')">Semua</span>';
+    for (var i = 0; i < maxCols; i++) {
+      var isActive = _qrCol === i;
+      html += '<span class="qr-col-tab' + (isActive ? ' active' : '') +
+        '" data-col="' + i + '" onclick="_qrSetCol(' + i + ')">Kol ' + (i+1) + '</span>';
+    }
+    container.innerHTML = html;
+  }
 
   function _parse(raw) {
     return raw.trim().split('\n')
-      .map(function (r) { return r.split('\t').map(function (c) { return c.trim(); }); })
-      .filter(function (r) { return r.some(function (c) { return c.length > 0; }); });
+      .map(function(r){ return r.split('\t').map(function(c){ return c.trim(); }); })
+      .filter(function(r){ return r.some(function(c){ return c.length > 0; }); });
   }
 
   function _qrUrl(text, size) {
-    return 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size||72) + 'x' + (size||72) +
-      '&data=' + encodeURIComponent(text);
+    return 'https://api.qrserver.com/v1/create-qr-code/?size='+(size||72)+'x'+(size||72)+
+      '&data='+encodeURIComponent(text);
   }
 
   function _isCode(val) {
     return /^(BAG|BDO|GTW|CGK|HVS|OB|IB|[A-Z]{2,}-[A-Z0-9\-]{3,})/i.test(val) ||
            /^[A-Z0-9\-]{8,}$/.test(val);
   }
-
   function _escH(s) {
     return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
   function _cellHtml(val) {
     if (!val) return '<span style="color:#3d444d">—</span>';
-    if (/selesai/i.test(val)) return '<span class="qr-cell-code green">' + _escH(val) + '</span>';
-    if (/proses/i.test(val)) return '<span class="qr-cell-code orange">' + _escH(val) + '</span>';
-    if (_isCode(val)) return '<span class="qr-cell-code">' + _escH(val) + '</span>';
-    return '<span style="color:#e6edf3">' + _escH(val) + '</span>';
+    if (/selesai/i.test(val)) return '<span class="qr-cell-code green">'+_escH(val)+'</span>';
+    if (/proses/i.test(val))  return '<span class="qr-cell-code orange">'+_escH(val)+'</span>';
+    if (_isCode(val))          return '<span class="qr-cell-code">'+_escH(val)+'</span>';
+    return '<span style="color:#e6edf3">'+_escH(val)+'</span>';
   }
 
-  window._qrGenerate = function () {
-    var raw = (document.getElementById('qrPasteTA').value || '').trim();
-    if (!raw) {
-      if (typeof toast === 'function') toast('Paste data terlebih dahulu', 'error');
-      return;
-    }
+  window._qrGenerate = function() {
+    var raw = (document.getElementById('qrPasteTA').value||'').trim();
+    if (!raw) { if (typeof toast==='function') toast('Paste data terlebih dahulu','error'); return; }
     _qrRows = _parse(raw);
     if (!_qrRows.length) return;
-    var maxCols = Math.max.apply(null, _qrRows.map(function(r){return r.length;}));
+    _qrMaxCols = Math.max.apply(null, _qrRows.map(function(r){ return r.length; }));
+    _buildColTabs(_qrMaxCols);
     document.getElementById('qrStatRows').textContent = _qrRows.length;
-    document.getElementById('qrStatCols').textContent = maxCols;
-    document.getElementById('qrStatQr').textContent   = _qrRows.length;
+    document.getElementById('qrStatCols').textContent = _qrMaxCols;
+    document.getElementById('qrStatCol').textContent  = _qrCol === 'all' ? 'Semua' : 'Kol '+(_qrCol+1);
     document.getElementById('qrStatsBar').style.display = 'flex';
     document.getElementById('qrPrintBtn').style.display  = '';
-    document.getElementById('qrTableCount').textContent  = '— ' + _qrRows.length + ' baris';
+    document.getElementById('qrTableCount').textContent  = '— '+_qrRows.length+' baris';
     _qrFiltered = _qrRows;
-    _qrRender(_qrRows, maxCols);
+    _qrRender(_qrFiltered, _qrMaxCols);
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display = 'none';
@@ -507,75 +443,87 @@
   };
 
   function _qrRender(rows, maxCols) {
-    if (!maxCols) maxCols = Math.max.apply(null, rows.map(function(r){return r.length;}));
     var wrap = document.getElementById('qrTableWrap');
     if (!rows.length) {
       wrap.innerHTML = '<div class="qr-empty"><span class="material-icons-round">qr_code</span><p>Tidak ada data</p></div>';
       return;
     }
+    /* Header */
     var thCols = '<th class="qr-th-qr">QR</th><th style="min-width:28px;color:#7d8590">#</th>';
-    for (var i = 0; i < maxCols; i++) thCols += '<th>Kol ' + (i+1) + '</th>';
+    for (var i = 0; i < maxCols; i++) {
+      var isActive = _qrCol !== 'all' && _qrCol === i;
+      thCols += '<th' + (isActive ? ' class="qr-th-active"' : '') + '>Kol '+(i+1)+'</th>';
+    }
+    /* Rows */
     var tbodyHtml = rows.map(function(row, ri) {
-      var qrContent = row.filter(function(c){return c;}).join(' | ');
+      var qrContent;
+      if (_qrCol === 'all') {
+        qrContent = row.filter(function(c){ return c; }).join(' | ');
+      } else {
+        qrContent = row[_qrCol] || '';
+      }
       var imgHtml = qrContent
-        ? '<img src="' + _qrUrl(qrContent) + '" width="64" height="64" loading="lazy" alt="QR">'
+        ? '<img src="'+_qrUrl(qrContent)+'" width="64" height="64" loading="lazy" alt="QR">'
         : '<span style="color:#3d444d;font-size:11px">—</span>';
-      var tds = '<td class="qr-img-cell">' + imgHtml + '</td>';
-      tds += '<td class="qr-row-num">' + (ri+1) + '</td>';
-      for (var ci = 0; ci < maxCols; ci++) tds += '<td>' + _cellHtml(row[ci]||'') + '</td>';
-      return '<tr style="animation:fp2ItemIn .2s ease ' + Math.min(ri*20,400) + 'ms both">' + tds + '</tr>';
+      var tds = '<td class="qr-img-cell">'+imgHtml+'</td>';
+      tds += '<td class="qr-row-num">'+(ri+1)+'</td>';
+      for (var ci = 0; ci < maxCols; ci++) {
+        var isActive = _qrCol !== 'all' && _qrCol === ci;
+        tds += '<td'+(isActive ? ' class="qr-td-active"' : '')+'>'+_cellHtml(row[ci]||'')+'</td>';
+      }
+      return '<tr style="animation:fp2ItemIn .2s ease '+Math.min(ri*20,400)+'ms both">'+tds+'</tr>';
     }).join('');
     wrap.innerHTML =
-      '<table class="qr-table"><thead><tr>' + thCols + '</tr></thead><tbody>' + tbodyHtml + '</tbody></table>';
+      '<table class="qr-table"><thead><tr>'+thCols+'</tr></thead><tbody>'+tbodyHtml+'</tbody></table>';
   }
 
-  window._qrFilterTable = function () {
+  window._qrFilterTable = function() {
     if (!_qrRows.length) return;
     var q = (document.getElementById('qrSearch').value||'').toLowerCase();
-    var maxCols = Math.max.apply(null, _qrRows.map(function(r){return r.length;}));
     _qrFiltered = q
       ? _qrRows.filter(function(row){ return row.some(function(c){ return c.toLowerCase().indexOf(q)!==-1; }); })
       : _qrRows;
-    document.getElementById('qrTableCount').textContent = '— ' + _qrFiltered.length + ' baris';
-    _qrRender(_qrFiltered, maxCols);
+    document.getElementById('qrTableCount').textContent = '— '+_qrFiltered.length+' baris';
+    _qrRender(_qrFiltered, _qrMaxCols);
   };
 
-  window._qrClear = function () {
+  window._qrClear = function() {
     document.getElementById('qrPasteTA').value = '';
-    _qrRows = []; _qrFiltered = [];
+    _qrRows=[]; _qrFiltered=[]; _qrCol='all'; _qrMaxCols=0;
     document.getElementById('qrStatsBar').style.display = 'none';
     document.getElementById('qrPrintBtn').style.display = 'none';
     document.getElementById('qrTableCount').textContent = '';
+    /* Reset tabs ke default */
+    var tabs = document.getElementById('qrColTabs');
+    if (tabs) tabs.innerHTML = '<span class="qr-col-tab all active" data-col="all" onclick="_qrSetCol(\'all\')">Semua Kolom</span>';
+    var hint = document.getElementById('qrColHint');
+    if (hint) hint.textContent = 'QR = semua kolom digabung';
     document.getElementById('qrTableWrap').innerHTML =
-      '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
-      '<p>Paste data dari web lain di atas<br>lalu klik <strong>Generate QR</strong><br>Setiap baris otomatis mendapat QR Code</p></div>';
-    var body = document.getElementById('qrPasteBody');
-    var icon = document.getElementById('qrPasteIcon');
-    if (body) body.style.display = '';
-    if (icon) icon.innerText = 'expand_less';
+      '<div class="qr-empty"><span class="material-icons-round">qr_code</span>'+
+      '<p>Paste data dari web lain di atas<br>lalu klik <strong>Generate QR</strong><br>'+
+      'Setiap baris otomatis mendapat QR Code</p></div>';
+    var body=document.getElementById('qrPasteBody');
+    var icon=document.getElementById('qrPasteIcon');
+    if (body) body.style.display='';
+    if (icon) icon.innerText='expand_less';
   };
 
   function bindEvents() {
-    var ta   = document.getElementById('qrPasteTA');
-    var wrap = document.getElementById('qrPasteWrap');
-    if (!ta || !wrap) return;
+    var ta=document.getElementById('qrPasteTA');
+    var wrap=document.getElementById('qrPasteWrap');
+    if (!ta||!wrap) return;
     ta.addEventListener('focus', function(){ wrap.classList.add('focused'); });
     ta.addEventListener('blur',  function(){ wrap.classList.remove('focused'); });
     ta.addEventListener('paste', function(){ setTimeout(window._qrGenerate, 120); });
   }
 
   function init() {
-    injectCSS();
-    injectPage();
-    injectNav();
-    patchSwitchPage();
+    injectCSS(); injectPage(); injectNav(); patchSwitchPage();
     setTimeout(bindEvents, 300);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 500); });
-  } else {
-    setTimeout(init, 500);
-  }
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init,500); });
+  } else { setTimeout(init,500); }
 
 })();
