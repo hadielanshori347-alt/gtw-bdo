@@ -183,11 +183,16 @@ const HomePage = {
     setTimeout(() => DetailPage.open(type, noTrack), 180);
   },
 
-  switchDataListTab(t) {
-    STATE.dataListTab = t;
-    STATE.currentTab  = t;
-    HomePage._renderDataList();
-  },
+switchDataListTab(t) {
+  STATE.dataListTab = t;
+  STATE.currentTab  = t;
+  ['ob','hvs','ib'].forEach(x => {
+    document.getElementById('dlTab' + x.toUpperCase())
+      ?.classList.toggle('active', x === t);
+  });
+  HomePage._renderDataList();
+},
+
 
   async quickSelesai(type, noTrack) {
     if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
