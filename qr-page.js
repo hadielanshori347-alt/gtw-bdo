@@ -1,6 +1,6 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.3
-   + Pilih kolom QR via dropdown + input manual (dark theme)
+   GTW BDO — qr-page.js v1.4
+   + Fix Supabase upsert: cek row dulu, lalu POST/PATCH
    ============================================================ */
 
 (function () {
@@ -226,8 +226,6 @@
     padding: 12px;
     gap: 10px;
   }
-
-  /* Paste panel */
   .qr-paste-body { padding: 12px; }
   .qr-paste-hdr { padding: 10px 12px; }
   .qr-paste-hdr-title { font-size: 12px; }
@@ -236,8 +234,6 @@
     min-height: 72px;
     padding: 26px 10px 8px;
   }
-
-  /* Kolom selector — stack vertikal */
   .qr-col-row { flex-direction: column; align-items: flex-start; gap: 6px; }
   .qr-col-select-wrap { width: 100%; }
   .qr-col-select { width: 100%; min-width: unset; font-size: 13px; padding: 8px 28px 8px 10px; }
@@ -245,31 +241,21 @@
   .qr-col-input-label { font-size: 11px; }
   .qr-col-input { width: 60px; font-size: 13px; padding: 7px 8px; }
   .qr-col-hint { font-size: 11px; }
-
-  /* Hint & actions */
   .qr-paste-hint { font-size: 10.5px; gap: 5px; }
   .qr-paste-actions { gap: 6px; }
   .qr-btn { padding: 9px 14px; font-size: 12.5px; border-radius: 8px; }
   .qr-btn .material-icons-round { font-size: 15px; }
-
-  /* Stats bar */
   .qr-stats-bar { gap: 12px; padding: 8px 12px; font-size: 11px; }
-
-  /* Result toolbar */
   .qr-result-toolbar { padding: 8px 10px; gap: 6px; flex-wrap: wrap; }
   .qr-result-title { font-size: 12.5px; width: 100%; }
   .qr-search-box { flex: 1; }
   .qr-search-box input { width: 100%; font-size: 13px; }
-
-  /* Table — QR lebih besar, kolom lain tetap scroll */
   .qr-table-wrap { -webkit-overflow-scrolling: touch; }
   .qr-table { font-size: 12px; }
   .qr-table th { padding: 7px 8px; font-size: 9.5px; }
   .qr-table td { padding: 6px 8px; }
   .qr-img-cell { padding: 4px 6px !important; }
   .qr-img-cell img { width: 80px !important; height: 80px !important; }
-
-  /* Empty state */
   .qr-empty { padding: 36px 16px; }
   .qr-empty .material-icons-round { font-size: 36px; }
   .qr-empty p { font-size: 12px; }
@@ -422,9 +408,10 @@
   /* ── State ── */
   var _qrRows     = [];
   var _qrFiltered = [];
-  var _qrCol      = 'all'; // 'all' | 0 | 1 | 2 ...
+  var _qrCol      = 'all';
   var _qrMaxCols  = 0;
-  /* ── Supabase Sync ── */
+
+  /* ── Supabase Config ── */
   var _qrSbUrl = '';
   var _qrSbKey = '';
 
@@ -436,44 +423,83 @@
     }
   }
 
+  /* ── FIXED: Supabase upsert — cek dulu, baru POST/PATCH ── */
   function _qrSaveToSupabase(rows, maxCols) {
     _qrResolveSupabase();
-    if (!_qrSbUrl || !_qrSbKey) return;
-    fetch(_qrSbUrl + '/rest/v1/qr_sessions', {
-      method: 'POST',
-      headers: {
-        'Content-Type'  : 'application/json',
-        'apikey'        : _qrSbKey,
-        'Authorization' : 'Bearer ' + _qrSbKey,
-        'Prefer'        : 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({
-        session_key : 'default',
-        rows        : rows,
-        max_cols    : maxCols,
-        updated_at  : new Date().toISOString(),
-      }),
-    }).then(function(r) {
-      if (!r.ok) console.warn('[QR] Supabase save error', r.status);
-    }).catch(function(e) {
-      console.warn('[QR] Supabase save failed', e.message);
+    if (!_qrSbUrl || !_qrSbKey) {
+      console.warn('[QR] Supabase config tidak ditemukan');
+      return;
+    }
+
+    var headers = {
+      'apikey'        : _qrSbKey,
+      'Authorization' : 'Bearer ' + _qrSbKey,
+    };
+
+    // Step 1: Cek apakah row 'default' sudah ada
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.default&select=id', {
+      headers: headers,
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(existing) {
+      var exists  = existing && existing.length > 0;
+      var method  = exists ? 'PATCH' : 'POST';
+      var url     = _qrSbUrl + '/rest/v1/qr_sessions' +
+                    (exists ? '?session_key=eq.default' : '');
+
+      var body = {
+        rows       : rows,
+        max_cols   : maxCols,
+        updated_at : new Date().toISOString(),
+      };
+      if (!exists) body.session_key = 'default';
+
+      return fetch(url, {
+        method  : method,
+        headers : Object.assign({}, headers, { 'Content-Type': 'application/json' }),
+        body    : JSON.stringify(body),
+      });
+    })
+    .then(function(r) {
+      if (!r.ok) {
+        r.text().then(function(t) {
+          console.warn('[QR] Supabase save error', r.status, t);
+        });
+      } else {
+        console.log('[QR] Supabase saved OK ✓');
+      }
+    })
+    .catch(function(e) {
+      console.warn('[QR] Supabase save failed:', e.message);
     });
   }
 
+  /* ── FIXED: Supabase clear ── */
   function _qrClearSupabase() {
     _qrResolveSupabase();
     if (!_qrSbUrl || !_qrSbKey) return;
+
     fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.default', {
-      method: 'PATCH',
+      method : 'PATCH',
       headers: {
         'Content-Type'  : 'application/json',
         'apikey'        : _qrSbKey,
         'Authorization' : 'Bearer ' + _qrSbKey,
       },
-      body: JSON.stringify({ rows: [], max_cols: 0, updated_at: new Date().toISOString() }),
-    }).catch(function(e) { console.warn('[QR] Supabase clear failed', e.message); });
+      body: JSON.stringify({
+        rows       : [],
+        max_cols   : 0,
+        updated_at : new Date().toISOString(),
+      }),
+    })
+    .then(function(r) {
+      if (!r.ok) r.text().then(function(t){ console.warn('[QR] Clear error', r.status, t); });
+      else console.log('[QR] Supabase cleared OK ✓');
+    })
+    .catch(function(e) { console.warn('[QR] Supabase clear failed:', e.message); });
   }
 
+  /* ── Toggle paste panel ── */
   window._qrTogglePaste = function() {
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
@@ -483,7 +509,7 @@
     if (icon) icon.innerText = open ? 'expand_more' : 'expand_less';
   };
 
-  /* Rebuild dropdown kolom setelah parse */
+  /* ── Rebuild dropdown kolom ── */
   function _buildColTabs(maxCols) {
     var sel = document.getElementById('qrColSelect');
     if (!sel) return;
@@ -493,44 +519,35 @@
     }
     sel.innerHTML = html;
     if (_qrCol !== 'all') sel.value = _qrCol;
-    /* Tampilkan input manual jika sudah ada kolom */
     var iw = document.getElementById('qrColInputWrap');
     if (iw) iw.style.display = maxCols > 0 ? '' : 'none';
   }
 
-  /* Set kolom dari dropdown */
   window._qrSetColFromSelect = function() {
     var sel = document.getElementById('qrColSelect');
     if (sel) window._qrSetCol(sel.value);
   };
 
-  /* Set kolom dari input angka */
   window._qrSetColFromInput = function() {
     var inp = document.getElementById('qrColInput');
     if (!inp) return;
     if (!inp.value.trim()) { window._qrSetCol('all'); return; }
     var val = parseInt(inp.value);
     if (isNaN(val) || val < 1) return;
-    var col = Math.min(val, _qrMaxCols) - 1; // konversi ke 0-based, clamp ke max
+    var col = Math.min(val, _qrMaxCols) - 1;
     window._qrSetCol(col);
-    /* Sync dropdown */
     var sel = document.getElementById('qrColSelect');
     if (sel) sel.value = col;
   };
 
-  /* Core set kolom */
   window._qrSetCol = function(col) {
     _qrCol = col === 'all' ? 'all' : parseInt(col);
-    /* Sync dropdown */
     var sel = document.getElementById('qrColSelect');
     if (sel) sel.value = col;
-    /* Sync input */
     var inp = document.getElementById('qrColInput');
     if (inp) inp.value = col === 'all' ? '' : (parseInt(col) + 1);
-    /* Update hint */
     var hint = document.getElementById('qrColHint');
     if (hint) hint.textContent = col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(col)+1);
-    /* Re-render kalau data sudah ada */
     if (_qrRows.length) {
       _qrFiltered = _qrRows;
       var statCol = document.getElementById('qrStatCol');
@@ -539,17 +556,20 @@
     }
   };
 
+  /* ── Parse paste data ── */
   function _parse(raw) {
     return raw.trim().split('\n')
       .map(function(r){ return r.split('\t').map(function(c){ return c.trim(); }); })
       .filter(function(r){ return r.some(function(c){ return c.length > 0; }); });
   }
 
+  /* ── QR URL helper ── */
   function _qrUrl(text, size) {
     return 'https://api.qrserver.com/v1/create-qr-code/?size='+(size||72)+'x'+(size||72)+
       '&data='+encodeURIComponent(text);
   }
 
+  /* ── Cell helpers ── */
   function _isCode(val) {
     return /^(BAG|BDO|GTW|CGK|HVS|OB|IB|[A-Z]{2,}-[A-Z0-9\-]{3,})/i.test(val) ||
            /^[A-Z0-9\-]{8,}$/.test(val);
@@ -565,9 +585,13 @@
     return '<span style="color:#e6edf3">'+_escH(val)+'</span>';
   }
 
+  /* ── Generate QR ── */
   window._qrGenerate = function() {
     var raw = (document.getElementById('qrPasteTA').value||'').trim();
-    if (!raw) { if (typeof toast==='function') toast('Paste data terlebih dahulu','error'); return; }
+    if (!raw) {
+      if (typeof toast==='function') toast('Paste data terlebih dahulu','error');
+      return;
+    }
     _qrRows = _parse(raw);
     if (!_qrRows.length) return;
     _qrMaxCols = Math.max.apply(null, _qrRows.map(function(r){ return r.length; }));
@@ -580,26 +604,28 @@
     document.getElementById('qrTableCount').textContent  = '— '+_qrRows.length+' baris';
     _qrFiltered = _qrRows;
     _qrRender(_qrFiltered, _qrMaxCols);
+
+    // ✓ Simpan ke Supabase dengan logika upsert yang benar
     _qrSaveToSupabase(_qrRows, _qrMaxCols);
+
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display = 'none';
     if (icon) icon.innerText = 'expand_more';
   };
 
+  /* ── Render table ── */
   function _qrRender(rows, maxCols) {
     var wrap = document.getElementById('qrTableWrap');
     if (!rows.length) {
       wrap.innerHTML = '<div class="qr-empty"><span class="material-icons-round">qr_code</span><p>Tidak ada data</p></div>';
       return;
     }
-    /* Header */
     var thCols = '<th class="qr-th-qr">QR</th><th style="min-width:28px;color:#7d8590">#</th>';
     for (var i = 0; i < maxCols; i++) {
       var isActive = _qrCol !== 'all' && _qrCol === i;
       thCols += '<th' + (isActive ? ' class="qr-th-active"' : '') + '>Kol '+(i+1)+'</th>';
     }
-    /* Rows */
     var tbodyHtml = rows.map(function(row, ri) {
       var qrContent;
       if (_qrCol === 'all') {
@@ -622,6 +648,7 @@
       '<table class="qr-table"><thead><tr>'+thCols+'</tr></thead><tbody>'+tbodyHtml+'</tbody></table>';
   }
 
+  /* ── Filter / search ── */
   window._qrFilterTable = function() {
     if (!_qrRows.length) return;
     var q = (document.getElementById('qrSearch').value||'').toLowerCase();
@@ -632,6 +659,7 @@
     _qrRender(_qrFiltered, _qrMaxCols);
   };
 
+  /* ── Clear ── */
   window._qrClear = function() {
     document.getElementById('qrPasteTA').value = '';
     _qrRows=[]; _qrFiltered=[]; _qrCol='all'; _qrMaxCols=0;
@@ -639,7 +667,6 @@
     document.getElementById('qrStatsBar').style.display = 'none';
     document.getElementById('qrPrintBtn').style.display = 'none';
     document.getElementById('qrTableCount').textContent = '';
-    /* Reset dropdown ke default */
     var sel = document.getElementById('qrColSelect');
     if (sel) sel.innerHTML = '<option value="all">— Semua Kolom —</option>';
     var inp = document.getElementById('qrColInput');
@@ -658,22 +685,29 @@
     if (icon) icon.innerText='expand_less';
   };
 
+  /* ── Bind events ── */
   function bindEvents() {
-    var ta=document.getElementById('qrPasteTA');
-    var wrap=document.getElementById('qrPasteWrap');
+    var ta   = document.getElementById('qrPasteTA');
+    var wrap = document.getElementById('qrPasteWrap');
     if (!ta||!wrap) return;
     ta.addEventListener('focus', function(){ wrap.classList.add('focused'); });
     ta.addEventListener('blur',  function(){ wrap.classList.remove('focused'); });
     ta.addEventListener('paste', function(){ setTimeout(window._qrGenerate, 120); });
   }
 
+  /* ── Init ── */
   function init() {
-    injectCSS(); injectPage(); injectNav(); patchSwitchPage();
+    injectCSS();
+    injectPage();
+    injectNav();
+    patchSwitchPage();
     setTimeout(bindEvents, 300);
   }
 
   if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init,500); });
-  } else { setTimeout(init,500); }
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(init, 500); });
+  } else {
+    setTimeout(init, 500);
+  }
 
 })();
