@@ -1434,3 +1434,28 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   font-size: 8px; color: var(--text3);
   font-weight: 500;
 }
+
+/* ─── Data List Switch ─── */
+.dl-switch {
+  display: flex;
+  gap: 8px;
+}
+.dl-switch-opt {
+  flex: 1; text-align: center;
+  padding: 10px 0;
+  border-radius: 10px;
+  font-size: 12px; font-weight: 700;
+  font-family: var(--font-head);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text3);
+  cursor: pointer; transition: .18s;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.dl-switch-opt:active { transform: scale(.97); }
+.dl-switch-opt.active {
+  background: #ffffff;
+  color: var(--ink);
+  border-color: #ffffff;
+}
