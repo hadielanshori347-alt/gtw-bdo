@@ -1,6 +1,6 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.2
-   + Pilih kolom QR (dark theme)
+   GTW BDO — qr-page.js v1.3
+   + Pilih kolom QR via dropdown + input manual (dark theme)
    ============================================================ */
 
 (function () {
@@ -102,7 +102,7 @@
   border: 1px solid var(--qr-border2); border-radius: 6px;
   color: var(--qr-text); font-family: 'JetBrains Mono', monospace;
   font-size: 12px; font-weight: 600; padding: 5px 28px 5px 10px;
-  cursor: pointer; outline: none; min-width: 130px;
+  cursor: pointer; outline: none; min-width: 140px;
   transition: border-color .15s;
 }
 .qr-col-select:focus { border-color: var(--qr-accent); }
@@ -258,8 +258,15 @@
           <!-- KOLOM QR SELECTOR -->
           <div class="qr-col-row">
             <span class="qr-col-label">Kolom QR:</span>
-            <div class="qr-col-tabs" id="qrColTabs">
-              <span class="qr-col-tab all active" data-col="all" onclick="_qrSetCol('all')">Semua Kolom</span>
+            <div class="qr-col-select-wrap">
+              <select class="qr-col-select" id="qrColSelect" onchange="_qrSetColFromSelect()">
+                <option value="all">— Semua Kolom —</option>
+              </select>
+              <div class="qr-col-input-wrap" id="qrColInputWrap" style="display:none">
+                <span class="qr-col-input-label">atau ketik no. kol:</span>
+                <input type="number" class="qr-col-input" id="qrColInput" min="1" placeholder="1"
+                  oninput="_qrSetColFromInput()" />
+              </div>
             </div>
             <span class="qr-col-hint" id="qrColHint">QR = semua kolom digabung</span>
           </div>
@@ -371,37 +378,61 @@
     if (icon) icon.innerText = open ? 'expand_more' : 'expand_less';
   };
 
-  /* Pilih kolom QR */
+  /* Rebuild dropdown kolom setelah parse */
+  function _buildColTabs(maxCols) {
+    var sel = document.getElementById('qrColSelect');
+    if (!sel) return;
+    var html = '<option value="all">— Semua Kolom —</option>';
+    for (var i = 0; i < maxCols; i++) {
+      html += '<option value="' + i + '"' + (_qrCol === i ? ' selected' : '') + '>Kolom ' + (i+1) + '</option>';
+    }
+    sel.innerHTML = html;
+    if (_qrCol !== 'all') sel.value = _qrCol;
+    /* Tampilkan input manual jika sudah ada kolom */
+    var iw = document.getElementById('qrColInputWrap');
+    if (iw) iw.style.display = maxCols > 0 ? '' : 'none';
+  }
+
+  /* Set kolom dari dropdown */
+  window._qrSetColFromSelect = function() {
+    var sel = document.getElementById('qrColSelect');
+    if (sel) window._qrSetCol(sel.value);
+  };
+
+  /* Set kolom dari input angka */
+  window._qrSetColFromInput = function() {
+    var inp = document.getElementById('qrColInput');
+    if (!inp) return;
+    if (!inp.value.trim()) { window._qrSetCol('all'); return; }
+    var val = parseInt(inp.value);
+    if (isNaN(val) || val < 1) return;
+    var col = Math.min(val, _qrMaxCols) - 1; // konversi ke 0-based, clamp ke max
+    window._qrSetCol(col);
+    /* Sync dropdown */
+    var sel = document.getElementById('qrColSelect');
+    if (sel) sel.value = col;
+  };
+
+  /* Core set kolom */
   window._qrSetCol = function(col) {
     _qrCol = col === 'all' ? 'all' : parseInt(col);
-    /* Update tab active */
-    document.querySelectorAll('.qr-col-tab').forEach(function(t) {
-      t.classList.toggle('active', t.dataset.col == col);
-    });
+    /* Sync dropdown */
+    var sel = document.getElementById('qrColSelect');
+    if (sel) sel.value = col;
+    /* Sync input */
+    var inp = document.getElementById('qrColInput');
+    if (inp) inp.value = col === 'all' ? '' : (parseInt(col) + 1);
     /* Update hint */
     var hint = document.getElementById('qrColHint');
-    if (hint) hint.textContent = col === 'all' ? 'QR = semua kolom digabung' : 'QR = Kolom ' + (parseInt(col)+1);
+    if (hint) hint.textContent = col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(col)+1);
     /* Re-render kalau data sudah ada */
     if (_qrRows.length) {
       _qrFiltered = _qrRows;
-      document.getElementById('qrStatCol').textContent = col === 'all' ? 'Semua' : 'Kol ' + (parseInt(col)+1);
+      var statCol = document.getElementById('qrStatCol');
+      if (statCol) statCol.textContent = col === 'all' ? 'Semua' : 'Kol ' + (parseInt(col)+1);
       _qrRender(_qrFiltered, _qrMaxCols);
     }
   };
-
-  /* Rebuild tab kolom setelah parse */
-  function _buildColTabs(maxCols) {
-    var container = document.getElementById('qrColTabs');
-    if (!container) return;
-    var html = '<span class="qr-col-tab all' + (_qrCol === 'all' ? ' active' : '') +
-      '" data-col="all" onclick="_qrSetCol(\'all\')">Semua</span>';
-    for (var i = 0; i < maxCols; i++) {
-      var isActive = _qrCol === i;
-      html += '<span class="qr-col-tab' + (isActive ? ' active' : '') +
-        '" data-col="' + i + '" onclick="_qrSetCol(' + i + ')">Kol ' + (i+1) + '</span>';
-    }
-    container.innerHTML = html;
-  }
 
   function _parse(raw) {
     return raw.trim().split('\n')
@@ -501,9 +532,13 @@
     document.getElementById('qrStatsBar').style.display = 'none';
     document.getElementById('qrPrintBtn').style.display = 'none';
     document.getElementById('qrTableCount').textContent = '';
-    /* Reset tabs ke default */
-    var tabs = document.getElementById('qrColTabs');
-    if (tabs) tabs.innerHTML = '<span class="qr-col-tab all active" data-col="all" onclick="_qrSetCol(\'all\')">Semua Kolom</span>';
+    /* Reset dropdown ke default */
+    var sel = document.getElementById('qrColSelect');
+    if (sel) sel.innerHTML = '<option value="all">— Semua Kolom —</option>';
+    var inp = document.getElementById('qrColInput');
+    if (inp) inp.value = '';
+    var iw = document.getElementById('qrColInputWrap');
+    if (iw) iw.style.display = 'none';
     var hint = document.getElementById('qrColHint');
     if (hint) hint.textContent = 'QR = semua kolom digabung';
     document.getElementById('qrTableWrap').innerHTML =
