@@ -400,8 +400,8 @@
   var _qrMaxCols  = 0;
 
   /* ── Supabase Config ── */
-  var _qrSbUrl = '';
-  var _qrSbKey = '';
+  var _qrSbUrl = "https://twhtgiexupzwbycemdee.supabase.co";
+var _qrSbKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3aHRnaWV4dXB6d2J5Y2VtZGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE1NzQsImV4cCI6MjA5NTM3NzU3NH0.A-j3mbhZUbs8trZLRmYAWG0NP_UY3Jh2u8FyZ5_IOnw";
 
  function _qrResolveSupabase() {
   if (_qrSbUrl && _qrSbKey) return;
