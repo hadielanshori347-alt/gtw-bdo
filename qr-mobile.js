@@ -1,6 +1,9 @@
 /* ============================================================
-   GTW BDO — qr-mobile.js v1.1
-   Fix: retry CONFIG, polling fallback 5s
+   GTW BDO — qr-mobile.js v1.0
+   QR Table untuk index-mobile.html
+   - Terima data real-time dari Supabase (web yg input)
+   - Mobile hanya bisa pilih kolom & lihat QR
+   - Inject halaman ke #pgHome structure
    ============================================================ */
 
 (function () {
@@ -16,7 +19,6 @@
   var _sbUrl   = '';
   var _sbKey   = '';
   var _initialized = false;
-  var _pollTimer   = null;
 
   var WS_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
 
@@ -77,6 +79,7 @@
         },
         ref: '1'
       }));
+      // heartbeat
       setInterval(function() {
         _wsSend(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: '0' }));
       }, 25000);
@@ -93,6 +96,7 @@
           _render();
           _showToast('QR data diperbarui');
         } else {
+          // fallback fetch
           _fetchSession();
         }
       }
@@ -111,14 +115,6 @@
     var delay = WS_DELAYS[Math.min(_wsRetry, WS_DELAYS.length - 1)];
     _wsRetry++;
     _wsTimer = setTimeout(function() { _wsTimer = null; _wsConnect(); }, delay);
-  }
-
-  /* ── Polling fallback ── */
-  function _startPolling() {
-    if (_pollTimer) return;
-    _pollTimer = setInterval(function() {
-      _fetchSession();
-    }, 5000);
   }
 
   /* ── Toast helper ── */
@@ -155,7 +151,7 @@
 }
 #pgQr.visible { display: flex; }
 
-/* APPBAR */
+/* APPBAR — sama dengan halaman lain */
 #pgQr .appbar { flex-shrink: 0; }
 
 /* STATUS BAR */
@@ -480,14 +476,21 @@
   window.QrMobile = {
 
     open: function() {
+      /* Pakai switchNav kalau ada, lalu tampilkan pgQr */
+      /* Sembunyikan semua page pakai cara yang sama dengan app mobile */
       var pages = ['pgHome','pgSearch','pgCreate','pgScan','pgPhoto','pgDetail'];
       pages.forEach(function(id) {
         var p = document.getElementById(id);
         if (p) { p.classList.add('hidden'); p.style.display = ''; }
       });
 
+      /* Nonaktifkan semua sidebar nav */
       document.querySelectorAll('.sidebar-item').forEach(function(b) { b.classList.remove('active'); });
+      ['sbnHome','sbnSearch','sbnOb','sbnHvs','sbnIb'].forEach(function(id) {
+        var b = document.getElementById(id); if (b) b.classList.remove('active');
+      });
 
+      /* Tampilkan pgQr */
       var pg = document.getElementById('pgQr');
       if (pg) {
         pg.classList.remove('hidden');
@@ -497,13 +500,12 @@
         pg.style.position = 'relative';
       }
 
+      /* Aktifkan nav QR */
       var btn = document.getElementById('sbnQr');
       if (btn) btn.classList.add('active');
 
+      /* Tutup sidebar kalau ada */
       try { if (typeof UI !== 'undefined' && UI.Sidebar) UI.Sidebar.close(); } catch(e) {}
-
-      // Refresh data saat halaman dibuka
-      _fetchSession();
     },
 
     setCol: function(val) {
@@ -530,35 +532,18 @@
     init: function() {
       if (_initialized) return;
       _initialized = true;
-
-      var attempts = 0;
-      var tryInit = function() {
-        _resolve();
-        if (!_sbUrl || !_sbKey) {
-          if (attempts++ < 20) {
-            setTimeout(tryInit, 500);
-            return;
-          }
-          console.warn('[QR-M] CONFIG tidak tersedia setelah 10 detik');
-        }
-
-        _injectCSS();
-        _injectPage();
-        _injectNav();
-        _fetchSession();
-        if (_sbUrl && _sbKey) _wsConnect();
-
-        // Polling fallback setiap 5 detik
-        _startPolling();
-      };
-
-      setTimeout(tryInit, 500);
+      _resolve();
+      _injectCSS();
+      _injectPage();
+      _injectNav();
+      _fetchSession();
+      if (_sbUrl && _sbKey) _wsConnect();
     },
   };
 
   /* ── Auto init ── */
   function _autoInit() {
-    setTimeout(function() { QrMobile.init(); }, 500);
+    setTimeout(function() { QrMobile.init(); }, 800);
   }
 
   if (document.readyState === 'loading') {
