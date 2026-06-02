@@ -1,9 +1,9 @@
 /* ============================================================
-   GTW BDO — qr-mobile.js v1.0
+   GTW BDO — qr-mobile.js v1.1
    QR Table untuk index-mobile.html
    - Terima data real-time dari Supabase (web yg input)
    - Mobile hanya bisa pilih kolom & lihat QR
-   - Inject halaman ke #pgHome structure
+   - Kolom bisa dipilih via dropdown ATAU input angka
    ============================================================ */
 
 (function () {
@@ -79,7 +79,6 @@
         },
         ref: '1'
       }));
-      // heartbeat
       setInterval(function() {
         _wsSend(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: '0' }));
       }, 25000);
@@ -96,7 +95,6 @@
           _render();
           _showToast('QR data diperbarui');
         } else {
-          // fallback fetch
           _fetchSession();
         }
       }
@@ -119,7 +117,7 @@
 
   /* ── Toast helper ── */
   function _showToast(msg) {
-    if (typeof toast === 'function') { toast(msg, 'info'); return; }
+    if (typeof UI !== 'undefined' && UI.Toast) { UI.Toast.show(msg); return; }
     var el = document.getElementById('gtoast');
     if (!el) return;
     el.textContent = msg;
@@ -151,7 +149,7 @@
 }
 #pgQr.visible { display: flex; }
 
-/* APPBAR — sama dengan halaman lain */
+/* APPBAR */
 #pgQr .appbar { flex-shrink: 0; }
 
 /* STATUS BAR */
@@ -189,7 +187,7 @@
   text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
 }
 .qrm-col-select {
-  flex: 1; min-width: 140px;
+  flex: 1; min-width: 120px;
   appearance: none; -webkit-appearance: none;
   background: #21262d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8590'/%3E%3C/svg%3E") no-repeat right 10px center;
   border: 1px solid #3d444d; border-radius: 8px;
@@ -198,6 +196,18 @@
 }
 .qrm-col-select:focus { border-color: #2f81f7; }
 .qrm-col-select option { background: #1c2128; }
+.qrm-col-input {
+  width: 64px;
+  background: #21262d;
+  border: 1px solid #3d444d; border-radius: 8px;
+  color: #e6edf3; font-size: 13px; font-weight: 600;
+  padding: 9px 8px; outline: none;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.qrm-col-input:focus { border-color: #2f81f7; }
+.qrm-col-input::placeholder { color: #3d444d; font-size: 11px; }
 .qrm-col-hint {
   font-size: 10.5px; color: #7d8590; width: 100%;
   font-family: 'DM Mono', monospace;
@@ -317,6 +327,10 @@
         <select class="qrm-col-select" id="qrmColSelect" onchange="QrMobile.setCol(this.value)">
           <option value="all">— Semua Kolom —</option>
         </select>
+        <input type="number" class="qrm-col-input" id="qrmColInput"
+          min="1" placeholder="No."
+          oninput="QrMobile.setColFromInput(this.value)"
+          title="Ketik nomor kolom">
         <span class="qrm-col-hint" id="qrmColHint">QR = semua kolom digabung</span>
       </div>
 
@@ -421,6 +435,10 @@
       if (_col !== 'all') sel.value = String(_col);
     }
 
+    /* Sync input angka */
+    var inp = document.getElementById('qrmColInput');
+    if (inp) inp.value = _col === 'all' ? '' : (parseInt(_col) + 1);
+
     /* Stats */
     var el;
     el = document.getElementById('qrmStatRows'); if (el) el.textContent = _rows.length;
@@ -476,21 +494,17 @@
   window.QrMobile = {
 
     open: function() {
-      /* Pakai switchNav kalau ada, lalu tampilkan pgQr */
-      /* Sembunyikan semua page pakai cara yang sama dengan app mobile */
       var pages = ['pgHome','pgSearch','pgCreate','pgScan','pgPhoto','pgDetail'];
       pages.forEach(function(id) {
         var p = document.getElementById(id);
         if (p) { p.classList.add('hidden'); p.style.display = ''; }
       });
 
-      /* Nonaktifkan semua sidebar nav */
       document.querySelectorAll('.sidebar-item').forEach(function(b) { b.classList.remove('active'); });
       ['sbnHome','sbnSearch','sbnOb','sbnHvs','sbnIb'].forEach(function(id) {
         var b = document.getElementById(id); if (b) b.classList.remove('active');
       });
 
-      /* Tampilkan pgQr */
       var pg = document.getElementById('pgQr');
       if (pg) {
         pg.classList.remove('hidden');
@@ -500,20 +514,52 @@
         pg.style.position = 'relative';
       }
 
-      /* Aktifkan nav QR */
       var btn = document.getElementById('sbnQr');
       if (btn) btn.classList.add('active');
 
-      /* Tutup sidebar kalau ada */
       try { if (typeof UI !== 'undefined' && UI.Sidebar) UI.Sidebar.close(); } catch(e) {}
     },
 
     setCol: function(val) {
       _col = val === 'all' ? 'all' : parseInt(val);
+
+      /* Sync input angka */
+      var inp = document.getElementById('qrmColInput');
+      if (inp) inp.value = _col === 'all' ? '' : (parseInt(_col) + 1);
+
+      /* Sync dropdown */
+      var sel = document.getElementById('qrmColSelect');
+      if (sel) sel.value = _col === 'all' ? 'all' : String(_col);
+
       var hint = document.getElementById('qrmColHint');
-      if (hint) hint.textContent = val === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(val)+1);
+      if (hint) hint.textContent = _col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(_col)+1);
+
       var stat = document.getElementById('qrmStatCol');
-      if (stat) stat.textContent = val === 'all' ? 'Semua' : 'Kol ' + (parseInt(val)+1);
+      if (stat) stat.textContent = _col === 'all' ? 'Semua' : 'Kol ' + (parseInt(_col)+1);
+
+      _renderList();
+    },
+
+    setColFromInput: function(val) {
+      if (!val || !String(val).trim()) {
+        QrMobile.setCol('all');
+        return;
+      }
+      var n = parseInt(val);
+      if (isNaN(n) || n < 1) return;
+      var col = Math.min(n, _maxCols) - 1;
+      _col = col;
+
+      /* Sync dropdown */
+      var sel = document.getElementById('qrmColSelect');
+      if (sel) sel.value = String(col);
+
+      var hint = document.getElementById('qrmColHint');
+      if (hint) hint.textContent = 'QR = isi Kolom ' + n;
+
+      var stat = document.getElementById('qrmStatCol');
+      if (stat) stat.textContent = 'Kol ' + n;
+
       _renderList();
     },
 
