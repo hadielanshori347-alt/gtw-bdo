@@ -1,8 +1,8 @@
 /* ============================================================
-   GTW BDO — qr-mobile.js v2.0
+   GTW BDO — qr-mobile.js v2.1
    QR Table untuk index-mobile.html
-   - Session QR per Incharge (sama dengan web)
-   - Mobile bisa pilih incharge sendiri via dropdown
+   - Otomatis ikut incharge global aktif (STATE.globalIncharge)
+   - Tidak ada dropdown pilih incharge — mirror dari IcModal
    - Real-time update via Supabase WebSocket
    - Kolom bisa dipilih via dropdown ATAU input angka
    ============================================================ */
@@ -20,7 +20,7 @@
   var _sbUrl       = '';
   var _sbKey       = '';
   var _initialized = false;
-  var _currentIc   = '';   // ← incharge aktif di halaman QR mobile
+  var _currentIc   = '';
 
   var WS_DELAYS = [1000, 2000, 4000, 8000, 16000, 30000];
 
@@ -31,59 +31,36 @@
       _sbUrl = (CONFIG.SUPABASE_URL || '').trim();
       _sbKey = (CONFIG.SUPABASE_KEY || '').trim();
     }
-    // Fallback hardcode jika CONFIG belum tersedia
     if (!_sbUrl) _sbUrl = 'https://twhtgiexupzwbycemdee.supabase.co';
     if (!_sbKey) _sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3aHRnaWV4dXB6d2J5Y2VtZGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE1NzQsImV4cCI6MjA5NTM3NzU3NH0.A-j3mbhZUbs8trZLRmYAWG0NP_UY3Jh2u8FyZ5_IOnw';
   }
 
-  /* ── session_key helper: sama persis dengan web ── */
+  /* ── session_key helper ── */
   function _sessionKey(ic) {
     if (!ic) return '';
     return 'ic_' + ic.toLowerCase().replace(/\s+/g, '_');
   }
 
-  /* ── Ambil incharge aktif dari global state mobile ── */
+  /* ── Ambil incharge aktif dari global state ── */
   function _getGlobalIc() {
-    // Coba dari state global mobile (app-mobile.js / ui-mobile.js)
+    // Prioritas 1: STATE.globalIncharge (sumber utama di app ini)
+    if (typeof STATE !== 'undefined' && STATE.globalIncharge) {
+      return STATE.globalIncharge;
+    }
+    // Prioritas 2: window._currentIncharge
     if (typeof window._currentIncharge === 'string' && window._currentIncharge) {
       return window._currentIncharge;
     }
-    // Coba dari IcModal state
+    // Prioritas 3: window._selectedIncharge
     if (typeof window._selectedIncharge === 'string' && window._selectedIncharge) {
       return window._selectedIncharge;
     }
-    // Coba dari elemen DOM sidebar
+    // Prioritas 4: elemen DOM sidebar
     var el = document.getElementById('sidebarIcName');
-    if (el && el.textContent && el.textContent !== 'Pilih Incharge') {
+    if (el && el.textContent && el.textContent.trim() !== 'Pilih Incharge') {
       return el.textContent.trim();
     }
     return '';
-  }
-
-  /* ── Fetch incharge list dari Supabase ── */
-  function _fetchInchargeList(cb) {
-    _resolve();
-    // Coba dari CONFIG global
-    var list = [];
-    if (typeof CONFIG !== 'undefined' && Array.isArray(CONFIG.INCHARGE_LIST)) {
-      list = CONFIG.INCHARGE_LIST.map(function(ic) {
-        return typeof ic === 'object' ? (ic.name || ic.nama || ic) : ic;
-      }).filter(Boolean);
-      if (list.length) { cb(list); return; }
-    }
-    // Fetch dari Supabase tabel incharge
-    fetch(_sbUrl + '/rest/v1/incharge?select=nama&order=nama', {
-      headers: { 'apikey': _sbKey, 'Authorization': 'Bearer ' + _sbKey },
-    })
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(data) {
-      if (Array.isArray(data) && data.length) {
-        cb(data.map(function(d) { return d.nama || d.name || ''; }).filter(Boolean));
-      } else {
-        cb([]);
-      }
-    })
-    .catch(function() { cb([]); });
   }
 
   /* ── Fetch session untuk incharge tertentu ── */
@@ -91,7 +68,6 @@
     _resolve();
     if (!_sbUrl || !_sbKey) return;
     if (!ic) {
-      // Kosongkan tampilan jika tidak ada incharge
       _rows = []; _maxCols = 0;
       _render();
       return;
@@ -117,28 +93,6 @@
     .catch(function(e) { console.warn('[QR-M] fetch failed', e.message); });
   }
 
-  /* ── Populate incharge dropdown di halaman QR ── */
-  function _populateIcDropdown(cb) {
-    var sel = document.getElementById('qrmIcSelect');
-    if (!sel) { if (cb) cb(); return; }
-
-    _fetchInchargeList(function(names) {
-      var html = '<option value="">— Pilih Incharge —</option>';
-      names.forEach(function(n) {
-        var esc = n.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        html += '<option value="' + esc + '">' + esc + '</option>';
-      });
-      sel.innerHTML = html;
-      // Jika ada global incharge aktif, pre-select
-      var globalIc = _getGlobalIc();
-      if (globalIc) {
-        sel.value = globalIc;
-        _currentIc = globalIc;
-      }
-      if (cb) cb();
-    });
-  }
-
   /* ── Set incharge aktif ── */
   function _setIc(ic) {
     _currentIc = ic;
@@ -146,10 +100,12 @@
     _rows      = [];
     _maxCols   = 0;
 
-    // Update dot & label
-    var dot    = document.getElementById('qrmIcDot');
-    var label  = document.getElementById('qrmStatusText');
-    var selKey = document.getElementById('qrmSessionKeyBadge');
+    var dot     = document.getElementById('qrmDot');
+    var label   = document.getElementById('qrmStatusText');
+    var selKey  = document.getElementById('qrmSessionKeyBadge');
+    var display = document.getElementById('qrmIcDisplay');
+
+    if (display) display.textContent = ic || '—';
 
     if (dot)    dot.className = 'qrm-status-dot' + (ic ? '' : ' waiting');
     if (selKey) {
@@ -159,14 +115,9 @@
     if (label) {
       label.innerHTML = ic
         ? 'Incharge: <strong>' + _escH(ic) + '</strong> — menunggu data...'
-        : 'Pilih incharge untuk melihat QR';
+        : 'Belum ada incharge aktif. Pilih incharge lewat menu.';
     }
 
-    // Sync dropdown jika belum
-    var sel = document.getElementById('qrmIcSelect');
-    if (sel && sel.value !== ic) sel.value = ic || '';
-
-    // Fetch data untuk incharge ini
     _fetchSession(ic);
   }
 
@@ -197,7 +148,6 @@
         },
         ref: '1'
       }));
-      // Heartbeat
       setInterval(function() {
         _wsSend(JSON.stringify({ topic: 'phoenix', event: 'heartbeat', payload: {}, ref: '0' }));
       }, 25000);
@@ -211,7 +161,6 @@
         var rec = (msg.payload && msg.payload.record) || null;
         if (!rec) { _fetchSession(_currentIc); return; }
 
-        // Hanya update jika session_key cocok dengan incharge aktif
         var activeKey = _sessionKey(_currentIc);
         if (!activeKey || rec.session_key !== activeKey) return;
 
@@ -274,7 +223,7 @@
 /* APPBAR */
 #pgQr .appbar { flex-shrink: 0; }
 
-/* INCHARGE SELECTOR BAR */
+/* INCHARGE INFO BAR */
 .qrm-ic-bar {
   display: flex;
   align-items: center;
@@ -297,23 +246,15 @@
   gap: 4px;
 }
 .qrm-ic-label svg { flex-shrink: 0; }
-.qrm-ic-select {
+.qrm-ic-display {
   flex: 1;
-  min-width: 140px;
-  appearance: none;
-  -webkit-appearance: none;
-  background: #21262d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8590'/%3E%3C/svg%3E") no-repeat right 10px center;
-  border: 1px solid #3d444d;
-  border-radius: 8px;
-  color: #e6edf3;
   font-size: 13px;
-  font-weight: 600;
-  padding: 9px 28px 9px 12px;
-  outline: none;
-  transition: border-color .15s;
+  font-weight: 700;
+  color: #58a6ff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.qrm-ic-select:focus { border-color: #2f81f7; }
-.qrm-ic-select option { background: #1c2128; }
 .qrm-ic-session-badge {
   display: none;
   font-size: 10px;
@@ -491,21 +432,19 @@
         </button>
       </div>
 
-      <!-- INCHARGE SELECTOR -->
+      <!-- INCHARGE INFO (read-only, ikut global) -->
       <div class="qrm-ic-bar">
         <span class="qrm-ic-label">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Incharge
+          Incharge Aktif
         </span>
-        <select class="qrm-ic-select" id="qrmIcSelect" onchange="QrMobile.onIcChange(this.value)">
-          <option value="">— Memuat... —</option>
-        </select>
+        <span class="qrm-ic-display" id="qrmIcDisplay">—</span>
         <span class="qrm-ic-session-badge" id="qrmSessionKeyBadge"></span>
       </div>
 
       <div class="qrm-status">
         <div class="qrm-status-dot waiting" id="qrmDot"></div>
-        <span id="qrmStatusText">Pilih incharge untuk melihat QR</span>
+        <span id="qrmStatusText">Belum ada incharge aktif. Pilih incharge lewat menu.</span>
       </div>
 
       <div class="qrm-col-bar" id="qrmColBar" style="display:none">
@@ -524,7 +463,7 @@
         <div class="qrm-empty" id="qrmEmpty">
           <div class="qrm-empty-icon">📱</div>
           <div class="qrm-empty-title">Pilih Incharge</div>
-          <div class="qrm-empty-sub">Pilih incharge di atas untuk melihat<br>QR Code yang sudah di-generate dari web.<br>Setiap incharge punya data QR terpisah.</div>
+          <div class="qrm-empty-sub">Pilih incharge lewat menu sidebar atau tombol IC di topbar.<br>QR Table akan otomatis tampil data incharge yang aktif.</div>
         </div>
         <div id="qrmContent" style="display:none">
           <div class="qrm-stats">
@@ -600,12 +539,11 @@
       if (content) content.style.display = 'none';
       if (colBar)  colBar.style.display  = 'none';
       if (dot) dot.className = 'qrm-status-dot waiting';
-      if (status) status.innerHTML = 'Pilih incharge untuk melihat QR';
-      // Update empty message
+      if (status) status.innerHTML = 'Belum ada incharge aktif. Pilih incharge lewat menu.';
       var emptyTitle = document.querySelector('#qrmEmpty .qrm-empty-title');
       var emptySub   = document.querySelector('#qrmEmpty .qrm-empty-sub');
       if (emptyTitle) emptyTitle.textContent = 'Pilih Incharge';
-      if (emptySub)   emptySub.innerHTML = 'Pilih incharge di atas untuk melihat<br>QR Code yang sudah di-generate dari web.<br>Setiap incharge punya data QR terpisah.';
+      if (emptySub)   emptySub.innerHTML = 'Pilih incharge lewat menu sidebar atau tombol IC di topbar.<br>QR Table akan otomatis tampil data incharge yang aktif.';
       return;
     }
 
@@ -615,7 +553,6 @@
       if (colBar)  colBar.style.display  = 'none';
       if (dot) dot.className = 'qrm-status-dot waiting';
       if (status) status.innerHTML = 'Incharge: <strong>' + _escH(_currentIc) + '</strong> — belum ada data QR';
-      // Update empty message
       var emptyTitle2 = document.querySelector('#qrmEmpty .qrm-empty-title');
       var emptySub2   = document.querySelector('#qrmEmpty .qrm-empty-sub');
       if (emptyTitle2) emptyTitle2.textContent = 'Belum Ada Data';
@@ -721,23 +658,14 @@
 
       try { if (typeof UI !== 'undefined' && UI.Sidebar) UI.Sidebar.close(); } catch(e) {}
 
-      // Populate dropdown & sync incharge saat halaman dibuka
-      _populateIcDropdown(function() {
-        // Coba sync dengan incharge global aktif
-        var globalIc = _getGlobalIc();
-        if (globalIc && globalIc !== _currentIc) {
-          _setIc(globalIc);
-        } else if (_currentIc) {
-          // Sudah ada incharge, fetch ulang untuk refresh
-          _fetchSession(_currentIc);
-        } else {
-          _render();
-        }
-      });
-    },
-
-    onIcChange: function(ic) {
-      _setIc(ic);
+      // Langsung pakai incharge global aktif — tidak perlu dropdown
+      var globalIc = _getGlobalIc();
+      if (globalIc) {
+        _setIc(globalIc);
+      } else {
+        _currentIc = '';
+        _render();
+      }
     },
 
     setCol: function(val) {
@@ -789,11 +717,12 @@
     },
 
     refresh: function() {
-      if (_currentIc) {
-        _fetchSession(_currentIc);
+      var ic = _getGlobalIc();
+      if (ic) {
+        _setIc(ic);
       } else {
-        // Refresh dropdown incharge juga
-        _populateIcDropdown(null);
+        _currentIc = '';
+        _render();
       }
     },
 
@@ -804,20 +733,22 @@
       _injectCSS();
       _injectPage();
       _injectNav();
-      // Jangan auto-fetch, tunggu incharge dipilih
       if (_sbUrl && _sbKey) _wsConnect();
 
-      // Pantau perubahan incharge global (dari IcModal)
+      // Polling sync incharge global — update otomatis saat IcModal berubah
       var _prevGlobalIc = '';
       setInterval(function() {
         var gic = _getGlobalIc();
-        if (gic && gic !== _prevGlobalIc) {
+        if (gic !== _prevGlobalIc) {
           _prevGlobalIc = gic;
-          // Sync ke QR page jika sedang terbuka
           var pgQr = document.getElementById('pgQr');
           var isVisible = pgQr && pgQr.style.display !== 'none' && !pgQr.classList.contains('hidden');
-          if (isVisible && gic !== _currentIc) {
+          if (isVisible) {
+            // Halaman QR sedang terbuka — update langsung
             _setIc(gic);
+          } else {
+            // Halaman QR tidak terbuka — simpan state saja
+            _currentIc = gic;
           }
         }
       }, 800);
