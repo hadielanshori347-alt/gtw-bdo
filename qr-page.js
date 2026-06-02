@@ -1,7 +1,8 @@
 /* ============================================================
-   GTW BDO — qr-page.js v2.0
+   GTW BDO — qr-page.js v2.1
    Session QR per Incharge:
-   - Web pilih incharge → session_key = nama incharge (lowercase)
+   - Auto-sync dari incharge aktif di topbar (global)
+   - Tidak ada dropdown incharge di halaman QR
    - Mobile baca sesuai incharge aktif
    ============================================================ */
 
@@ -37,7 +38,7 @@
   padding: 18px 20px;
 }
 
-/* ── INCHARGE SELECTOR BAR ── */
+/* ── INCHARGE STATUS BAR (read-only, no dropdown) ── */
 .qr-ic-bar {
   display: flex;
   align-items: center;
@@ -69,17 +70,18 @@
   background: #3fb950;
   box-shadow: 0 0 0 3px rgba(63,185,80,.2);
 }
-.qr-ic-select {
-  flex: 1; min-width: 160px;
-  appearance: none; -webkit-appearance: none;
-  background: #21262d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8590'/%3E%3C/svg%3E") no-repeat right 10px center;
-  border: 1px solid #3d444d; border-radius: 7px;
-  color: #e6edf3; font-size: 12.5px; font-weight: 600;
-  padding: 7px 28px 7px 10px; outline: none; cursor: pointer;
-  transition: border-color .15s;
+.qr-ic-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e6edf3;
+  flex: 1;
+  letter-spacing: -.01em;
 }
-.qr-ic-select:focus { border-color: #2f81f7; }
-.qr-ic-select option { background: #1c2128; }
+.qr-ic-name.empty {
+  color: #7d8590;
+  font-weight: 400;
+  font-style: italic;
+}
 .qr-ic-session-key {
   font-size: 10.5px;
   color: #7d8590;
@@ -91,6 +93,15 @@
   white-space: nowrap;
 }
 .qr-ic-session-key span { color: #58a6ff; }
+.qr-ic-hint {
+  font-size: 10.5px;
+  color: #7d8590;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.qr-ic-hint .material-icons-round { font-size: 13px; color: #58a6ff; }
 
 /* PASTE PANEL */
 .qr-paste-panel {
@@ -328,27 +339,11 @@
     document.head.appendChild(s);
   }
 
-  /* ── Collect incharge list from global state ── */
-  function _getInchargeList() {
-    // Coba ambil dari CONFIG atau state global yang sudah ada di aplikasi
-    var list = [];
-    if (typeof CONFIG !== 'undefined' && Array.isArray(CONFIG.INCHARGE_LIST)) {
-      list = CONFIG.INCHARGE_LIST;
-    } else if (typeof INCHARGE_LIST !== 'undefined' && Array.isArray(INCHARGE_LIST)) {
-      list = INCHARGE_LIST;
-    } else if (typeof window._inchargeList !== 'undefined') {
-      list = window._inchargeList;
-    }
-    return list;
-  }
-
   /* ── Get active incharge from global widget ── */
   function _getActiveIncharge() {
-    // Coba dari global state dulu
     if (typeof window._currentIncharge === 'string' && window._currentIncharge) {
       return window._currentIncharge;
     }
-    // Fallback: baca dari input widget topbar
     var inp = document.getElementById('globalInchargeInput');
     if (inp && inp.value && inp.value.trim()) return inp.value.trim();
     return '';
@@ -368,18 +363,20 @@
     div.id = 'page-qr';
     div.style.display = 'none';
     div.innerHTML = `
-      <!-- ── INCHARGE SELECTOR ── -->
+      <!-- ── INCHARGE STATUS BAR (auto-sync, no dropdown) ── -->
       <div class="qr-ic-bar">
         <span class="qr-ic-bar-label">
           <span class="material-icons-round">person</span>
-          Incharge QR
+          Incharge Aktif
         </span>
         <div class="qr-ic-dot" id="qrIcDot"></div>
-        <select class="qr-ic-select" id="qrIcSelect" onchange="_qrOnIcChange(this.value)">
-          <option value="">— Pilih Incharge —</option>
-        </select>
+        <span class="qr-ic-name empty" id="qrIcName">— Belum dipilih —</span>
         <span class="qr-ic-session-key" id="qrIcSessionLabel" style="display:none">
           session: <span id="qrIcSessionVal">—</span>
+        </span>
+        <span class="qr-ic-hint">
+          <span class="material-icons-round">info</span>
+          Ubah incharge di topbar kanan atas
         </span>
       </div>
 
@@ -395,7 +392,7 @@
           <!-- Warn jika belum pilih incharge -->
           <div class="qr-no-ic-warn" id="qrNoIcWarn">
             <span class="material-icons-round">warning_amber</span>
-            Pilih <strong>Incharge</strong> di atas sebelum generate QR.
+            Pilih <strong>Incharge</strong> di topbar kanan atas sebelum generate QR.
           </div>
 
           <div class="qr-paste-area-wrap" id="qrPasteWrap">
@@ -458,7 +455,7 @@
         <div class="qr-table-wrap" id="qrTableWrap">
           <div class="qr-empty">
             <span class="material-icons-round">qr_code</span>
-            <p>Pilih <strong>Incharge</strong> lalu paste data di atas<br>
+            <p>Pilih <strong>Incharge</strong> di topbar lalu paste data di atas<br>
             dan klik <strong>Generate QR</strong><br>
             Setiap baris otomatis mendapat QR Code</p>
           </div>
@@ -514,102 +511,58 @@
       var ttl = document.getElementById('topbarTitle');
       if (ttl) ttl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris (per incharge)</span>';
 
-      // Populate incharge dropdown saat halaman dibuka
-      _qrPopulateIcDropdown();
-
       // Sync dengan incharge yang sudah aktif di topbar
       var activeIc = _getActiveIncharge();
-      if (activeIc) _qrSetIc(activeIc);
+      _qrSetIc(activeIc);
 
       setTimeout(function(){ var ta=document.getElementById('qrPasteTA'); if(ta) ta.focus(); }, 120);
     };
   }
 
-  /* ── Populate incharge dropdown ── */
-  function _qrPopulateIcDropdown() {
-    var sel = document.getElementById('qrIcSelect');
-    if (!sel) return;
-
-    // Ambil list dari Supabase atau CONFIG
-    var list = _getInchargeList();
-
-    // Selalu sediakan option kosong
-    var html = '<option value="">— Pilih Incharge —</option>';
-
-    if (list.length) {
-      list.forEach(function(ic) {
-        var name = typeof ic === 'object' ? (ic.name || ic.nama || ic) : ic;
-        html += '<option value="' + _escH(name) + '">' + _escH(name) + '</option>';
-      });
-    } else {
-      // Fallback: ambil dari Supabase langsung
-      _qrFetchInchargeList(function(names) {
-        var h = '<option value="">— Pilih Incharge —</option>';
-        names.forEach(function(n) { h += '<option value="'+_escH(n)+'">'+_escH(n)+'</option>'; });
-        sel.innerHTML = h;
-        // Re-apply active jika ada
-        var active = _getActiveIncharge();
-        if (active) { sel.value = active; _qrSetIc(active); }
-      });
-    }
-    sel.innerHTML = html;
-  }
-
-  /* ── Fetch incharge list dari Supabase ── */
-  function _qrFetchInchargeList(cb) {
-    _qrResolveSupabase();
-    if (!_qrSbUrl || !_qrSbKey) return;
-    // Coba dari tabel incharge atau config
-    fetch(_qrSbUrl + '/rest/v1/rpc/get_incharge_list', {
-      method: 'POST',
-      headers: {
-        'apikey': _qrSbKey,
-        'Authorization': 'Bearer ' + _qrSbKey,
-        'Content-Type': 'application/json',
-      },
-      body: '{}',
-    })
-    .then(function(r) { return r.ok ? r.json() : []; })
-    .then(function(data) {
-      if (Array.isArray(data)) cb(data.map(function(d){ return d.name || d.nama || d; }));
-    })
-    .catch(function() {
-      // Fallback: coba dari tabel incharge langsung
-      fetch(_qrSbUrl + '/rest/v1/incharge?select=nama&order=nama', {
-        headers: { 'apikey': _qrSbKey, 'Authorization': 'Bearer ' + _qrSbKey },
-      })
-      .then(function(r) { return r.ok ? r.json() : []; })
-      .then(function(data) {
-        if (Array.isArray(data)) cb(data.map(function(d){ return d.nama || d.name || ''; }).filter(Boolean));
-      })
-      .catch(function() { cb([]); });
-    });
-  }
-
-  /* ── On incharge change ── */
-  window._qrOnIcChange = function(ic) {
-    _qrSetIc(ic);
-  };
-
+  /* ── On incharge change (dipanggil dari interval polling) ── */
   function _qrSetIc(ic) {
+    // Jika incharge tidak berubah, skip
+    if (ic === _qrCurrentIc) return;
+
     _qrCurrentIc = ic;
 
     var dot   = document.getElementById('qrIcDot');
+    var name  = document.getElementById('qrIcName');
     var label = document.getElementById('qrIcSessionLabel');
     var val   = document.getElementById('qrIcSessionVal');
     var warn  = document.getElementById('qrNoIcWarn');
     var btn   = document.getElementById('qrBtnGenerate');
-    var sel   = document.getElementById('qrIcSelect');
 
-    if (dot)   dot.classList.toggle('active', !!ic);
+    if (dot) dot.classList.toggle('active', !!ic);
+
+    if (name) {
+      name.textContent = ic || '— Belum dipilih —';
+      name.classList.toggle('empty', !ic);
+    }
+
     if (label) label.style.display = ic ? '' : 'none';
     if (val)   val.textContent = ic ? _sessionKey(ic) : '—';
     if (warn)  warn.classList.toggle('show', !ic);
     if (btn)   btn.disabled = !ic;
-    if (sel && sel.value !== ic) sel.value = ic;
 
-    // Jika ada data tersimpan untuk incharge ini, load dulu
-    if (ic) _qrLoadFromSupabase(ic);
+    // Reset state data lama, lalu load data untuk incharge baru
+    _qrRows = []; _qrFiltered = []; _qrMaxCols = 0;
+
+    if (ic) {
+      _qrLoadFromSupabase(ic);
+    } else {
+      // Kosongkan UI
+      var cnt = document.getElementById('qrTableCount');
+      if (cnt) cnt.textContent = '';
+      var sb = document.getElementById('qrStatsBar');
+      if (sb) sb.style.display = 'none';
+      var pb = document.getElementById('qrPrintBtn');
+      if (pb) pb.style.display = 'none';
+      var tw = document.getElementById('qrTableWrap');
+      if (tw) tw.innerHTML =
+        '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
+        '<p>Pilih <strong>Incharge</strong> di topbar kanan atas<br>lalu paste data dan klik <strong>Generate QR</strong></p></div>';
+    }
   }
 
   /* ── State ── */
@@ -678,10 +631,13 @@
         _qrFiltered = _qrRows;
         _buildColTabs(_qrMaxCols);
         _updateStats();
-        document.getElementById('qrTableCount').textContent = '— ' + _qrRows.length + ' baris';
+        var cnt = document.getElementById('qrTableCount');
+        if (cnt) cnt.textContent = '— ' + _qrRows.length + ' baris';
         _qrRender(_qrFiltered, _qrMaxCols);
-        document.getElementById('qrStatsBar').style.display = 'flex';
-        document.getElementById('qrPrintBtn').style.display = '';
+        var sb = document.getElementById('qrStatsBar');
+        if (sb) sb.style.display = 'flex';
+        var pb = document.getElementById('qrPrintBtn');
+        if (pb) pb.style.display = '';
         var ta = document.getElementById('qrPasteTA');
         if (ta && !ta.value.trim()) {
           ta.value = _qrRows.map(function(r){ return r.join('\t'); }).join('\n');
@@ -689,13 +645,20 @@
       } else {
         // Tidak ada data untuk incharge ini — reset tabel
         _qrRows = []; _qrFiltered = []; _qrMaxCols = 0;
-        document.getElementById('qrTableCount').textContent = '';
-        document.getElementById('qrStatsBar').style.display = 'none';
-        document.getElementById('qrPrintBtn').style.display = 'none';
-        document.getElementById('qrTableWrap').innerHTML =
+        var cnt = document.getElementById('qrTableCount');
+        if (cnt) cnt.textContent = '';
+        var sb = document.getElementById('qrStatsBar');
+        if (sb) sb.style.display = 'none';
+        var pb = document.getElementById('qrPrintBtn');
+        if (pb) pb.style.display = 'none';
+        var tw = document.getElementById('qrTableWrap');
+        if (tw) tw.innerHTML =
           '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
           '<p>Belum ada data QR untuk incharge <strong>' + _escH(ic) + '</strong><br>' +
           'Paste data di atas lalu klik <strong>Generate QR</strong></p></div>';
+        // Kosongkan textarea juga agar tidak memperlihatkan data incharge lain
+        var ta = document.getElementById('qrPasteTA');
+        if (ta) ta.value = '';
       }
     })
     .catch(function(e) { console.warn('[QR] load failed', e.message); });
@@ -813,9 +776,12 @@
     _qrMaxCols = Math.max.apply(null, _qrRows.map(function(r){ return r.length; }));
     _buildColTabs(_qrMaxCols);
     _updateStats();
-    document.getElementById('qrStatsBar').style.display = 'flex';
-    document.getElementById('qrPrintBtn').style.display  = '';
-    document.getElementById('qrTableCount').textContent  = '— '+_qrRows.length+' baris';
+    var sb = document.getElementById('qrStatsBar');
+    if (sb) sb.style.display = 'flex';
+    var pb = document.getElementById('qrPrintBtn');
+    if (pb) pb.style.display = '';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '— '+_qrRows.length+' baris';
     _qrFiltered = _qrRows;
     _qrRender(_qrFiltered, _qrMaxCols);
 
@@ -869,19 +835,24 @@
     _qrFiltered = q
       ? _qrRows.filter(function(row){ return row.some(function(c){ return c.toLowerCase().indexOf(q)!==-1; }); })
       : _qrRows;
-    document.getElementById('qrTableCount').textContent = '— '+_qrFiltered.length+' baris';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '— '+_qrFiltered.length+' baris';
     _qrRender(_qrFiltered, _qrMaxCols);
   };
 
   /* ── Clear ── */
   window._qrClear = function() {
-    document.getElementById('qrPasteTA').value = '';
+    var ta = document.getElementById('qrPasteTA');
+    if (ta) ta.value = '';
     _qrRows=[]; _qrFiltered=[]; _qrCol='all'; _qrMaxCols=0;
     // Clear session incharge yang aktif di Supabase
     if (_qrCurrentIc) _qrUpsert(_qrCurrentIc, [], 0);
-    document.getElementById('qrStatsBar').style.display = 'none';
-    document.getElementById('qrPrintBtn').style.display = 'none';
-    document.getElementById('qrTableCount').textContent = '';
+    var sb = document.getElementById('qrStatsBar');
+    if (sb) sb.style.display = 'none';
+    var pb = document.getElementById('qrPrintBtn');
+    if (pb) pb.style.display = 'none';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '';
     var sel = document.getElementById('qrColSelect');
     if (sel) sel.innerHTML = '<option value="all">— Semua Kolom —</option>';
     var inp = document.getElementById('qrColInput');
@@ -890,12 +861,13 @@
     if (iw) iw.style.display = 'none';
     var hint = document.getElementById('qrColHint');
     if (hint) hint.textContent = 'QR = semua kolom digabung';
-    document.getElementById('qrTableWrap').innerHTML =
+    var tw = document.getElementById('qrTableWrap');
+    if (tw) tw.innerHTML =
       '<div class="qr-empty"><span class="material-icons-round">qr_code</span>'+
       '<p>Paste data di atas lalu klik <strong>Generate QR</strong><br>'+
       'Setiap baris otomatis mendapat QR Code</p></div>';
-    var body=document.getElementById('qrPasteBody');
-    var icon=document.getElementById('qrPasteIcon');
+    var body = document.getElementById('qrPasteBody');
+    var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display='';
     if (icon) icon.innerText='expand_less';
   };
@@ -916,24 +888,22 @@
       setTimeout(window._qrGenerate, 120);
     });
 
-    // Pantau perubahan incharge global (topbar)
-    var globalInp = document.getElementById('globalInchargeInput');
-    if (globalInp) {
-      var _prevIc = '';
-      setInterval(function() {
-        var ic = _getActiveIncharge();
-        if (ic !== _prevIc) {
-          _prevIc = ic;
-          // Sync ke selector QR jika halaman QR aktif
-          var pgQr = document.getElementById('page-qr');
-          if (pgQr && pgQr.style.display !== 'none') {
-            _qrSetIc(ic);
-            var sel = document.getElementById('qrIcSelect');
-            if (sel) sel.value = ic;
-          }
+    /* ── Polling: pantau perubahan incharge global dari topbar ── */
+    var _prevIc = _qrCurrentIc;
+    setInterval(function() {
+      var ic = _getActiveIncharge();
+      if (ic !== _prevIc) {
+        _prevIc = ic;
+        // Sync ke QR page jika sedang aktif
+        var pgQr = document.getElementById('page-qr');
+        if (pgQr && pgQr.style.display !== 'none') {
+          _qrSetIc(ic);
+        } else {
+          // Update state diam-diam agar siap saat halaman dibuka
+          _qrCurrentIc = ic;
         }
-      }, 800);
-    }
+      }
+    }, 500);
   }
 
   /* ── Init ── */
