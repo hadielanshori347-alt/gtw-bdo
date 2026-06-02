@@ -1,7 +1,9 @@
 /* ============================================================
-   GTW BDO — qr-page.js v1.5
-   Fix: upsert pakai Prefer: resolution=merge-duplicates
-        (tidak perlu cek row dulu, lebih reliable)
+   GTW BDO — qr-page.js v2.1
+   Session QR per Incharge:
+   - Auto-sync dari incharge aktif di topbar (global)
+   - Tidak ada dropdown incharge di halaman QR
+   - Mobile baca sesuai incharge aktif
    ============================================================ */
 
 (function () {
@@ -36,6 +38,71 @@
   padding: 18px 20px;
 }
 
+/* ── INCHARGE STATUS BAR (read-only, no dropdown) ── */
+.qr-ic-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 10px 16px;
+  flex-wrap: wrap;
+}
+.qr-ic-bar-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7d8590;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.qr-ic-bar-label .material-icons-round { font-size: 14px; color: #58a6ff; }
+.qr-ic-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #3d444d; flex-shrink: 0;
+  transition: background .3s;
+}
+.qr-ic-dot.active {
+  background: #3fb950;
+  box-shadow: 0 0 0 3px rgba(63,185,80,.2);
+}
+.qr-ic-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e6edf3;
+  flex: 1;
+  letter-spacing: -.01em;
+}
+.qr-ic-name.empty {
+  color: #7d8590;
+  font-weight: 400;
+  font-style: italic;
+}
+.qr-ic-session-key {
+  font-size: 10.5px;
+  color: #7d8590;
+  font-family: 'JetBrains Mono', monospace;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.qr-ic-session-key span { color: #58a6ff; }
+.qr-ic-hint {
+  font-size: 10.5px;
+  color: #7d8590;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.qr-ic-hint .material-icons-round { font-size: 13px; color: #58a6ff; }
+
 /* PASTE PANEL */
 .qr-paste-panel {
   background: var(--qr-surface);
@@ -56,6 +123,19 @@
 }
 .qr-paste-hdr-title .material-icons-round { font-size: 16px; color: var(--qr-accent2); }
 .qr-paste-body { padding: 16px 18px; }
+
+.qr-no-ic-warn {
+  display: none;
+  align-items: center; gap: 8px;
+  background: rgba(210,153,34,.12);
+  border: 1px solid rgba(210,153,34,.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px; color: #d29922;
+  margin-bottom: 12px;
+}
+.qr-no-ic-warn .material-icons-round { font-size: 16px; }
+.qr-no-ic-warn.show { display: flex; }
 
 .qr-paste-area-wrap {
   position: relative;
@@ -145,6 +225,7 @@
 .qr-btn .material-icons-round { font-size: 14px; }
 .qr-btn-primary { background: var(--qr-accent); color: #fff; }
 .qr-btn-primary:hover { background: #388bfd; }
+.qr-btn-primary:disabled { background: #3d444d; color: #7d8590; cursor: not-allowed; }
 .qr-btn-outline { background: transparent; border: 1px solid var(--qr-border2); color: var(--qr-muted); }
 .qr-btn-outline:hover { border-color: var(--qr-accent2); color: var(--qr-accent2); }
 
@@ -258,6 +339,22 @@
     document.head.appendChild(s);
   }
 
+  /* ── Get active incharge from global widget ── */
+  function _getActiveIncharge() {
+    if (typeof window._currentIncharge === 'string' && window._currentIncharge) {
+      return window._currentIncharge;
+    }
+    var inp = document.getElementById('globalInchargeInput');
+    if (inp && inp.value && inp.value.trim()) return inp.value.trim();
+    return '';
+  }
+
+  /* ── session_key helper: pakai nama incharge lowercase ── */
+  function _sessionKey(ic) {
+    if (!ic) return '';
+    return 'ic_' + ic.toLowerCase().replace(/\s+/g, '_');
+  }
+
   function injectPage() {
     if (document.getElementById('page-qr')) return;
     var content = document.getElementById('mainContent');
@@ -266,15 +363,38 @@
     div.id = 'page-qr';
     div.style.display = 'none';
     div.innerHTML = `
+      <!-- ── INCHARGE STATUS BAR (auto-sync, no dropdown) ── -->
+      <div class="qr-ic-bar">
+        <span class="qr-ic-bar-label">
+          <span class="material-icons-round">person</span>
+          Incharge Aktif
+        </span>
+        <div class="qr-ic-dot" id="qrIcDot"></div>
+        <span class="qr-ic-name empty" id="qrIcName">— Belum dipilih —</span>
+        <span class="qr-ic-session-key" id="qrIcSessionLabel" style="display:none">
+          session: <span id="qrIcSessionVal">—</span>
+        </span>
+        <span class="qr-ic-hint">
+          <span class="material-icons-round">info</span>
+          Ubah incharge di topbar kanan atas
+        </span>
+      </div>
+
       <div class="qr-paste-panel">
         <div class="qr-paste-hdr" onclick="_qrTogglePaste()">
           <div class="qr-paste-hdr-title">
             <span class="material-icons-round">qr_code_scanner</span>
             Paste Data → Generate QR
           </div>
-          <span class="material-icons-round" id="qrPasteIcon" style="color:rgba(255,255,255,.35);font-size:18px">expand_more</span>
+          <span class="material-icons-round" id="qrPasteIcon" style="color:rgba(255,255,255,.35);font-size:18px">expand_less</span>
         </div>
         <div class="qr-paste-body" id="qrPasteBody">
+          <!-- Warn jika belum pilih incharge -->
+          <div class="qr-no-ic-warn" id="qrNoIcWarn">
+            <span class="material-icons-round">warning_amber</span>
+            Pilih <strong>Incharge</strong> di topbar kanan atas sebelum generate QR.
+          </div>
+
           <div class="qr-paste-area-wrap" id="qrPasteWrap">
             <span class="qr-paste-area-label">▸ Area Paste Data</span>
             <textarea class="qr-paste-textarea" id="qrPasteTA"
@@ -302,7 +422,7 @@
           </div>
 
           <div class="qr-paste-actions">
-            <button class="qr-btn qr-btn-primary" onclick="_qrGenerate()">
+            <button class="qr-btn qr-btn-primary" id="qrBtnGenerate" onclick="_qrGenerate()" disabled>
               <span class="material-icons-round">qr_code</span> Generate QR
             </button>
             <button class="qr-btn qr-btn-outline" onclick="_qrClear()">
@@ -314,6 +434,7 @@
           </div>
         </div>
         <div class="qr-stats-bar" id="qrStatsBar" style="display:none">
+          <span>Incharge: <strong id="qrStatIc">—</strong></span>
           <span>Baris: <strong id="qrStatRows">0</strong></span>
           <span>Kolom: <strong id="qrStatCols">0</strong></span>
           <span>QR dari: <strong id="qrStatCol">Semua</strong></span>
@@ -334,8 +455,8 @@
         <div class="qr-table-wrap" id="qrTableWrap">
           <div class="qr-empty">
             <span class="material-icons-round">qr_code</span>
-            <p>Paste data dari web lain di atas<br>
-            lalu klik <strong>Generate QR</strong><br>
+            <p>Pilih <strong>Incharge</strong> di topbar lalu paste data di atas<br>
+            dan klik <strong>Generate QR</strong><br>
             Setiap baris otomatis mendapat QR Code</p>
           </div>
         </div>
@@ -388,73 +509,168 @@
       });
       var nav = document.getElementById('nav-qr'); if (nav) nav.classList.add('active');
       var ttl = document.getElementById('topbarTitle');
-      if (ttl) ttl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris</span>';
+      if (ttl) ttl.innerHTML = 'QR Table <span class="topbar-sub">Paste data → generate QR Code per baris (per incharge)</span>';
+
+      // Sync dengan incharge yang sudah aktif di topbar
+      var activeIc = _getActiveIncharge();
+      _qrSetIc(activeIc);
+
       setTimeout(function(){ var ta=document.getElementById('qrPasteTA'); if(ta) ta.focus(); }, 120);
     };
   }
 
+  /* ── On incharge change (dipanggil dari interval polling) ── */
+  function _qrSetIc(ic) {
+    // Jika incharge tidak berubah, skip
+    if (ic === _qrCurrentIc) return;
+
+    _qrCurrentIc = ic;
+
+    var dot   = document.getElementById('qrIcDot');
+    var name  = document.getElementById('qrIcName');
+    var label = document.getElementById('qrIcSessionLabel');
+    var val   = document.getElementById('qrIcSessionVal');
+    var warn  = document.getElementById('qrNoIcWarn');
+    var btn   = document.getElementById('qrBtnGenerate');
+
+    if (dot) dot.classList.toggle('active', !!ic);
+
+    if (name) {
+      name.textContent = ic || '— Belum dipilih —';
+      name.classList.toggle('empty', !ic);
+    }
+
+    if (label) label.style.display = ic ? '' : 'none';
+    if (val)   val.textContent = ic ? _sessionKey(ic) : '—';
+    if (warn)  warn.classList.toggle('show', !ic);
+    if (btn)   btn.disabled = !ic;
+
+    // Reset state data lama, lalu load data untuk incharge baru
+    _qrRows = []; _qrFiltered = []; _qrMaxCols = 0;
+
+    if (ic) {
+      _qrLoadFromSupabase(ic);
+    } else {
+      // Kosongkan UI
+      var cnt = document.getElementById('qrTableCount');
+      if (cnt) cnt.textContent = '';
+      var sb = document.getElementById('qrStatsBar');
+      if (sb) sb.style.display = 'none';
+      var pb = document.getElementById('qrPrintBtn');
+      if (pb) pb.style.display = 'none';
+      var tw = document.getElementById('qrTableWrap');
+      if (tw) tw.innerHTML =
+        '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
+        '<p>Pilih <strong>Incharge</strong> di topbar kanan atas<br>lalu paste data dan klik <strong>Generate QR</strong></p></div>';
+    }
+  }
+
   /* ── State ── */
-  var _qrRows     = [];
-  var _qrFiltered = [];
-  var _qrCol      = 'all';
-  var _qrMaxCols  = 0;
+  var _qrRows       = [];
+  var _qrFiltered   = [];
+  var _qrCol        = 'all';
+  var _qrMaxCols    = 0;
+  var _qrCurrentIc  = '';
 
   /* ── Supabase Config ── */
   var _qrSbUrl = "https://twhtgiexupzwbycemdee.supabase.co";
-var _qrSbKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3aHRnaWV4dXB6d2J5Y2VtZGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE1NzQsImV4cCI6MjA5NTM3NzU3NH0.A-j3mbhZUbs8trZLRmYAWG0NP_UY3Jh2u8FyZ5_IOnw";
+  var _qrSbKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3aHRnaWV4dXB6d2J5Y2VtZGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE1NzQsImV4cCI6MjA5NTM3NzU3NH0.A-j3mbhZUbs8trZLRmYAWG0NP_UY3Jh2u8FyZ5_IOnw";
 
- function _qrResolveSupabase() {
-  if (_qrSbUrl && _qrSbKey) return;
-  if (typeof CONFIG !== 'undefined') {
-    _qrSbUrl = (CONFIG.SUPABASE_URL || '').trim();
-    _qrSbKey = (CONFIG.SUPABASE_KEY || '').trim();
-  }
-  if (!_qrSbUrl) _qrSbUrl = "https://twhtgiexupzwbycemdee.supabase.co";
-  if (!_qrSbKey) _qrSbKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3aHRnaWV4dXB6d2J5Y2VtZGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDE1NzQsImV4cCI6MjA5NTM3NzU3NH0.A-j3mbhZUbs8trZLRmYAWG0NP_UY3Jh2u8FyZ5_IOnw";
-}
-
-/* ── FIX: Supabase upsert pakai Prefer: resolution=merge-duplicates ── */
-function _qrUpsert(rows, maxCols) {
-  _qrResolveSupabase();
-  if (!_qrSbUrl || !_qrSbKey) {
-    console.warn('[QR] Supabase config tidak ditemukan');
-    return;
-  }
-  fetch(_qrSbUrl + '/rest/v1/qr_sessions', {
-    method  : 'POST',
-    headers : {
-      'apikey'        : _qrSbKey,
-      'Authorization' : 'Bearer ' + _qrSbKey,
-      'Content-Type'  : 'application/json',
-      'Prefer'        : 'resolution=merge-duplicates',
-    },
-    body: JSON.stringify({
-      session_key : 'default',
-      rows        : rows,
-      max_cols    : maxCols,
-      updated_at  : new Date().toISOString(),
-    }),
-  })
-  .then(function(r) {
-    if (!r.ok) {
-      r.text().then(function(t) {
-        console.warn('[QR] upsert error', r.status, t);
-      });
-    } else {
-      console.log('[QR] upsert OK ✓ rows=' + rows.length);
+  function _qrResolveSupabase() {
+    if (_qrSbUrl && _qrSbKey) return;
+    if (typeof CONFIG !== 'undefined') {
+      _qrSbUrl = (CONFIG.SUPABASE_URL || '').trim();
+      _qrSbKey = (CONFIG.SUPABASE_KEY || '').trim();
     }
-  })
-  .catch(function(e) {
-    console.warn('[QR] upsert failed:', e.message);
-  });
-}
-
-  function _qrSaveToSupabase(rows, maxCols) {
-    _qrUpsert(rows, maxCols);
   }
 
-  function _qrClearSupabase() {
-    _qrUpsert([], 0);
+  /* ── Upsert session per incharge ── */
+  function _qrUpsert(ic, rows, maxCols) {
+    _qrResolveSupabase();
+    if (!_qrSbUrl || !_qrSbKey || !ic) return;
+    var key = _sessionKey(ic);
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions', {
+      method  : 'POST',
+      headers : {
+        'apikey'        : _qrSbKey,
+        'Authorization' : 'Bearer ' + _qrSbKey,
+        'Content-Type'  : 'application/json',
+        'Prefer'        : 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        session_key : key,
+        incharge    : ic,
+        rows        : rows,
+        max_cols    : maxCols,
+        updated_at  : new Date().toISOString(),
+      }),
+    })
+    .then(function(r) {
+      if (!r.ok) r.text().then(function(t) { console.warn('[QR] upsert error', r.status, t); });
+      else console.log('[QR] upsert OK ✓ ic=' + ic + ' rows=' + rows.length);
+    })
+    .catch(function(e) { console.warn('[QR] upsert failed:', e.message); });
+  }
+
+  /* ── Load session dari Supabase untuk incharge tertentu ── */
+  function _qrLoadFromSupabase(ic) {
+    _qrResolveSupabase();
+    if (!_qrSbUrl || !_qrSbKey || !ic) return;
+    var key = _sessionKey(ic);
+    fetch(_qrSbUrl + '/rest/v1/qr_sessions?session_key=eq.' + encodeURIComponent(key) + '&select=rows,max_cols,incharge', {
+      headers: {
+        'apikey'        : _qrSbKey,
+        'Authorization' : 'Bearer ' + _qrSbKey,
+      },
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data[0] && data[0].rows && data[0].rows.length) {
+        _qrRows    = data[0].rows;
+        _qrMaxCols = data[0].max_cols || 0;
+        _qrFiltered = _qrRows;
+        _buildColTabs(_qrMaxCols);
+        _updateStats();
+        var cnt = document.getElementById('qrTableCount');
+        if (cnt) cnt.textContent = '— ' + _qrRows.length + ' baris';
+        _qrRender(_qrFiltered, _qrMaxCols);
+        var sb = document.getElementById('qrStatsBar');
+        if (sb) sb.style.display = 'flex';
+        var pb = document.getElementById('qrPrintBtn');
+        if (pb) pb.style.display = '';
+        var ta = document.getElementById('qrPasteTA');
+        if (ta && !ta.value.trim()) {
+          ta.value = _qrRows.map(function(r){ return r.join('\t'); }).join('\n');
+        }
+      } else {
+        // Tidak ada data untuk incharge ini — reset tabel
+        _qrRows = []; _qrFiltered = []; _qrMaxCols = 0;
+        var cnt = document.getElementById('qrTableCount');
+        if (cnt) cnt.textContent = '';
+        var sb = document.getElementById('qrStatsBar');
+        if (sb) sb.style.display = 'none';
+        var pb = document.getElementById('qrPrintBtn');
+        if (pb) pb.style.display = 'none';
+        var tw = document.getElementById('qrTableWrap');
+        if (tw) tw.innerHTML =
+          '<div class="qr-empty"><span class="material-icons-round">qr_code</span>' +
+          '<p>Belum ada data QR untuk incharge <strong>' + _escH(ic) + '</strong><br>' +
+          'Paste data di atas lalu klik <strong>Generate QR</strong></p></div>';
+        // Kosongkan textarea juga agar tidak memperlihatkan data incharge lain
+        var ta = document.getElementById('qrPasteTA');
+        if (ta) ta.value = '';
+      }
+    })
+    .catch(function(e) { console.warn('[QR] load failed', e.message); });
+  }
+
+  function _updateStats() {
+    var el;
+    el = document.getElementById('qrStatIc');   if (el) el.textContent = _qrCurrentIc || '—';
+    el = document.getElementById('qrStatRows');  if (el) el.textContent = _qrRows.length;
+    el = document.getElementById('qrStatCols');  if (el) el.textContent = _qrMaxCols;
+    el = document.getElementById('qrStatCol');
+    if (el) el.textContent = _qrCol === 'all' ? 'Semua' : 'Kol ' + (parseInt(_qrCol)+1);
   }
 
   /* ── Toggle paste panel ── */
@@ -508,8 +724,7 @@ function _qrUpsert(rows, maxCols) {
     if (hint) hint.textContent = col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(col)+1);
     if (_qrRows.length) {
       _qrFiltered = _qrRows;
-      var statCol = document.getElementById('qrStatCol');
-      if (statCol) statCol.textContent = col === 'all' ? 'Semua' : 'Kol ' + (parseInt(col)+1);
+      _updateStats();
       _qrRender(_qrFiltered, _qrMaxCols);
     }
   };
@@ -545,6 +760,12 @@ function _qrUpsert(rows, maxCols) {
 
   /* ── Generate QR ── */
   window._qrGenerate = function() {
+    if (!_qrCurrentIc) {
+      if (typeof toast==='function') toast('Pilih Incharge terlebih dahulu!','error');
+      var warn = document.getElementById('qrNoIcWarn');
+      if (warn) { warn.classList.add('show'); setTimeout(function(){ warn.classList.remove('show'); }, 3000); }
+      return;
+    }
     var raw = (document.getElementById('qrPasteTA').value||'').trim();
     if (!raw) {
       if (typeof toast==='function') toast('Paste data terlebih dahulu','error');
@@ -554,17 +775,18 @@ function _qrUpsert(rows, maxCols) {
     if (!_qrRows.length) return;
     _qrMaxCols = Math.max.apply(null, _qrRows.map(function(r){ return r.length; }));
     _buildColTabs(_qrMaxCols);
-    document.getElementById('qrStatRows').textContent = _qrRows.length;
-    document.getElementById('qrStatCols').textContent = _qrMaxCols;
-    document.getElementById('qrStatCol').textContent  = _qrCol === 'all' ? 'Semua' : 'Kol '+(_qrCol+1);
-    document.getElementById('qrStatsBar').style.display = 'flex';
-    document.getElementById('qrPrintBtn').style.display  = '';
-    document.getElementById('qrTableCount').textContent  = '— '+_qrRows.length+' baris';
+    _updateStats();
+    var sb = document.getElementById('qrStatsBar');
+    if (sb) sb.style.display = 'flex';
+    var pb = document.getElementById('qrPrintBtn');
+    if (pb) pb.style.display = '';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '— '+_qrRows.length+' baris';
     _qrFiltered = _qrRows;
     _qrRender(_qrFiltered, _qrMaxCols);
 
-    // Simpan ke Supabase — upsert langsung
-    _qrSaveToSupabase(_qrRows, _qrMaxCols);
+    // Simpan ke Supabase dengan session_key = incharge
+    _qrUpsert(_qrCurrentIc, _qrRows, _qrMaxCols);
 
     var body = document.getElementById('qrPasteBody');
     var icon = document.getElementById('qrPasteIcon');
@@ -613,18 +835,24 @@ function _qrUpsert(rows, maxCols) {
     _qrFiltered = q
       ? _qrRows.filter(function(row){ return row.some(function(c){ return c.toLowerCase().indexOf(q)!==-1; }); })
       : _qrRows;
-    document.getElementById('qrTableCount').textContent = '— '+_qrFiltered.length+' baris';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '— '+_qrFiltered.length+' baris';
     _qrRender(_qrFiltered, _qrMaxCols);
   };
 
   /* ── Clear ── */
   window._qrClear = function() {
-    document.getElementById('qrPasteTA').value = '';
+    var ta = document.getElementById('qrPasteTA');
+    if (ta) ta.value = '';
     _qrRows=[]; _qrFiltered=[]; _qrCol='all'; _qrMaxCols=0;
-    _qrClearSupabase();
-    document.getElementById('qrStatsBar').style.display = 'none';
-    document.getElementById('qrPrintBtn').style.display = 'none';
-    document.getElementById('qrTableCount').textContent = '';
+    // Clear session incharge yang aktif di Supabase
+    if (_qrCurrentIc) _qrUpsert(_qrCurrentIc, [], 0);
+    var sb = document.getElementById('qrStatsBar');
+    if (sb) sb.style.display = 'none';
+    var pb = document.getElementById('qrPrintBtn');
+    if (pb) pb.style.display = 'none';
+    var cnt = document.getElementById('qrTableCount');
+    if (cnt) cnt.textContent = '';
     var sel = document.getElementById('qrColSelect');
     if (sel) sel.innerHTML = '<option value="all">— Semua Kolom —</option>';
     var inp = document.getElementById('qrColInput');
@@ -633,12 +861,13 @@ function _qrUpsert(rows, maxCols) {
     if (iw) iw.style.display = 'none';
     var hint = document.getElementById('qrColHint');
     if (hint) hint.textContent = 'QR = semua kolom digabung';
-    document.getElementById('qrTableWrap').innerHTML =
+    var tw = document.getElementById('qrTableWrap');
+    if (tw) tw.innerHTML =
       '<div class="qr-empty"><span class="material-icons-round">qr_code</span>'+
-      '<p>Paste data dari web lain di atas<br>lalu klik <strong>Generate QR</strong><br>'+
+      '<p>Paste data di atas lalu klik <strong>Generate QR</strong><br>'+
       'Setiap baris otomatis mendapat QR Code</p></div>';
-    var body=document.getElementById('qrPasteBody');
-    var icon=document.getElementById('qrPasteIcon');
+    var body = document.getElementById('qrPasteBody');
+    var icon = document.getElementById('qrPasteIcon');
     if (body) body.style.display='';
     if (icon) icon.innerText='expand_less';
   };
@@ -650,7 +879,31 @@ function _qrUpsert(rows, maxCols) {
     if (!ta||!wrap) return;
     ta.addEventListener('focus', function(){ wrap.classList.add('focused'); });
     ta.addEventListener('blur',  function(){ wrap.classList.remove('focused'); });
-    ta.addEventListener('paste', function(){ setTimeout(window._qrGenerate, 120); });
+    ta.addEventListener('paste', function(){
+      if (!_qrCurrentIc) {
+        var warn = document.getElementById('qrNoIcWarn');
+        if (warn) warn.classList.add('show');
+        return;
+      }
+      setTimeout(window._qrGenerate, 120);
+    });
+
+    /* ── Polling: pantau perubahan incharge global dari topbar ── */
+    var _prevIc = _qrCurrentIc;
+    setInterval(function() {
+      var ic = _getActiveIncharge();
+      if (ic !== _prevIc) {
+        _prevIc = ic;
+        // Sync ke QR page jika sedang aktif
+        var pgQr = document.getElementById('page-qr');
+        if (pgQr && pgQr.style.display !== 'none') {
+          _qrSetIc(ic);
+        } else {
+          // Update state diam-diam agar siap saat halaman dibuka
+          _qrCurrentIc = ic;
+        }
+      }
+    }, 500);
   }
 
   /* ── Init ── */
