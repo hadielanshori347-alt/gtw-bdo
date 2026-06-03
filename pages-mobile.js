@@ -42,7 +42,6 @@ render() {
         <div class="app-icon-label">Semua</div>
       </div>
         <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
-      </div>
 
       <div class="app-icon-wrap" onclick="typeof QrMobile !== 'undefined' && QrMobile.open()">
         <div class="app-icon app-icon-qr">
