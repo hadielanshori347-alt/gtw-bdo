@@ -180,12 +180,15 @@
 <!-- ═══ SEARCH PAGE ═══ -->
 <div class="page hidden" id="pgSearch">
   <div class="appbar">
-    <button class="hamburger" onclick="UI.Sidebar.toggle()" aria-label="Menu"><span></span></button>
-    <div class="appbar-title">Cari AWB</div>
-    <button class="appbar-icon" onclick="reloadAll()" aria-label="Refresh">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-    </button>
-  </div>
+    <div class="appbar">
+  <button class="back-icon" onclick="switchNav('home')" aria-label="Kembali">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="appbar-title">Cari AWB</div>
+  <button class="appbar-icon" onclick="reloadAll()" aria-label="Refresh">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  </button>
+</div>
   <div class="scroll-content">
     <div class="search-hero">
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px;letter-spacing:.3px;">Cari nomor AWB di semua data OB, HVS, dan IB</div>
