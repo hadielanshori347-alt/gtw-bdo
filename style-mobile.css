@@ -1485,3 +1485,59 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   color: var(--ink);
   border-color: #ffffff;
 }
+
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 12px;
+  padding: 28px 16px 16px;
+}
+.app-icon-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-icon-wrap:active .app-icon {
+  transform: scale(0.88);
+  opacity: 0.8;
+}
+.app-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+  color: #fff;
+}
+.app-icon-scan   { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 14px rgba(37,99,235,.45); }
+.app-icon-search { background: linear-gradient(135deg, #7c3aed, #6d28d9); box-shadow: 0 4px 14px rgba(124,58,237,.45); }
+.app-icon-semua  { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 14px rgba(5,150,105,.45); }
+.app-icon-qr     { background: linear-gradient(135deg, #0891b2, #0e7490); box-shadow: 0 4px 14px rgba(8,145,178,.45); }
+.app-icon-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text2, #a0aec0);
+  text-align: center;
+  letter-spacing: 0.2px;
+}
+.app-icon-badge {
+  position: absolute;
+  top: -4px;
+  right: 8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
