@@ -92,10 +92,10 @@ const HomePage = {
 
   // ── Scan Menu — pilih OB / HVS / IB ──
   openScanMenu() {
-    if (!STATE.globalIncharge) { UI.Toast.error('Pilih Incharge dulu'); IcModal.open(); return; }
-    document.getElementById('scanMenuModal').classList.add('open');
-  },
-
+  if (!STATE.globalIncharge) { UI.Toast.error('Pilih Incharge dulu'); IcModal.open(); return; }
+  CreatePage.open();
+},
+  
   selectScanType(t) {
     document.getElementById('scanMenuModal').classList.remove('open');
     STATE.createType = t;
