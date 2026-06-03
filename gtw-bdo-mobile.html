@@ -156,21 +156,27 @@
     <div class="tab-item"        id="homeTabIb"  onclick="HomePage.switchTab('ib')">IB HVS</div>
   </div>
 
-  <div class="scroll-content" id="homeScroll">
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-label">Total AWB</div>
-        <div class="stat-value" id="statAwb">0</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-label">Selesai</div>
-        <div class="stat-value" id="statSelesai">0</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-label">Proses</div>
-        <div class="stat-value" id="statProses">0</div>
-      </div>
+  <!-- Jadi ini: -->
+<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px;overflow:hidden">
+  <div class="dl-switch" style="padding:10px 12px 10px">
+    <div class="dl-switch-opt active" id="homeSwitchHarian" onclick="HomePage.switchHomeMode('harian')">📅 Hari Ini</div>
+    <div class="dl-switch-opt" id="homeSwitchSemua" onclick="HomePage.switchHomeMode('semua')">📋 Semua</div>
+  </div>
+  <div style="display:flex;border-top:1px solid var(--border)">
+    <div style="flex:1;padding:14px 10px;text-align:center;border-right:1px solid var(--border)">
+      <div class="stat-label">Total AWB</div>
+      <div class="stat-value" id="statAwb" style="font-size:24px;color:var(--blue)">0</div>
     </div>
+    <div style="flex:1;padding:14px 10px;text-align:center;border-right:1px solid var(--border)">
+      <div class="stat-label">Selesai</div>
+      <div class="stat-value" id="statSelesai" style="font-size:24px;color:var(--green)">0</div>
+    </div>
+    <div style="flex:1;padding:14px 10px;text-align:center">
+      <div class="stat-label">Proses</div>
+      <div class="stat-value" id="statProses" style="font-size:24px;color:var(--orange)">0</div>
+    </div>
+  </div>
+</div>
     <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
     <div class="safe-pad"></div>
   </div>
