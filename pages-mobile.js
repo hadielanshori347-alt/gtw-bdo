@@ -61,7 +61,8 @@ render() {
 },
 
 updateStats() {
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
   const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
 
@@ -116,8 +117,8 @@ updateStats() {
   _renderDataList() {
     const mode  = STATE.dataListMode;
     const tab   = STATE.dataListTab;
-    const today = new Date().toISOString().slice(0, 10);
-
+    const now = new Date();
+    const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const arr = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
     let data  = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
 
