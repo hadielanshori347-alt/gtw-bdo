@@ -40,6 +40,7 @@ render() {
           </svg>
         </div>
         <div class="app-icon-label">Semua</div>
+      </div>
         <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
       </div>
 
@@ -72,11 +73,6 @@ updateStats() {
   document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
   document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
 
-  const badge = document.getElementById('dashSemuaBadge');
-  if (badge) {
-    badge.textContent = filtered.length || '';
-    badge.style.display = filtered.length ? 'flex' : 'none';
-  }
 },
 
   switchTab(t) {
