@@ -599,16 +599,18 @@
 
 <!-- ═══ DATA LIST MODAL ═══ -->
 <div class="modal-ov" id="dataListModal" style="align-items:stretch">
-  <div class="modal-sheet" style="max-height:92vh;border-radius:20px 20px 0 0">
+  <div class="modal-sheet" style="height:100vh;max-height:100vh;border-radius:0;display:flex;flex-direction:column">
 
     <div class="modal-hdr">
+      <button class="back-icon" onclick="document.getElementById('dataListModal').classList.remove('open')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
       <div class="modal-title" id="dataListTitle">Data</div>
       <button class="modal-close" onclick="document.getElementById('dataListModal').classList.remove('open')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
 
-    <!-- Switch Harian / Semua -->
     <div style="padding:10px 14px 0;flex-shrink:0">
       <div class="dl-switch">
         <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">📅 Harian</div>
@@ -616,14 +618,20 @@
       </div>
     </div>
 
-    <!-- Tab OB / HVS / IB — 3 tombol pill -->
-    <div class="dl-tabs-pill">
+    <div class="dl-tabs-pill" style="flex-shrink:0">
       <div class="dl-tab-pill active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
       <div class="dl-tab-pill"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
       <div class="dl-tab-pill"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
     </div>
 
-    <div class="modal-body" style="padding:12px" id="dataListBody"></div>
+    <div class="modal-body" style="padding:12px;flex:1;overflow-y:auto" id="dataListBody"></div>
+
+    <div style="padding:12px 14px;padding-bottom:calc(12px + var(--safe-bot));background:var(--ink2);border-top:1px solid var(--border);flex-shrink:0">
+      <button class="btn btn-outline" style="width:100%" onclick="document.getElementById('dataListModal').classList.remove('open')">
+        ← Kembali
+      </button>
+    </div>
+
   </div>
 </div>
 
