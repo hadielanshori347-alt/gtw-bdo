@@ -114,7 +114,7 @@ updateStats() {
     document.getElementById('dataListModal').classList.add('open');
   },
   
- _renderDataList() {
+  _renderDataList() {
     const mode  = STATE.dataListMode;
     const tab   = STATE.dataListTab;
     const now = new Date();
@@ -125,6 +125,7 @@ updateStats() {
     if (mode === 'harian') {
       data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
     }
+    // mode === 'semua' → tampilkan semua
 
     // Update tab buttons
     ['ob','hvs','ib'].forEach(x => {
@@ -135,12 +136,6 @@ updateStats() {
     // Update title
     document.getElementById('dataListTitle').innerText =
       mode === 'harian' ? 'Data Harian' : 'Semua Data';
-
-    // ── UPDATE STATS ──
-    const totalAwb = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
-    document.getElementById('dlStatAwb').innerText     = totalAwb;
-    document.getElementById('dlStatSelesai').innerText = data.filter(x => x.status === 'SELESAI').length;
-    document.getElementById('dlStatProses').innerText  = data.filter(x => x.status !== 'SELESAI').length;
 
     const el = document.getElementById('dataListBody');
     if (!data.length) {
