@@ -5,9 +5,57 @@ const HomePage = {
 
 render() {
   const el = document.getElementById('homeList');
-  el.innerHTML = `
-    <div class="app-grid">
+  const today = new Date().toISOString().slice(0, 10);
+  const tab = STATE.currentTab || 'ob';
+  const mode = STATE.homeMode || 'harian';
 
+  const arr = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
+  let data = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
+  if (mode === 'harian') data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
+
+  const totalAwb   = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const selesai    = data.filter(x => x.status === 'SELESAI').length;
+  const proses     = data.filter(x => x.status !== 'SELESAI').length;
+  const ic         = STATE.globalIncharge;
+
+  el.innerHTML = `
+    <!-- Stats compact -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;">
+
+      <!-- Toggle Hari Ini / Semua -->
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="HomePage.setMode('harian')"
+          style="flex:1;padding:9px 0;border-radius:20px;font-size:13px;font-weight:700;font-family:var(--font-head);border:1.5px solid ${mode==='harian'?'rgba(255,255,255,.4)':'var(--border)'};background:${mode==='harian'?'#fff':'transparent'};color:${mode==='harian'?'var(--ink)':'var(--text3)'};cursor:pointer;transition:.15s;letter-spacing:.2px;">
+          Hari Ini
+        </button>
+        <button onclick="HomePage.setMode('semua')"
+          style="flex:1;padding:9px 0;border-radius:20px;font-size:13px;font-weight:700;font-family:var(--font-head);border:1.5px solid ${mode==='semua'?'rgba(255,255,255,.4)':'var(--border)'};background:${mode==='semua'?'transparent':'transparent'};color:${mode==='semua'?'#ffffff':'var(--text3)'};cursor:pointer;transition:.15s;letter-spacing:.2px;">
+          Semua
+        </button>
+      </div>
+
+      <!-- 3 stat columns -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+        <div style="text-align:center;padding:0 8px;border-right:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-head);margin-bottom:6px;">Total AWB</div>
+          <div style="width:32px;height:2px;background:var(--blue);margin:0 auto 8px;border-radius:2px;"></div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--blue);line-height:1;">${ic ? totalAwb : '<span style="font-size:12px;color:var(--text3)">pilih incharge</span>'}</div>
+        </div>
+        <div style="text-align:center;padding:0 8px;border-right:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-head);margin-bottom:6px;">Selesai</div>
+          <div style="width:32px;height:2px;background:var(--green);margin:0 auto 8px;border-radius:2px;"></div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--green);line-height:1;">${ic ? selesai : '—'}</div>
+        </div>
+        <div style="text-align:center;padding:0 8px;">
+          <div style="font-size:9px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-head);margin-bottom:6px;">Proses</div>
+          <div style="width:32px;height:2px;background:var(--orange);margin:0 auto 8px;border-radius:2px;"></div>
+          <div style="font-size:22px;font-weight:700;font-family:var(--mono);color:var(--orange);line-height:1;">${ic ? proses : '—'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Grid -->
+    <div class="app-grid">
       <div class="app-icon-wrap" onclick="HomePage.openScanMenu()">
         <div class="app-icon app-icon-scan">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -41,7 +89,6 @@ render() {
         </div>
         <div class="app-icon-label">Semua</div>
       </div>
-        <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
 
       <div class="app-icon-wrap" onclick="typeof QrMobile !== 'undefined' && QrMobile.open()">
         <div class="app-icon app-icon-qr">
@@ -54,10 +101,16 @@ render() {
         </div>
         <div class="app-icon-label">QR Table</div>
       </div>
-
     </div>`;
+},
 
-  HomePage.updateStats();
+setMode(mode) {
+  STATE.homeMode = mode;
+  HomePage.render();
+},
+
+updateStats() {
+  HomePage.render();
 },
 
 updateStats() {
