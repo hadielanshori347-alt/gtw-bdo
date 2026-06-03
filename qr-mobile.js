@@ -1,9 +1,9 @@
 /* ============================================================
-   GTW BDO — qr-mobile.js v2.2
+   GTW BDO — qr-mobile.js v2.3
    QR Table untuk index-mobile.html
    - Tombol kembali ke home
-   - Hapus dropdown kolom
-   - Stats + search freeze, hanya list scroll
+   - Input angka kolom (tanpa dropdown select)
+   - Stats + search + kolom input freeze, hanya list scroll
    - Real-time update via Supabase WebSocket
    ============================================================ */
 
@@ -286,6 +286,40 @@
 .qrm-search-row input::placeholder { color: #3d444d; }
 .qrm-search-icon { font-size: 16px; color: #7d8590; flex-shrink: 0; }
 
+/* KOLOM INPUT ROW */
+.qrm-col-input-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px;
+}
+.qrm-col-input-label {
+  font-size: 10px; font-weight: 700; color: #7d8590;
+  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+}
+.qrm-col-input {
+  width: 70px;
+  background: #21262d;
+  border: 1px solid #3d444d; border-radius: 8px;
+  color: #e6edf3; font-size: 13px; font-weight: 600;
+  padding: 7px 8px; outline: none;
+  text-align: center;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.qrm-col-input:focus { border-color: #2f81f7; }
+.qrm-col-input::placeholder { color: #3d444d; font-size: 11px; }
+.qrm-col-clear {
+  background: transparent; border: 1px solid #3d444d; border-radius: 7px;
+  color: #7d8590; font-size: 11px; font-weight: 700;
+  padding: 7px 10px; cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, color .15s;
+}
+.qrm-col-clear:active { border-color: #58a6ff; color: #58a6ff; }
+.qrm-col-hint {
+  flex: 1; font-size: 10.5px; color: #7d8590;
+  font-family: 'DM Mono', monospace; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+
 /* SCROLL AREA — hanya list QR */
 .qrm-scroll {
   flex: 1; overflow-y: auto;
@@ -382,8 +416,17 @@
         <span id="qrmStatusText">Belum ada incharge aktif. Pilih incharge lewat menu.</span>
       </div>
 
-      <!-- FREEZE HEADER: stats + search -->
+      <!-- FREEZE HEADER: kolom input + stats + search -->
       <div class="qrm-freeze-header" id="qrmFreezeHeader" style="display:none">
+        <div class="qrm-col-input-row">
+          <span class="qrm-col-input-label">Kolom QR:</span>
+          <input type="number" class="qrm-col-input" id="qrmColInput"
+            min="1" placeholder="No."
+            oninput="QrMobile.setColFromInput(this.value)"
+            title="Ketik nomor kolom, kosongkan = semua">
+          <button class="qrm-col-clear" onclick="QrMobile.setColFromInput('')" title="Reset ke semua kolom">Semua</button>
+          <span class="qrm-col-hint" id="qrmColHint">QR = semua kolom digabung</span>
+        </div>
         <div class="qrm-stats">
           <div class="qrm-stat">
             <div class="qrm-stat-label">Total Baris</div>
@@ -497,6 +540,12 @@
     el = document.getElementById('qrmStatCols'); if (el) el.textContent = _maxCols;
     el = document.getElementById('qrmStatCol');  if (el) el.textContent = _col === 'all' ? 'Semua' : 'Kol ' + (parseInt(_col)+1);
 
+    /* Sync kolom input */
+    var inp = document.getElementById('qrmColInput');
+    if (inp) inp.value = _col === 'all' ? '' : (parseInt(_col) + 1);
+    var hint = document.getElementById('qrmColHint');
+    if (hint) hint.textContent = _col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(_col)+1);
+
     /* Apply search filter */
     var q = (document.getElementById('qrmSearch') || {value:''}).value.toLowerCase();
     _filtered = q
@@ -589,6 +638,32 @@
       }
       var sbnHome = document.getElementById('sbnHome');
       if (sbnHome) sbnHome.classList.add('active');
+    },
+
+    setColFromInput: function(val) {
+      if (!val || !String(val).trim()) {
+        /* Reset ke semua kolom */
+        _col = 'all';
+        var inp  = document.getElementById('qrmColInput');
+        var hint = document.getElementById('qrmColHint');
+        var stat = document.getElementById('qrmStatCol');
+        if (inp)  inp.value       = '';
+        if (hint) hint.textContent = 'QR = semua kolom digabung';
+        if (stat) stat.textContent = 'Semua';
+        _renderList();
+        return;
+      }
+      var n = parseInt(val);
+      if (isNaN(n) || n < 1) return;
+      var col = Math.min(n, _maxCols) - 1;
+      _col = col;
+      var hint = document.getElementById('qrmColHint');
+      var stat = document.getElementById('qrmStatCol');
+      var inp  = document.getElementById('qrmColInput');
+      if (hint) hint.textContent = 'QR = isi Kolom ' + (col + 1);
+      if (stat) stat.textContent = 'Kol ' + (col + 1);
+      if (inp && parseInt(inp.value) !== col + 1) inp.value = col + 1;
+      _renderList();
     },
 
     search: function(q) {
