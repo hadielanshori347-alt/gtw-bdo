@@ -1488,9 +1488,10 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 
 .app-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px 8px;
-  padding: 24px 12px 16px;
+  grid-template-columns: repeat(4, 1fr);  
+  gap: 16px 8px;
+  padding: 20px 12px 16px;
+  width: 100%;
 }
 .app-icon-wrap {
   display: flex;
@@ -1505,8 +1506,9 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   opacity: 0.8;
 }
 .app-icon {
-  width: 54px;
-  height: 54px;
+  width: 100%;       
+  aspect-ratio: 1/1; 
+  max-width: 56px;
   border-radius: 14px;
   display: flex;
   align-items: center;
