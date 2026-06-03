@@ -3,6 +3,8 @@
 // ════════════════════════════════════════════
 const HomePage = {
 
+const HomePage = {
+
 render() {
   const el = document.getElementById('homeList');
   el.innerHTML = `
@@ -71,28 +73,28 @@ updateStats() {
     filtered = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
   }
 
-  switchHomeMode(mode) {
-  STATE.homeMode = mode;
-  document.getElementById('homeSwitchHarian')?.classList.toggle('active', mode === 'harian');
-  document.getElementById('homeSwitchSemua')?.classList.toggle('active', mode === 'semua');
-  HomePage.updateStats();
-},
-
   const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
   document.getElementById('statAwb').innerText     = totalAwb;
   document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
   document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
-},
-  
 
-  switchTab(t) {
-    STATE.currentTab = t;
-    // Sync sidebar button active state
-    ['ob','hvs','ib'].forEach(x => {
-      document.getElementById('sbn' + x.charAt(0).toUpperCase() + x.slice(1))
-        ?.classList.toggle('active', x === t);
-    });
-  },
+  // Sync tombol switch
+  document.getElementById('homeSwitchHarian')?.classList.toggle('active', mode === 'harian');
+  document.getElementById('homeSwitchSemua')?.classList.toggle('active', mode === 'semua');
+},
+
+switchHomeMode(mode) {
+  STATE.homeMode = mode;
+  HomePage.updateStats();
+},
+
+switchTab(t) {
+  STATE.currentTab = t;
+  ['ob','hvs','ib'].forEach(x => {
+    document.getElementById('sbn' + x.charAt(0).toUpperCase() + x.slice(1))
+      ?.classList.toggle('active', x === t);
+  });
+},
 
   // ── Scan Menu — pilih OB / HVS / IB ──
   openScanMenu() {
@@ -104,11 +106,10 @@ updateStats() {
     document.getElementById('scanMenuModal').classList.remove('open');
     STATE.createType = t;
     CreatePage.open();
-    // Auto-select type setelah open
     setTimeout(() => CreatePage.selectType(t), 80);
   },
 
- switchDataMode(mode) {
+  switchDataMode(mode) {
     STATE.dataListMode = mode;
     document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
     document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
@@ -123,7 +124,7 @@ updateStats() {
     HomePage._renderDataList();
     document.getElementById('dataListModal').classList.add('open');
   },
-  
+
   _renderDataList() {
     const mode  = STATE.dataListMode;
     const tab   = STATE.dataListTab;
@@ -135,17 +136,20 @@ updateStats() {
     if (mode === 'harian') {
       data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
     }
-    // mode === 'semua' → tampilkan semua
 
-    // Update tab buttons
     ['ob','hvs','ib'].forEach(x => {
       document.getElementById('dlTab' + x.toUpperCase())
         ?.classList.toggle('active', x === tab);
     });
 
-    // Update title
     document.getElementById('dataListTitle').innerText =
       mode === 'harian' ? 'Data Harian' : 'Semua Data';
+
+    // Update stats modal
+    const totalAwb = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
+    document.getElementById('dlStatAwb').innerText     = totalAwb;
+    document.getElementById('dlStatSelesai').innerText = data.filter(x => x.status === 'SELESAI').length;
+    document.getElementById('dlStatProses').innerText  = data.filter(x => x.status !== 'SELESAI').length;
 
     const el = document.getElementById('dataListBody');
     if (!data.length) {
@@ -187,16 +191,15 @@ updateStats() {
     setTimeout(() => DetailPage.open(type, noTrack), 180);
   },
 
-switchDataListTab(t) {
-  STATE.dataListTab = t;
-  STATE.currentTab  = t;
-  ['ob','hvs','ib'].forEach(x => {
-    document.getElementById('dlTab' + x.toUpperCase())
-      ?.classList.toggle('active', x === t);
-  });
-  HomePage._renderDataList();
-},
-
+  switchDataListTab(t) {
+    STATE.dataListTab = t;
+    STATE.currentTab  = t;
+    ['ob','hvs','ib'].forEach(x => {
+      document.getElementById('dlTab' + x.toUpperCase())
+        ?.classList.toggle('active', x === t);
+    });
+    HomePage._renderDataList();
+  },
 
   async quickSelesai(type, noTrack) {
     if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
@@ -216,7 +219,6 @@ switchDataListTab(t) {
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
   }
 };
-
 // ════════════════════════════════════════════
 // CREATE PAGE
 // ════════════════════════════════════════════
