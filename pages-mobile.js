@@ -64,16 +64,26 @@ updateStats() {
   const now = new Date();
   const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
-  const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
+  let filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : [...all];
 
-  const harian = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
+  const mode = STATE.homeMode || 'harian';
+  if (mode === 'harian') {
+    filtered = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
+  }
+
+  switchHomeMode(mode) {
+  STATE.homeMode = mode;
+  document.getElementById('homeSwitchHarian')?.classList.toggle('active', mode === 'harian');
+  document.getElementById('homeSwitchSemua')?.classList.toggle('active', mode === 'semua');
+  HomePage.updateStats();
+},
+
   const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
-
   document.getElementById('statAwb').innerText     = totalAwb;
   document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
   document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
-
 },
+  
 
   switchTab(t) {
     STATE.currentTab = t;
