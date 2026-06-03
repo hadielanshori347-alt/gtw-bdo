@@ -605,17 +605,37 @@
       </button>
     </div>
 
+    <!-- SWITCH HARIAN / SEMUA -->
     <div style="padding:10px 14px 0;flex-shrink:0">
       <div class="dl-switch">
-        <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">📅 Harian</div>
+        <div class="dl-switch-opt active" id="dlSwitchHarian" onclick="HomePage.switchDataMode('harian')">📅 Hari Ini</div>
         <div class="dl-switch-opt" id="dlSwitchSemua" onclick="HomePage.switchDataMode('semua')">📋 Semua</div>
       </div>
     </div>
 
-    <div class="dl-tabs-pill" style="flex-shrink:0">
-      <div class="dl-tab-pill active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
-      <div class="dl-tab-pill"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
-      <div class="dl-tab-pill"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
+    <!-- STATS ROW -->
+    <div style="padding:10px 14px 0;flex-shrink:0">
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-label">Total AWB</div>
+          <div class="stat-value" id="dlStatAwb">0</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Selesai</div>
+          <div class="stat-value" id="dlStatSelesai">0</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Proses</div>
+          <div class="stat-value" id="dlStatProses">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar" style="flex-shrink:0">
+      <div class="tab-item active" id="dlTabOB"  onclick="HomePage.switchDataListTab('ob')">OB BDO</div>
+      <div class="tab-item"        id="dlTabHVS" onclick="HomePage.switchDataListTab('hvs')">OB HVS</div>
+      <div class="tab-item"        id="dlTabIB"  onclick="HomePage.switchDataListTab('ib')">IB HVS</div>
     </div>
 
     <div class="modal-body" style="padding:12px;flex:1;overflow-y:auto;padding-bottom:calc(12px + var(--safe-bot))" id="dataListBody"></div>
