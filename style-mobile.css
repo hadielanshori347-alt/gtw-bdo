@@ -1489,8 +1489,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .app-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px 12px;
-  padding: 28px 16px 16px;
+  gap: 24px 8px;
+  padding: 24px 12px 16px;
 }
 .app-icon-wrap {
   display: flex;
@@ -1498,7 +1498,6 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  position: relative;
   -webkit-tap-highlight-color: transparent;
 }
 .app-icon-wrap:active .app-icon {
@@ -1506,9 +1505,9 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   opacity: 0.8;
 }
 .app-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1520,7 +1519,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .app-icon-semua  { background: linear-gradient(135deg, #059669, #047857); box-shadow: 0 4px 14px rgba(5,150,105,.45); }
 .app-icon-qr     { background: linear-gradient(135deg, #0891b2, #0e7490); box-shadow: 0 4px 14px rgba(8,145,178,.45); }
 .app-icon-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--text2, #a0aec0);
   text-align: center;
