@@ -126,11 +126,12 @@ const Photo = {
     const pad   = n => n < 10 ? '0' + n : n;
     const waktu = `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
     const lines = [
+      STATE.globalIncharge ? STATE.globalIncharge.toUpperCase() : '',
       waktu,
       `Service: ${STATE.currentSvc}`,
       `Tujuan: ${STATE.currentTuj}`,
       `Lokasi: ${STATE.gpsCoords || '—'}`
-    ];
+    ].filter(Boolean);
     const fs = Math.max(14, Math.floor(canvas.width / 40));
     const lh = fs + 8, p = 12;
     ctx.font = `bold ${fs}px Arial`;
