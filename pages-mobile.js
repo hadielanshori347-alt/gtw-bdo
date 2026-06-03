@@ -675,8 +675,8 @@ const DetailPage = {
       pb.onclick = () => FotoFull.open(fotoUrls, 0);
     } else {
       pb.innerHTML = `<div class="no-img">📷<br>${isSelesai ? 'Tidak ada foto' : 'Klik untuk tambah foto'}</div>`;
-      pb.style.cursor = isSelesai ? 'default' : 'pointer';
-      pb.onclick = isSelesai ? null : () => DetailPage.tambahFoto();
+      pb.style.cursor = 'pointer';
+      pb.onclick = () => DetailPage.tambahFoto();
     }
     document.getElementById('roBbar').classList.toggle('hidden', !isSelesai);
 
@@ -696,8 +696,8 @@ const DetailPage = {
       return `<div class="detail-field"><div class="d-label">${escH(label)}</div><div class="d-value${cls}">${display}</div></div>`;
     }).join('');
 
-    let footer = '<button class="btn btn-outline" style="flex:1" onclick="DetailPage.close()">Tutup</button>';
-    if (!isSelesai) footer += '<button class="btn btn-success" style="flex:1" onclick="DetailPage.markSelesai()">✓ Selesai</button>';
+    let footer = '<button class="btn btn-outline" style="flex:1" onclick="DetailPage.tambahFoto()">📷 Tambah Foto</button>';
+    if (!isSelesai) footer += '<button class="btn btn-success" style="flex:1" onclick="Scanner.open(\'detail\',\'' + item.no_track + '\',\'\')">+ Tambah AWB</button>';
     document.getElementById('detailFooter').innerHTML = footer;
     DetailPage._buildMenu(item, type, isSelesai);
   },
