@@ -451,12 +451,10 @@ const CreatePage = {
   },
 
   _checkIbReady() {
-    const hasSvc  = !!UI.Scb.getValue('scbIbSvc');
-    const hasFrom = !!UI.Scb.getValue('scbIbFrom');
-    const hasTuj  = !!STATE.ibActiveTuj;
-    if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !(hasSvc && hasFrom);
-    if (document.getElementById('btnIbRescan')) document.getElementById('btnIbRescan').disabled = !hasTuj;
-  },
+  const hasSvc  = !!UI.Scb.getValue('scbIbSvc');
+  const hasFrom = !!UI.Scb.getValue('scbIbFrom');
+  if (document.getElementById('btnAddIbTuj')) document.getElementById('btnAddIbTuj').disabled = !(hasSvc && hasFrom);
+},
 
   _checkForm() {
     if (STATE.createType === 'ob' || STATE.createType === 'hvs') CreatePage._checkObForm();
