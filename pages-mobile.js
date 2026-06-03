@@ -3,70 +3,81 @@
 // ════════════════════════════════════════════
 const HomePage = {
 
-  render() {
+render() {
   const el = document.getElementById('homeList');
   el.innerHTML = `
-   <div class="dash-grid">
+    <div class="app-grid">
 
-  <div class="dash-card dash-scan" onclick="HomePage.openScanMenu()">
-    <div class="dash-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-        <circle cx="12" cy="13" r="4"/>
-      </svg>
-    </div>
-    <div class="dash-label">Scan AWB</div>
-    <div class="dash-sub">Tambah</div>
-  </div>
+      <div class="app-icon-wrap" onclick="HomePage.openScanMenu()">
+        <div class="app-icon app-icon-scan">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </div>
+        <div class="app-icon-label">Scan AWB</div>
+      </div>
 
-  <div class="dash-card dash-search" onclick="switchNav('search')">
-    <div class="dash-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-    </div>
-    <div class="dash-label">Cari AWB</div>
-    <div class="dash-sub">Lacak resi</div>
-  </div>
+      <div class="app-icon-wrap" onclick="switchNav('search')">
+        <div class="app-icon app-icon-search">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <div class="app-icon-label">Cari AWB</div>
+      </div>
 
-  <div class="dash-card dash-semua" onclick="HomePage.openDataList('semua')" style="grid-column:span 2">
-    <div class="dash-icon">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="8" y1="6" x2="21" y2="6"/>
-        <line x1="8" y1="12" x2="21" y2="12"/>
-        <line x1="8" y1="18" x2="21" y2="18"/>
-        <line x1="3" y1="6" x2="3.01" y2="6"/>
-        <line x1="3" y1="12" x2="3.01" y2="12"/>
-        <line x1="3" y1="18" x2="3.01" y2="18"/>
-      </svg>
-    </div>
-    <div class="dash-label">Semua</div>
-    <div class="dash-sub" id="dashSemuaSub">Semua data</div>
-  </div>
+      <div class="app-icon-wrap" onclick="HomePage.openDataList('semua')">
+        <div class="app-icon app-icon-semua">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="app-icon-label">Semua</div>
+        <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
+      </div>
 
-</div>`;
-    
+      <div class="app-icon-wrap" onclick="typeof QrMobile !== 'undefined' && QrMobile.open()">
+        <div class="app-icon app-icon-qr">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M14 14h2v2h-2zM18 14h3M14 18h3M18 18v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="app-icon-label">QR Table</div>
+      </div>
+
+    </div>`;
+
   HomePage.updateStats();
 },
 
-  updateStats() {
-    const today = new Date().toISOString().slice(0, 10);
-    const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
-    const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
+updateStats() {
+  const today = new Date().toISOString().slice(0, 10);
+  const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
+  const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
 
-    const harian = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
-    const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const harian = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
+  const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
 
-    document.getElementById('statAwb').innerText     = totalAwb;
-    document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
-    document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
+  document.getElementById('statAwb').innerText     = totalAwb;
+  document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
+  document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
 
-    const hSub = document.getElementById('dashHarianSub');
-    const sSub = document.getElementById('dashSemuaSub');
-    if (hSub) hSub.innerText = harian.length + ' tracking';
-    if (sSub) sSub.innerText = filtered.length + ' tracking';
-  },
+  const badge = document.getElementById('dashSemuaBadge');
+  if (badge) {
+    badge.textContent = filtered.length || '';
+    badge.style.display = filtered.length ? 'flex' : 'none';
+  }
+},
 
   switchTab(t) {
     STATE.currentTab = t;
