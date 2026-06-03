@@ -1,10 +1,10 @@
 /* ============================================================
-   GTW BDO — qr-mobile.js v2.1
+   GTW BDO — qr-mobile.js v2.2
    QR Table untuk index-mobile.html
-   - Otomatis ikut incharge global aktif (STATE.globalIncharge)
-   - Tidak ada dropdown pilih incharge — mirror dari IcModal
+   - Tombol kembali ke home
+   - Hapus dropdown kolom
+   - Stats + search freeze, hanya list scroll
    - Real-time update via Supabase WebSocket
-   - Kolom bisa dipilih via dropdown ATAU input angka
    ============================================================ */
 
 (function () {
@@ -43,41 +43,22 @@
 
   /* ── Ambil incharge aktif dari global state ── */
   function _getGlobalIc() {
-    // Prioritas 1: STATE.globalIncharge (sumber utama di app ini)
-    if (typeof STATE !== 'undefined' && STATE.globalIncharge) {
-      return STATE.globalIncharge;
-    }
-    // Prioritas 2: window._currentIncharge
-    if (typeof window._currentIncharge === 'string' && window._currentIncharge) {
-      return window._currentIncharge;
-    }
-    // Prioritas 3: window._selectedIncharge
-    if (typeof window._selectedIncharge === 'string' && window._selectedIncharge) {
-      return window._selectedIncharge;
-    }
-    // Prioritas 4: elemen DOM sidebar
+    if (typeof STATE !== 'undefined' && STATE.globalIncharge) return STATE.globalIncharge;
+    if (typeof window._currentIncharge === 'string' && window._currentIncharge) return window._currentIncharge;
+    if (typeof window._selectedIncharge === 'string' && window._selectedIncharge) return window._selectedIncharge;
     var el = document.getElementById('sidebarIcName');
-    if (el && el.textContent && el.textContent.trim() !== 'Pilih Incharge') {
-      return el.textContent.trim();
-    }
+    if (el && el.textContent && el.textContent.trim() !== 'Pilih Incharge') return el.textContent.trim();
     return '';
   }
 
-  /* ── Fetch session untuk incharge tertentu ── */
+  /* ── Fetch session ── */
   function _fetchSession(ic) {
     _resolve();
     if (!_sbUrl || !_sbKey) return;
-    if (!ic) {
-      _rows = []; _maxCols = 0;
-      _render();
-      return;
-    }
+    if (!ic) { _rows = []; _maxCols = 0; _render(); return; }
     var key = _sessionKey(ic);
     fetch(_sbUrl + '/rest/v1/qr_sessions?session_key=eq.' + encodeURIComponent(key) + '&select=rows,max_cols,incharge', {
-      headers: {
-        'apikey'        : _sbKey,
-        'Authorization' : 'Bearer ' + _sbKey,
-      },
+      headers: { 'apikey': _sbKey, 'Authorization': 'Bearer ' + _sbKey },
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
@@ -85,8 +66,7 @@
         _rows    = data[0].rows    || [];
         _maxCols = data[0].max_cols || 0;
       } else {
-        _rows    = [];
-        _maxCols = 0;
+        _rows = []; _maxCols = 0;
       }
       _render();
     })
@@ -106,18 +86,13 @@
     var display = document.getElementById('qrmIcDisplay');
 
     if (display) display.textContent = ic || '—';
-
     if (dot)    dot.className = 'qrm-status-dot' + (ic ? '' : ' waiting');
-    if (selKey) {
-      selKey.style.display = ic ? '' : 'none';
-      selKey.textContent   = ic ? _sessionKey(ic) : '';
-    }
+    if (selKey) { selKey.style.display = ic ? '' : 'none'; selKey.textContent = ic ? _sessionKey(ic) : ''; }
     if (label) {
       label.innerHTML = ic
         ? 'Incharge: <strong>' + _escH(ic) + '</strong> — menunggu data...'
         : 'Belum ada incharge aktif. Pilih incharge lewat menu.';
     }
-
     _fetchSession(ic);
   }
 
@@ -135,17 +110,8 @@
     _ws.onopen = function() {
       _wsRetry = 0;
       _wsSend(JSON.stringify({
-        topic   : 'realtime:*',
-        event   : 'phx_join',
-        payload : {
-          config: {
-            broadcast        : { self: false },
-            presence         : { key: '' },
-            postgres_changes : [
-              { event: '*', schema: 'public', table: 'qr_sessions' }
-            ]
-          }
-        },
+        topic: 'realtime:*', event: 'phx_join',
+        payload: { config: { broadcast: { self: false }, presence: { key: '' }, postgres_changes: [{ event: '*', schema: 'public', table: 'qr_sessions' }] } },
         ref: '1'
       }));
       setInterval(function() {
@@ -156,14 +122,11 @@
     _ws.onmessage = function(ev) {
       var msg;
       try { msg = JSON.parse(ev.data); } catch(e) { return; }
-
       if (msg.event === 'postgres_changes') {
         var rec = (msg.payload && msg.payload.record) || null;
         if (!rec) { _fetchSession(_currentIc); return; }
-
         var activeKey = _sessionKey(_currentIc);
         if (!activeKey || rec.session_key !== activeKey) return;
-
         _rows    = rec.rows    || [];
         _maxCols = rec.max_cols || 0;
         _render();
@@ -289,46 +252,41 @@
 }
 .qrm-status strong { color: #58a6ff; }
 
-/* KOLOM SELECTOR */
-.qrm-col-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px;
-  background: #161b22;
+/* FREEZE HEADER — stats + search, tidak ikut scroll */
+.qrm-freeze-header {
+  flex-shrink: 0;
+  background: #0d1117;
   border-bottom: 1px solid #30363d;
-  flex-shrink: 0; flex-wrap: wrap;
-}
-.qrm-col-label {
-  font-size: 10px; font-weight: 700; color: #7d8590;
-  text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
-}
-.qrm-col-select {
-  flex: 1; min-width: 120px;
-  appearance: none; -webkit-appearance: none;
-  background: #21262d url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237d8590'/%3E%3C/svg%3E") no-repeat right 10px center;
-  border: 1px solid #3d444d; border-radius: 8px;
-  color: #e6edf3; font-size: 13px; font-weight: 600;
-  padding: 9px 28px 9px 12px; outline: none;
-}
-.qrm-col-select:focus { border-color: #2f81f7; }
-.qrm-col-select option { background: #1c2128; }
-.qrm-col-input {
-  width: 64px;
-  background: #21262d;
-  border: 1px solid #3d444d; border-radius: 8px;
-  color: #e6edf3; font-size: 13px; font-weight: 600;
-  padding: 9px 8px; outline: none;
-  text-align: center;
-  -webkit-appearance: none;
-  appearance: none;
-}
-.qrm-col-input:focus { border-color: #2f81f7; }
-.qrm-col-input::placeholder { color: #3d444d; font-size: 11px; }
-.qrm-col-hint {
-  font-size: 10.5px; color: #7d8590; width: 100%;
-  font-family: 'DM Mono', monospace;
+  padding: 10px 14px 8px;
 }
 
-/* SCROLL AREA */
+/* STATS */
+.qrm-stats {
+  display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.qrm-stat {
+  flex: 1; min-width: 70px;
+  background: #161b22; border: 1px solid #30363d; border-radius: 10px;
+  padding: 8px 10px; text-align: center;
+}
+.qrm-stat-label { font-size: 9.5px; color: #7d8590; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }
+.qrm-stat-value { font-size: 18px; font-weight: 800; color: #58a6ff; }
+.qrm-stat-value.sm { font-size: 12px; padding-top: 3px; }
+
+/* Search */
+.qrm-search-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #1c2128; border: 1px solid #30363d; border-radius: 9px;
+  padding: 8px 12px;
+}
+.qrm-search-row input {
+  flex: 1; background: transparent; border: none; outline: none;
+  font-size: 13px; color: #e6edf3;
+}
+.qrm-search-row input::placeholder { color: #3d444d; }
+.qrm-search-icon { font-size: 16px; color: #7d8590; flex-shrink: 0; }
+
+/* SCROLL AREA — hanya list QR */
 .qrm-scroll {
   flex: 1; overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -387,31 +345,6 @@
   background: rgba(47,129,247,.25); border-color: #2f81f7;
   color: #93c5fd;
 }
-
-/* STATS */
-.qrm-stats {
-  display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
-}
-.qrm-stat {
-  flex: 1; min-width: 80px;
-  background: #161b22; border: 1px solid #30363d; border-radius: 10px;
-  padding: 10px 12px; text-align: center;
-}
-.qrm-stat-label { font-size: 9.5px; color: #7d8590; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }
-.qrm-stat-value { font-size: 20px; font-weight: 800; color: #58a6ff; }
-
-/* Search */
-.qrm-search-row {
-  display: flex; align-items: center; gap: 8px;
-  background: #1c2128; border: 1px solid #30363d; border-radius: 9px;
-  padding: 8px 12px; margin-bottom: 12px;
-}
-.qrm-search-row input {
-  flex: 1; background: transparent; border: none; outline: none;
-  font-size: 13px; color: #e6edf3;
-}
-.qrm-search-row input::placeholder { color: #3d444d; }
-.qrm-search-icon { font-size: 16px; color: #7d8590; flex-shrink: 0; }
     `;
     document.head.appendChild(s);
   }
@@ -425,14 +358,16 @@
     pg.style.cssText = 'flex-direction:column;height:100%;overflow:hidden;background:#0d1117;';
     pg.innerHTML = `
       <div class="appbar">
-        <button class="hamburger" onclick="UI.Sidebar.toggle()" aria-label="Menu"><span></span></button>
+        <button class="back-icon" onclick="QrMobile.goHome()" aria-label="Kembali">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="appbar-title">QR Table</div>
         <button class="appbar-icon" onclick="QrMobile.refresh()" aria-label="Refresh">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
         </button>
       </div>
 
-      <!-- INCHARGE INFO (read-only, ikut global) -->
+      <!-- INCHARGE INFO (read-only) -->
       <div class="qrm-ic-bar">
         <span class="qrm-ic-label">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -447,45 +382,36 @@
         <span id="qrmStatusText">Belum ada incharge aktif. Pilih incharge lewat menu.</span>
       </div>
 
-      <div class="qrm-col-bar" id="qrmColBar" style="display:none">
-        <span class="qrm-col-label">Kolom QR:</span>
-        <select class="qrm-col-select" id="qrmColSelect" onchange="QrMobile.setCol(this.value)">
-          <option value="all">— Semua Kolom —</option>
-        </select>
-        <input type="number" class="qrm-col-input" id="qrmColInput"
-          min="1" placeholder="No."
-          oninput="QrMobile.setColFromInput(this.value)"
-          title="Ketik nomor kolom">
-        <span class="qrm-col-hint" id="qrmColHint">QR = semua kolom digabung</span>
+      <!-- FREEZE HEADER: stats + search -->
+      <div class="qrm-freeze-header" id="qrmFreezeHeader" style="display:none">
+        <div class="qrm-stats">
+          <div class="qrm-stat">
+            <div class="qrm-stat-label">Total Baris</div>
+            <div class="qrm-stat-value" id="qrmStatRows">0</div>
+          </div>
+          <div class="qrm-stat">
+            <div class="qrm-stat-label">Kolom</div>
+            <div class="qrm-stat-value" id="qrmStatCols">0</div>
+          </div>
+          <div class="qrm-stat">
+            <div class="qrm-stat-label">QR dari</div>
+            <div class="qrm-stat-value sm" id="qrmStatCol">Semua</div>
+          </div>
+        </div>
+        <div class="qrm-search-row">
+          <span class="qrm-search-icon">🔍</span>
+          <input id="qrmSearch" placeholder="Cari data..." oninput="QrMobile.search(this.value)">
+        </div>
       </div>
 
+      <!-- SCROLL AREA — hanya list QR -->
       <div class="qrm-scroll" id="qrmScroll">
         <div class="qrm-empty" id="qrmEmpty">
           <div class="qrm-empty-icon">📱</div>
           <div class="qrm-empty-title">Pilih Incharge</div>
           <div class="qrm-empty-sub">Pilih incharge lewat menu sidebar atau tombol IC di topbar.<br>QR Table akan otomatis tampil data incharge yang aktif.</div>
         </div>
-        <div id="qrmContent" style="display:none">
-          <div class="qrm-stats">
-            <div class="qrm-stat">
-              <div class="qrm-stat-label">Total Baris</div>
-              <div class="qrm-stat-value" id="qrmStatRows">0</div>
-            </div>
-            <div class="qrm-stat">
-              <div class="qrm-stat-label">Kolom</div>
-              <div class="qrm-stat-value" id="qrmStatCols">0</div>
-            </div>
-            <div class="qrm-stat">
-              <div class="qrm-stat-label">QR dari</div>
-              <div class="qrm-stat-value" style="font-size:13px;padding-top:4px" id="qrmStatCol">Semua</div>
-            </div>
-          </div>
-          <div class="qrm-search-row">
-            <span class="qrm-search-icon">🔍</span>
-            <input id="qrmSearch" placeholder="Cari data..." oninput="QrMobile.search(this.value)">
-          </div>
-          <div id="qrmList"></div>
-        </div>
+        <div id="qrmList"></div>
       </div>
     `;
     document.body.appendChild(pg);
@@ -528,16 +454,16 @@
   var _filtered = [];
 
   function _render() {
-    var empty   = document.getElementById('qrmEmpty');
-    var content = document.getElementById('qrmContent');
-    var colBar  = document.getElementById('qrmColBar');
-    var dot     = document.getElementById('qrmDot');
-    var status  = document.getElementById('qrmStatusText');
+    var empty        = document.getElementById('qrmEmpty');
+    var list         = document.getElementById('qrmList');
+    var freezeHeader = document.getElementById('qrmFreezeHeader');
+    var dot          = document.getElementById('qrmDot');
+    var status       = document.getElementById('qrmStatusText');
 
     if (!_currentIc) {
-      if (empty)   empty.style.display   = '';
-      if (content) content.style.display = 'none';
-      if (colBar)  colBar.style.display  = 'none';
+      if (empty)        empty.style.display        = '';
+      if (list)         list.innerHTML              = '';
+      if (freezeHeader) freezeHeader.style.display  = 'none';
       if (dot) dot.className = 'qrm-status-dot waiting';
       if (status) status.innerHTML = 'Belum ada incharge aktif. Pilih incharge lewat menu.';
       var emptyTitle = document.querySelector('#qrmEmpty .qrm-empty-title');
@@ -548,9 +474,9 @@
     }
 
     if (!_rows || !_rows.length) {
-      if (empty)   empty.style.display   = '';
-      if (content) content.style.display = 'none';
-      if (colBar)  colBar.style.display  = 'none';
+      if (empty)        empty.style.display        = '';
+      if (list)         list.innerHTML              = '';
+      if (freezeHeader) freezeHeader.style.display  = 'none';
       if (dot) dot.className = 'qrm-status-dot waiting';
       if (status) status.innerHTML = 'Incharge: <strong>' + _escH(_currentIc) + '</strong> — belum ada data QR';
       var emptyTitle2 = document.querySelector('#qrmEmpty .qrm-empty-title');
@@ -560,36 +486,16 @@
       return;
     }
 
-    if (empty)   empty.style.display   = 'none';
-    if (content) content.style.display = '';
-    if (colBar)  colBar.style.display  = '';
+    if (empty)        empty.style.display        = 'none';
+    if (freezeHeader) freezeHeader.style.display  = '';
     if (dot) dot.className = 'qrm-status-dot';
     if (status) status.innerHTML = _escH(_currentIc) + ': <strong>' + _rows.length + '</strong> baris · real-time aktif';
-
-    /* Rebuild kolom dropdown */
-    var sel = document.getElementById('qrmColSelect');
-    if (sel) {
-      var html = '<option value="all">— Semua Kolom —</option>';
-      for (var i = 0; i < _maxCols; i++) {
-        html += '<option value="' + i + '"' + (_col === i ? ' selected' : '') + '>Kolom ' + (i+1) + '</option>';
-      }
-      sel.innerHTML = html;
-      if (_col !== 'all') sel.value = String(_col);
-    }
-
-    /* Sync input angka */
-    var inp = document.getElementById('qrmColInput');
-    if (inp) inp.value = _col === 'all' ? '' : (parseInt(_col) + 1);
 
     /* Stats */
     var el;
     el = document.getElementById('qrmStatRows'); if (el) el.textContent = _rows.length;
     el = document.getElementById('qrmStatCols'); if (el) el.textContent = _maxCols;
     el = document.getElementById('qrmStatCol');  if (el) el.textContent = _col === 'all' ? 'Semua' : 'Kol ' + (parseInt(_col)+1);
-
-    /* Hint */
-    var hint = document.getElementById('qrmColHint');
-    if (hint) hint.textContent = _col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(_col)+1);
 
     /* Apply search filter */
     var q = (document.getElementById('qrmSearch') || {value:''}).value.toLowerCase();
@@ -658,7 +564,6 @@
 
       try { if (typeof UI !== 'undefined' && UI.Sidebar) UI.Sidebar.close(); } catch(e) {}
 
-      // Langsung pakai incharge global aktif — tidak perlu dropdown
       var globalIc = _getGlobalIc();
       if (globalIc) {
         _setIc(globalIc);
@@ -668,44 +573,22 @@
       }
     },
 
-    setCol: function(val) {
-      _col = val === 'all' ? 'all' : parseInt(val);
+    /* Tombol kembali ke home */
+    goHome: function() {
+      var pg = document.getElementById('pgQr');
+      if (pg) { pg.classList.add('hidden'); pg.style.display = ''; }
 
-      var inp = document.getElementById('qrmColInput');
-      if (inp) inp.value = _col === 'all' ? '' : (parseInt(_col) + 1);
+      var btn = document.getElementById('sbnQr');
+      if (btn) btn.classList.remove('active');
 
-      var sel = document.getElementById('qrmColSelect');
-      if (sel) sel.value = _col === 'all' ? 'all' : String(_col);
-
-      var hint = document.getElementById('qrmColHint');
-      if (hint) hint.textContent = _col === 'all' ? 'QR = semua kolom digabung' : 'QR = isi Kolom ' + (parseInt(_col)+1);
-
-      var stat = document.getElementById('qrmStatCol');
-      if (stat) stat.textContent = _col === 'all' ? 'Semua' : 'Kol ' + (parseInt(_col)+1);
-
-      _renderList();
-    },
-
-    setColFromInput: function(val) {
-      if (!val || !String(val).trim()) {
-        QrMobile.setCol('all');
-        return;
+      /* Aktifkan home */
+      var pgHome = document.getElementById('pgHome');
+      if (pgHome) {
+        pgHome.classList.remove('hidden');
+        pgHome.style.display = '';
       }
-      var n = parseInt(val);
-      if (isNaN(n) || n < 1) return;
-      var col = Math.min(n, _maxCols) - 1;
-      _col = col;
-
-      var sel = document.getElementById('qrmColSelect');
-      if (sel) sel.value = String(col);
-
-      var hint = document.getElementById('qrmColHint');
-      if (hint) hint.textContent = 'QR = isi Kolom ' + n;
-
-      var stat = document.getElementById('qrmStatCol');
-      if (stat) stat.textContent = 'Kol ' + n;
-
-      _renderList();
+      var sbnHome = document.getElementById('sbnHome');
+      if (sbnHome) sbnHome.classList.add('active');
     },
 
     search: function(q) {
@@ -735,7 +618,7 @@
       _injectNav();
       if (_sbUrl && _sbKey) _wsConnect();
 
-      // Polling sync incharge global — update otomatis saat IcModal berubah
+      /* Polling sync incharge global */
       var _prevGlobalIc = '';
       setInterval(function() {
         var gic = _getGlobalIc();
@@ -744,10 +627,8 @@
           var pgQr = document.getElementById('pgQr');
           var isVisible = pgQr && pgQr.style.display !== 'none' && !pgQr.classList.contains('hidden');
           if (isVisible) {
-            // Halaman QR sedang terbuka — update langsung
             _setIc(gic);
           } else {
-            // Halaman QR tidak terbuka — simpan state saja
             _currentIc = gic;
           }
         }
