@@ -342,11 +342,15 @@ const Scanner = {
     STATE.scanItems = [];
   },
 
-  async close() {
+async close() {
     await Scanner._stop();
-    if (STATE.scanContext === 'detail') UI.Page.show('pgDetail');
-    else UI.Page.show('pgCreate');
-  },
+    if (STATE.scanContext === 'detail' && STATE.scanOpenedFrom !== 'create') {
+        UI.Page.show('pgDetail');
+    } else {
+        STATE.scanOpenedFrom = '';
+        UI.Page.show('pgCreate');
+    }
+},
 
   _doneCreate() {
     if (STATE.scanItems.length) Scanner._flushToActive();
