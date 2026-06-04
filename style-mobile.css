@@ -257,24 +257,32 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .tab-bar {
   background: var(--ink2);
   border-bottom: 1px solid var(--border);
-  display: flex; flex-shrink: 0;
-  padding: 0 16px; gap: 4px;
+  display: flex;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  gap: 6px;
 }
 .tab-item {
-  flex: 1; text-align: center;
-  padding: 13px 0;
-  font-size: 11px; font-weight: 700;
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--text3);
-  border-bottom: 2px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
   transition: .18s;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: .8px;
   font-family: var(--font-head);
+  border: 1px solid transparent;
+  background: transparent;
 }
+.tab-item:active { transform: scale(.96); }
 .tab-item.active {
+  background: rgba(255,255,255,.08);
   color: #ffffff;
-  border-bottom-color: #ffffff;
+  border-color: rgba(255,255,255,.2);
 }
 
 /* ─── Stats ─── */
