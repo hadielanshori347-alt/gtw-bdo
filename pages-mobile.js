@@ -3,11 +3,12 @@
 // ════════════════════════════════════════════
 const HomePage = {
 
+const HomePage = {
+
 render() {
   const el = document.getElementById('homeList');
   el.innerHTML = `
     <div class="app-grid">
-
       <div class="app-icon-wrap" onclick="HomePage.openScanMenu()">
         <div class="app-icon app-icon-scan">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -17,7 +18,6 @@ render() {
         </div>
         <div class="app-icon-label">Scan AWB</div>
       </div>
-
       <div class="app-icon-wrap" onclick="switchNav('search')">
         <div class="app-icon app-icon-search">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -27,22 +27,17 @@ render() {
         </div>
         <div class="app-icon-label">Cari AWB</div>
       </div>
-
       <div class="app-icon-wrap" onclick="HomePage.openDataList('semua')">
         <div class="app-icon app-icon-semua">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"/>
-            <line x1="8" y1="12" x2="21" y2="12"/>
-            <line x1="8" y1="18" x2="21" y2="18"/>
-            <line x1="3" y1="6" x2="3.01" y2="6"/>
-            <line x1="3" y1="12" x2="3.01" y2="12"/>
-            <line x1="3" y1="18" x2="3.01" y2="18"/>
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
           </svg>
         </div>
         <div class="app-icon-label">Semua</div>
       </div>
-        <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
-
+      <div class="app-icon-badge" id="dashSemuaBadge" style="display:none"></div>
       <div class="app-icon-wrap" onclick="typeof QrMobile !== 'undefined' && QrMobile.open()">
         <div class="app-icon app-icon-qr">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -54,9 +49,7 @@ render() {
         </div>
         <div class="app-icon-label">QR Table</div>
       </div>
-
     </div>`;
-
   HomePage.updateStats();
 },
 
@@ -66,19 +59,24 @@ updateStats() {
   const tab   = STATE.currentTab || 'ob';
   const arr   = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
   const filtered = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
-
-  const mode = STATE.statsMode || 'harian';
-  const data = mode === 'harian'
+  const mode  = STATE.statsMode || 'harian';
+  const data  = mode === 'harian'
     ? filtered.filter(d => (d.created_date || '').slice(0, 10) === today)
     : filtered;
-
   const totalAwb = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
   document.getElementById('statAwb').innerText     = totalAwb;
   document.getElementById('statSelesai').innerText = data.filter(x => x.status === 'SELESAI').length;
   document.getElementById('statProses').innerText  = data.filter(x => x.status !== 'SELESAI').length;
 },
 
-  switchTab(t) {
+switchStatsMode(mode) {
+  STATE.statsMode = mode;
+  document.getElementById('stglHarian')?.classList.toggle('active', mode === 'harian');
+  document.getElementById('stglSemua')?.classList.toggle('active', mode === 'semua');
+  HomePage.updateStats();
+},
+
+switchTab(t) {
   STATE.currentTab           = t;
   STATE.dataListTab          = t;
   STATE.dataListStatusFilter = null;
@@ -91,146 +89,140 @@ updateStats() {
   HomePage.updateStats();
 },
 
-  openStatsFilter(statusFilter) {
+openStatsFilter(statusFilter) {
   STATE.dataListMode         = STATE.statsMode || 'harian';
   STATE.dataListTab          = STATE.currentTab || 'ob';
   STATE.dataListStatusFilter = statusFilter;
-
   document.getElementById('dlSwitchHarian')?.classList.toggle('active', STATE.dataListMode === 'harian');
   document.getElementById('dlSwitchSemua')?.classList.toggle('active', STATE.dataListMode === 'semua');
-
   ['ob','hvs','ib'].forEach(x => {
     document.getElementById('dlTab' + x.toUpperCase())
       ?.classList.toggle('active', x === STATE.dataListTab);
   });
-
   HomePage._renderDataList();
   document.getElementById('dataListModal').classList.add('open');
 },
 
-  // ── Scan Menu — pilih OB / HVS / IB ──
-  openScanMenu() {
+openScanMenu() {
   if (!STATE.globalIncharge) { UI.Toast.error('Pilih Incharge dulu'); IcModal.open(); return; }
   CreatePage.open();
 },
-  
-  selectScanType(t) {
-    document.getElementById('scanMenuModal').classList.remove('open');
-    STATE.createType = t;
-    CreatePage.open();
-    // Auto-select type setelah open
-    setTimeout(() => CreatePage.selectType(t), 80);
-  },
 
- switchDataMode(mode) {
-    STATE.dataListMode = mode;
-    document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
-    document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
-    HomePage._renderDataList();
-  },
+selectScanType(t) {
+  document.getElementById('scanMenuModal').classList.remove('open');
+  STATE.createType = t;
+  CreatePage.open();
+  setTimeout(() => CreatePage.selectType(t), 80);
+},
 
-  openDataList(mode) {
-    STATE.dataListMode = mode;
-    STATE.dataListTab  = STATE.currentTab || 'ob';
-    document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
-    document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
-    HomePage._renderDataList();
-    document.getElementById('dataListModal').classList.add('open');
-  },
-  
-  _renderDataList() {
-    const mode  = STATE.dataListMode;
-    const tab   = STATE.dataListTab;
-    const now = new Date();
-    const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const arr = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
-    let data  = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
+switchDataMode(mode) {
+  STATE.dataListMode         = mode;
+  STATE.dataListStatusFilter = null;
+  document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
+  document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
+  HomePage._renderDataList();
+},
 
-    if (mode === 'harian') {
-      data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
-    }
-    // mode === 'semua' → tampilkan semua
+openDataList(mode) {
+  STATE.dataListMode         = mode;
+  STATE.dataListTab          = STATE.currentTab || 'ob';
+  STATE.dataListStatusFilter = null;
+  document.getElementById('dlSwitchHarian')?.classList.toggle('active', mode === 'harian');
+  document.getElementById('dlSwitchSemua')?.classList.toggle('active', mode === 'semua');
+  HomePage._renderDataList();
+  document.getElementById('dataListModal').classList.add('open');
+},
 
-    // Update tab buttons
-    ['ob','hvs','ib'].forEach(x => {
-      document.getElementById('dlTab' + x.toUpperCase())
-        ?.classList.toggle('active', x === tab);
-    });
+_renderDataList() {
+  const mode  = STATE.dataListMode  || 'semua';
+  const tab   = STATE.dataListTab   || 'ob';
+  const now   = new Date();
+  const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const arr   = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
+  let data    = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
 
-    // Update title
-    document.getElementById('dataListTitle').innerText =
-      mode === 'harian' ? 'Data Harian' : 'Semua Data';
+  if (mode === 'harian') data = data.filter(d => (d.created_date || '').slice(0, 10) === today);
 
-    const el = document.getElementById('dataListBody');
-    if (!data.length) {
-      el.innerHTML = `<div class="scan-empty" style="padding:32px">
-        ${mode === 'harian' ? 'Tidak ada data hari ini' : 'Tidak ada data'}
-      </div>`;
-      return;
-    }
+  // Filter status
+  if (STATE.dataListStatusFilter === 'selesai')      data = data.filter(d => d.status === 'SELESAI');
+  else if (STATE.dataListStatusFilter === 'proses')  data = data.filter(d => d.status !== 'SELESAI');
 
-    el.innerHTML = data.map(d => {
-      const isProses = d.status !== 'SELESAI';
-      const badge    = isProses
-        ? '<span class="badge badge-proses">● On Proses</span>'
-        : '<span class="badge badge-selesai">✓ Selesai</span>';
-      const tujLabel = (d.from ? `Dari: ${d.from} → ` : '') + d.tujuan;
-      const svcBadge = tab === 'hvs'
-        ? `<span class="badge badge-purple">${escH(d.service)}</span>`
-        : `<span class="badge badge-blue">${escH(d.service)}</span>`;
+  // Update tab pills
+  ['ob','hvs','ib'].forEach(x => {
+    document.getElementById('dlTab' + x.toUpperCase())?.classList.toggle('active', x === tab);
+  });
 
-      return `<div class="card" onclick="HomePage._openDetail('${tab}','${escQ(d.no_track)}')">
-        <div class="card-inner">
-          <div class="card-top">
-            <div class="card-no">${escH(d.no_track)}</div>
-            ${badge}
-          </div>
-          <div class="card-sub">${svcBadge} ${escH(tujLabel)}</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
-            <span class="badge badge-awb">${d.total_awb} AWB</span>
-            <span style="font-size:11px;color:var(--text3)">${escH(d.created_date)}</span>
-          </div>
-          ${isProses ? `<div style="margin-top:10px"><button class="btn-selesai" onclick="event.stopPropagation();HomePage.quickSelesai('${tab}','${escQ(d.no_track)}')">✓ Selesai</button></div>` : ''}
+  // Update title
+  const filterLabel = STATE.dataListStatusFilter === 'selesai' ? ' · Selesai'
+                    : STATE.dataListStatusFilter === 'proses'  ? ' · On Proses' : '';
+  document.getElementById('dataListTitle').innerText =
+    (mode === 'harian' ? 'Data Harian' : 'Semua Data') + filterLabel;
+
+  const el = document.getElementById('dataListBody');
+  if (!data.length) {
+    el.innerHTML = `<div class="scan-empty" style="padding:32px">Tidak ada data</div>`;
+    return;
+  }
+
+  el.innerHTML = data.map(d => {
+    const isProses = d.status !== 'SELESAI';
+    const badge    = isProses
+      ? '<span class="badge badge-proses">● On Proses</span>'
+      : '<span class="badge badge-selesai">✓ Selesai</span>';
+    const tujLabel = (d.from ? `Dari: ${d.from} → ` : '') + d.tujuan;
+    const svcBadge = tab === 'hvs'
+      ? `<span class="badge badge-purple">${escH(d.service)}</span>`
+      : `<span class="badge badge-blue">${escH(d.service)}</span>`;
+    return `<div class="card" onclick="HomePage._openDetail('${tab}','${escQ(d.no_track)}')">
+      <div class="card-inner">
+        <div class="card-top">
+          <div class="card-no">${escH(d.no_track)}</div>
+          ${badge}
         </div>
-      </div>`;
-    }).join('');
-  },
+        <div class="card-sub">${svcBadge} ${escH(tujLabel)}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <span class="badge badge-awb">${d.total_awb} AWB</span>
+          <span style="font-size:11px;color:var(--text3)">${escH(d.created_date)}</span>
+        </div>
+        ${isProses ? `<div style="margin-top:10px"><button class="btn-selesai" onclick="event.stopPropagation();HomePage.quickSelesai('${tab}','${escQ(d.no_track)}')">✓ Selesai</button></div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+},
 
-  _openDetail(type, noTrack) {
-    document.getElementById('dataListModal').classList.remove('open');
-    setTimeout(() => DetailPage.open(type, noTrack), 180);
-  },
+_openDetail(type, noTrack) {
+  document.getElementById('dataListModal').classList.remove('open');
+  setTimeout(() => DetailPage.open(type, noTrack), 180);
+},
 
 switchDataListTab(t) {
-  STATE.dataListTab = t;
-  STATE.currentTab  = t;
+  STATE.dataListTab          = t;
+  STATE.currentTab           = t;
+  STATE.dataListStatusFilter = null;
   ['ob','hvs','ib'].forEach(x => {
-    document.getElementById('dlTab' + x.toUpperCase())
-      ?.classList.toggle('active', x === t);
+    document.getElementById('dlTab' + x.toUpperCase())?.classList.toggle('active', x === t);
   });
   HomePage._renderDataList();
 },
 
-
-  async quickSelesai(type, noTrack) {
-    if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
-    UI.Loading.show('Mengubah status...');
-    const action = type === 'ob' ? 'updateObStatus' : type === 'hvs' ? 'updateHvsStatus' : 'updateIbStatus';
-    try {
-      const res = await API.post(action, { noTrack, newStatus: 'SELESAI' });
-      UI.Loading.hide();
-      if (res.success) {
-        const arr  = type === 'ob' ? STATE.obData : type === 'hvs' ? STATE.hvsData : STATE.ibData;
-        const item = arr.find(d => d.no_track === noTrack);
-        if (item) item.status = 'SELESAI';
-        HomePage._renderDataList();
-        HomePage.updateStats();
-        UI.Toast.success('Status → SELESAI');
-      } else UI.Toast.error('Gagal: ' + (res.error || ''));
-    } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
-  }
+async quickSelesai(type, noTrack) {
+  if (!confirm('Tandai ' + noTrack + ' sebagai SELESAI?')) return;
+  UI.Loading.show('Mengubah status...');
+  const action = type === 'ob' ? 'updateObStatus' : type === 'hvs' ? 'updateHvsStatus' : 'updateIbStatus';
+  try {
+    const res = await API.post(action, { noTrack, newStatus: 'SELESAI' });
+    UI.Loading.hide();
+    if (res.success) {
+      const arr  = type === 'ob' ? STATE.obData : type === 'hvs' ? STATE.hvsData : STATE.ibData;
+      const item = arr.find(d => d.no_track === noTrack);
+      if (item) item.status = 'SELESAI';
+      HomePage._renderDataList();
+      HomePage.updateStats();
+      UI.Toast.success('Status → SELESAI');
+    } else UI.Toast.error('Gagal: ' + (res.error || ''));
+  } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
+}
 };
-
 // ════════════════════════════════════════════
 // CREATE PAGE
 // ════════════════════════════════════════════
