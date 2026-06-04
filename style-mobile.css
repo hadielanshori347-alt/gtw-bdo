@@ -278,46 +278,75 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 
 /* ─── Stats ─── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+.stats-wrap {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
   margin-bottom: 16px;
 }
-.stat-card {
-  background: var(--surface2);
-  border-radius: var(--r);
-  border: 1px solid var(--border);
-  padding: 14px 10px 12px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+.stats-toggle {
+  display: flex;
+  padding: 6px;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
 }
-.stat-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 2px;
+.stgl-btn {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  letter-spacing: .3px;
+  color: var(--text3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: .18s;
 }
-.stat-card.blue::before { background: var(--blue); }
-.stat-card.green::before { background: var(--green); }
-.stat-card.orange::before { background: var(--orange); }
-
-.stat-label {
-  font-size: 8px; font-weight: 700;
+.stgl-btn.active {
+  background: #ffffff;
+  color: var(--ink);
+}
+.stats-band {
+  display: flex;
+  align-items: center;
+}
+.stats-band-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.stats-band-item:active { background: rgba(255,255,255,.05); }
+.sbi-div {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.sbi-label {
+  font-size: 9px;
+  font-weight: 700;
   color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-bottom: 6px;
   font-family: var(--font-head);
 }
-.stat-value {
-  font-size: 26px; font-weight: 700;
+.sbi-val {
+  font-size: 26px;
+  font-weight: 700;
   font-family: var(--mono);
   line-height: 1;
 }
-.stat-card.blue .stat-value  { color: var(--blue); }
-.stat-card.green .stat-value { color: var(--green); }
-.stat-card.orange .stat-value{ color: var(--orange); }
+.sbi-val.blue   { color: var(--blue); }
+.sbi-val.green  { color: var(--green); }
+.sbi-val.orange { color: var(--orange); }
 
 /* ─── Cards ─── */
 .card {
