@@ -150,13 +150,12 @@
     </button>
   </div>
 
-  <div class="tab-bar">
-    <div class="tab-item active" id="homeTabOb"  onclick="HomePage.switchTab('ob')">OB BDO</div>
-    <div class="tab-item"        id="homeTabHvs" onclick="HomePage.switchTab('hvs')">OB HVS</div>
-    <div class="tab-item"        id="homeTabIb"  onclick="HomePage.switchTab('ib')">IB HVS</div>
-  </div>
-
-  <div class="scroll-content" id="homeScroll">
+ <div class="tab-bar">
+  <div class="tab-item active" id="homeTabOb"  onclick="HomePage.switchTab('ob');  HomePage.updateStats()">OB BDO</div>
+  <div class="tab-item"        id="homeTabHvs" onclick="HomePage.switchTab('hvs'); HomePage.updateStats()">OB HVS</div>
+  <div class="tab-item"        id="homeTabIb"  onclick="HomePage.switchTab('ib');  HomePage.updateStats()">IB HVS</div>
+</div>
+<div class="scroll-content" id="homeScroll">
   <div class="stats-wrap">
     <div class="stats-toggle">
       <button class="stgl-btn active" id="stglHarian" onclick="HomePage.switchStatsMode('harian')">Hari Ini</button>
