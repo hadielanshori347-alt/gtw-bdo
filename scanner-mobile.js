@@ -437,7 +437,7 @@ _start() {
     const formats = Scanner._getFormats();
     const cfg = {
       fps: 20,
-       qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
+      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
       aspectRatio: 1.7,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
@@ -479,7 +479,7 @@ _start() {
     if (!h5) return;
     const _cfg = cfg || {
       fps: 20,
-      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
+      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
       aspectRatio: 1.7,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
@@ -511,19 +511,14 @@ _start() {
     document.getElementById('camErr').style.display = 'none';
   },
 
-  _injectScanOverlay() {
-    const readerEl = document.getElementById('reader');
-    if (!readerEl || readerEl.querySelector('.scan-overlay')) return;
-    const overlay = document.createElement('div');
-    overlay.className = 'scan-overlay';
-    overlay.innerHTML = `
-      <div class="scan-frame">
-        <div class="scan-corner-br"></div>
-        <div class="scan-corner-bl"></div>
-        <div class="scan-line"></div>
-      </div>`;
-    readerEl.appendChild(overlay);
-  },
+_injectScanOverlay() {
+  const readerEl = document.getElementById('reader');
+  if (!readerEl || readerEl.querySelector('.scan-line-only')) return;
+
+  const line = document.createElement('div');
+  line.className = 'scan-line-only';
+  readerEl.appendChild(line);
+},
   
   _onSuccess(text) {
     if (Scanner._paused) return;
