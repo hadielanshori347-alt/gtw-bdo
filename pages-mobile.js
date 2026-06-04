@@ -61,28 +61,52 @@ render() {
 },
 
 updateStats() {
-  const now = new Date();
+  const now   = new Date();
   const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const all   = [...STATE.obData, ...STATE.hvsData, ...STATE.ibData];
-  const filtered = STATE.globalIncharge ? all.filter(d => d.incharge === STATE.globalIncharge) : all;
+  const tab   = STATE.currentTab || 'ob';
+  const arr   = tab === 'ob' ? STATE.obData : tab === 'hvs' ? STATE.hvsData : STATE.ibData;
+  const filtered = STATE.globalIncharge ? arr.filter(d => d.incharge === STATE.globalIncharge) : [...arr];
 
-  const harian = filtered.filter(d => (d.created_date || '').slice(0, 10) === today);
-  const totalAwb = filtered.reduce((s, x) => s + (+x.total_awb || 0), 0);
+  const mode = STATE.statsMode || 'harian';
+  const data = mode === 'harian'
+    ? filtered.filter(d => (d.created_date || '').slice(0, 10) === today)
+    : filtered;
 
+  const totalAwb = data.reduce((s, x) => s + (+x.total_awb || 0), 0);
   document.getElementById('statAwb').innerText     = totalAwb;
-  document.getElementById('statSelesai').innerText = filtered.filter(x => x.status === 'SELESAI').length;
-  document.getElementById('statProses').innerText  = filtered.filter(x => x.status !== 'SELESAI').length;
-
+  document.getElementById('statSelesai').innerText = data.filter(x => x.status === 'SELESAI').length;
+  document.getElementById('statProses').innerText  = data.filter(x => x.status !== 'SELESAI').length;
 },
 
   switchTab(t) {
-    STATE.currentTab = t;
-    // Sync sidebar button active state
-    ['ob','hvs','ib'].forEach(x => {
-      document.getElementById('sbn' + x.charAt(0).toUpperCase() + x.slice(1))
-        ?.classList.toggle('active', x === t);
-    });
-  },
+  STATE.currentTab           = t;
+  STATE.dataListTab          = t;
+  STATE.dataListStatusFilter = null;
+  ['ob','hvs','ib'].forEach(x => {
+    document.getElementById('homeTab' + x.charAt(0).toUpperCase() + x.slice(1))
+      ?.classList.toggle('active', x === t);
+    document.getElementById('sbn' + x.charAt(0).toUpperCase() + x.slice(1))
+      ?.classList.toggle('active', x === t);
+  });
+  HomePage.updateStats();
+},
+
+  openStatsFilter(statusFilter) {
+  STATE.dataListMode         = STATE.statsMode || 'harian';
+  STATE.dataListTab          = STATE.currentTab || 'ob';
+  STATE.dataListStatusFilter = statusFilter;
+
+  document.getElementById('dlSwitchHarian')?.classList.toggle('active', STATE.dataListMode === 'harian');
+  document.getElementById('dlSwitchSemua')?.classList.toggle('active', STATE.dataListMode === 'semua');
+
+  ['ob','hvs','ib'].forEach(x => {
+    document.getElementById('dlTab' + x.toUpperCase())
+      ?.classList.toggle('active', x === STATE.dataListTab);
+  });
+
+  HomePage._renderDataList();
+  document.getElementById('dataListModal').classList.add('open');
+},
 
   // ── Scan Menu — pilih OB / HVS / IB ──
   openScanMenu() {
