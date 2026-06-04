@@ -6,9 +6,9 @@ const Scanner = {
   _beepCtx: null,
   _paused: false,
   _preferredCamId: null,
-  _prewarmed: false,          // flag: kamera sudah pre-warm
-  _prewarmStream: null,       // MediaStream dari pre-warm
-  _supportedFormats: null,    // cache format list
+  _prewarmed: false,         
+  _prewarmStream: null,       
+  _supportedFormats: null,    
 
   beep() {
     try {
@@ -445,73 +445,82 @@ const Scanner = {
     const formats = Scanner._getFormats();
     const cfg = {
       fps: 20,                          // lebih tinggi = lebih responsif
-      qrbox: { width: 260, height: 160 },
-      aspectRatio: 1.4,
+      qrbox: { width: 300, height: 300 },
+      aspectRatio: 1.0,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true  // pakai native BarcodeDetector jika ada (Android/Chrome) — jauh lebih cepat
       }
     };
 
-    if (Scanner._preferredCamId) {
-      h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
-        .then(() => { STATE.isScannerRunning = true; })
-        .catch(() => {
-          Scanner._preferredCamId = null;
-          Scanner._startViaEnumerate(h5, cfg);
-        });
-      return;
-    }
-    Scanner._startViaEnumerate(h5, cfg);
-  },
+   if (Scanner._preferredCamId) {
+  h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
+    .then(() => { 
+      STATE.isScannerRunning = true;
+      Scanner._injectScanOverlay();  // ← di dalam .then()
+    })
+    .catch(() => {
+      Scanner._preferredCamId = null;
+      Scanner._startViaEnumerate(h5, cfg);
+    });
+  return;
+}
+Scanner._startViaEnumerate(h5, cfg);
 
-  _startViaEnumerate(h5, cfg) {
-    Html5Qrcode.getCameras()
-      .then(cams => {
-        if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
-        const back  = cams.find(c => /back|rear|env/i.test(c.label));
-        const camId = back ? back.id : cams[cams.length - 1].id;
-        Scanner._preferredCamId = camId;
-        h5.start(camId, cfg, Scanner._onSuccess, () => {})
-          .then(() => { STATE.isScannerRunning = true; })
-          .catch(() => Scanner._startFacing('environment', h5, cfg));
-      })
-      .catch(() => Scanner._startFacing('environment', h5, cfg));
-  },
+_startViaEnumerate(h5, cfg) {
+  Html5Qrcode.getCameras()
+    .then(cams => {
+      if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
+      const back  = cams.find(c => /back|rear|env/i.test(c.label));
+      const camId = back ? back.id : cams[cams.length - 1].id;
+      Scanner._preferredCamId = camId;
+      h5.start(camId, cfg, Scanner._onSuccess, () => {})
+        .then(() => {
+          STATE.isScannerRunning = true;
+          Scanner._injectScanOverlay();  // ← tambahkan
+        })
+        .catch(() => Scanner._startFacing('environment', h5, cfg));
+    })
+    .catch(() => Scanner._startFacing('environment', h5, cfg));
+},
 
-  _startFacing(mode, h5Inst, cfg) {
-    const h5 = h5Inst || STATE.html5QrCode;
-    if (!h5) return;
-    const _cfg = cfg || {
-      fps: 20,
-      qrbox: { width: 260, height: 160 },
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-    };
-    h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
-      .then(() => { STATE.isScannerRunning = true; })
-      .catch(() => {
-        if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
-        else document.getElementById('camErr').style.display = 'block';
-      });
-  },
+_startFacing(mode, h5Inst, cfg) {
+  const h5 = h5Inst || STATE.html5QrCode;
+  if (!h5) return;
+  const _cfg = cfg || {
+    fps: 20,
+    qrbox: { width: 300, height: 300 },  // ← fix dari 260x160
+    aspectRatio: 1.0,                     // ← tambahkan
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  };
+  h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
+    .then(() => {
+      STATE.isScannerRunning = true;
+      Scanner._injectScanOverlay();  // ← tambahkan
+    })
+    .catch(() => {
+      if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
+      else document.getElementById('camErr').style.display = 'block';
+    });
+},
 
-  async _stop() {
-    Scanner._paused = false;
-    if (STATE.html5QrCode && STATE.isScannerRunning) {
-      try { await STATE.html5QrCode.stop(); } catch(e) {}
-    }
-    STATE.isScannerRunning = false;
-    STATE.html5QrCode = null;
-    try {
-      const videos = document.querySelectorAll('#reader video');
-      videos.forEach(v => {
-        if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
-      });
-    } catch(e) {}
-    document.getElementById('reader').innerHTML = '';
-    document.getElementById('camErr').style.display = 'none';
-  },
-
+async _stop() {
+  Scanner._paused = false;
+  if (STATE.html5QrCode && STATE.isScannerRunning) {
+    try { await STATE.html5QrCode.stop(); } catch(e) {}
+  }
+  STATE.isScannerRunning = false;
+  STATE.html5QrCode = null;
+  try {
+    const videos = document.querySelectorAll('#reader video');
+    videos.forEach(v => {
+      if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+    });
+  } catch(e) {}
+  document.getElementById('reader').innerHTML = '';
+  document.getElementById('camErr').style.display = 'none';
+},
+  
   _onSuccess(text) {
     if (Scanner._paused) return;
     const now = Date.now();
