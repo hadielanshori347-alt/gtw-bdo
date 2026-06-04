@@ -438,7 +438,7 @@ _start() {
     const cfg = {
       fps: 20,
       qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
-      aspectRatio: 1.7,
+      aspectRatio: 1.33,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
@@ -480,7 +480,7 @@ _start() {
     const _cfg = cfg || {
       fps: 20,
       qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
-      aspectRatio: 1.7,
+      aspectRatio: 1.33,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
     h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
