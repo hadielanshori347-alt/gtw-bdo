@@ -1591,8 +1591,8 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 }
 .scan-frame {
   position: relative;
-  width: 88vw; max-width: 340px;
-  height: 38vw; max-height: 150px;  /* ← pendek, lebar */
+  width: 95vw; max-width: 500px;
+  height: 30vw; max-height: 130px;  /* ← pendek, lebar */
 }
 .scan-frame::before, .scan-frame::after,
 .scan-corner-br, .scan-corner-bl {
