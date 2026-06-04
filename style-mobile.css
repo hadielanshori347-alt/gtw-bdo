@@ -602,6 +602,14 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .cam-wrap video  { width: 100% !important; height: 100% !important; object-fit: cover; display: block; }
 #reader          { width: 100%; height: 100%; }
 #reader video    { width: 100% !important; height: 100% !important; object-fit: cover; }
+
+#reader > div:first-child,
+#reader__scan_region > div,
+#reader__scan_region img {
+  display: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
 .cam-err {
   background: rgba(245,158,11,.1);
   border-top: 1px solid rgba(245,158,11,.2);
@@ -1587,18 +1595,21 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .scan-overlay {
   position: absolute; inset: 0; pointer-events: none;
   z-index: 10; display: flex;
-  align-items: center; justify-content: center;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 18%;
 }
 .scan-frame {
   position: relative;
-  width: 95vw; max-width: 500px;
-  height: 30vw; max-height: 130px;  /* ← pendek, lebar */
+  width: 88vw; max-width: 420px;
+  height: 52vw; max-height: 220px;
 }
 .scan-frame::before, .scan-frame::after,
 .scan-corner-br, .scan-corner-bl {
   content: ''; position: absolute;
-  width: 28px; height: 28px;
-  border-color: #a78bfa; border-style: solid;
+  width: 32px; height: 32px;
+  border-color: #ffffff;
+  border-style: solid;
 }
 .scan-frame::before  { top:0;    left:0;  border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
 .scan-frame::after   { top:0;    right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
@@ -1606,9 +1617,9 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .scan-corner-bl      { bottom:0; left:0;  border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
 .scan-line {
   position: absolute; left:4px; right:4px; height:2px;
-  background: linear-gradient(90deg, transparent, #a78bfa, #c4b5fd, #a78bfa, transparent);
+  background: linear-gradient(90deg, transparent, #ffffff, rgba(255,255,255,0.8), #ffffff, transparent);
   border-radius: 2px;
-  box-shadow: 0 0 8px 2px rgba(167,139,250,0.6);
+  box-shadow: 0 0 8px 2px rgba(255,255,255,0.5);
   animation: scanMove 2s ease-in-out infinite;
 }
 @keyframes scanMove {
