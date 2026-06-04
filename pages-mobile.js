@@ -587,8 +587,9 @@ const CreatePage = {
       }).catch(() => {});
 
       // Buka scanner mode detail — flow sama seperti OB
-      STATE.scanContext = 'detail';
-      STATE.scanItems   = [];
+      STATE.scanContext    = 'detail';
+      STATE.scanOpenedFrom = 'create';
+      STATE.scanItems      = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
 
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
@@ -634,8 +635,9 @@ const CreatePage = {
       API.get('getIbList').then(r => { STATE.ibData = r.list || []; DataLoader.loadScanAwbs(); }).catch(() => {});
 
       // Buka scanner mode detail — flow sama seperti OB
-      STATE.scanContext = 'detail';
-      STATE.scanItems   = [];
+      STATE.scanContext    = 'detail';
+      STATE.scanOpenedFrom = 'create';
+      STATE.scanItems      = [];
       Scanner.open('detail', STATE.currentNoTrack, '');
 
     } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
