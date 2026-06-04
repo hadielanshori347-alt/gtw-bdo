@@ -52,6 +52,12 @@ render() {
 },
 
 updateStats() {
+    if (!STATE.globalIncharge) {
+    document.getElementById('statAwb').innerText     = 0;
+    document.getElementById('statSelesai').innerText = 0;
+    document.getElementById('statProses').innerText  = 0;
+    return;
+  }
   const now   = new Date();
   const today = new Date(now.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const tab   = STATE.currentTab || 'ob';
@@ -132,6 +138,15 @@ openDataList(mode) {
 },
 
 _renderDataList() {
+    if (!STATE.globalIncharge) {
+    document.getElementById('dataListBody').innerHTML =
+      `<div class="scan-empty" style="padding:40px;text-align:center">
+        <div style="font-size:32px;margin-bottom:12px">👤</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:6px">Pilih Incharge Dulu</div>
+        <div style="font-size:12px;color:var(--text3)">Tap tombol Incharge di pojok kanan atas</div>
+      </div>`;
+    return;
+  }
   const mode  = STATE.dataListMode  || 'semua';
   const tab   = STATE.dataListTab   || 'ob';
   const now   = new Date();
