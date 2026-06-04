@@ -437,7 +437,7 @@ _start() {
     const formats = Scanner._getFormats();
     const cfg = {
       fps: 20,
-      qrbox: { width: 280, height: 140 },
+      qrbox: { width: 300, height: 130 },
       aspectRatio: 1.7,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
@@ -479,7 +479,7 @@ _start() {
     if (!h5) return;
     const _cfg = cfg || {
       fps: 20,
-      qrbox: { width: 280, height: 140 },
+      qrbox: { width: 300, height: 130 },
       aspectRatio: 1.7,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
