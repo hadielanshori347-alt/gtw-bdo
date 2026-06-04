@@ -179,8 +179,10 @@
     </div>
   </div>
   <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
-  <div class="safe-pad"></div>
+  <div class="safe-pad"></div> 
 </div>
+</div>
+  
 
 <!-- ═══ SEARCH PAGE ═══ -->
 <div class="page hidden" id="pgSearch">
@@ -212,7 +214,7 @@
 </div>
 
 <!-- ═══ CREATE PAGE ═══ -->
-<div class="page hidden" id="pgCreate">
+<div class="page hidden" id="pgCreate" style="display:flex;flex-direction:column">
   <div class="appbar">
     <button class="back-icon" onclick="CreatePage.close()" aria-label="Kembali">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -317,7 +319,7 @@
       <div class="scan-list" id="ibScanList"><div class="scan-empty">Isi form dulu</div></div>
     </div>
 
-    <div style="margin-top:14px;display:flex;gap:8px;display:none" id="createActions">
+    <div style="margin-top:14px;gap:8px;display:none" id="createActions">
       <button class="btn btn-outline" onclick="CreatePage.close()">Batal</button>
       <button class="btn btn-primary" style="flex:1" id="btnSave" disabled onclick="CreatePage.doSave()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
