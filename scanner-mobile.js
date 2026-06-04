@@ -6,6 +6,9 @@ const Scanner = {
   _beepCtx: null,
   _paused: false,
   _preferredCamId: null,
+  _prewarmed: false,          // flag: kamera sudah pre-warm
+  _prewarmStream: null,       // MediaStream dari pre-warm
+  _supportedFormats: null,    // cache format list
 
   beep() {
     try {
@@ -24,6 +27,67 @@ const Scanner = {
       osc.stop(ctx.currentTime + 0.15);
     } catch(e) {}
     if (navigator.vibrate) navigator.vibrate(60);
+  },
+
+  // ══════════════════════════════════════════
+  // FORMAT LIST — QR + semua barcode umum
+  // ══════════════════════════════════════════
+  _getFormats() {
+    if (Scanner._supportedFormats) return Scanner._supportedFormats;
+    try {
+      const F = Html5QrcodeSupportedFormats;
+      Scanner._supportedFormats = [
+        F.QR_CODE,
+        F.CODE_128,     // paling umum untuk logistik/AWB
+        F.CODE_39,
+        F.CODE_93,
+        F.EAN_13,
+        F.EAN_8,
+        F.UPC_A,
+        F.UPC_E,
+        F.ITF,          // Interleaved 2 of 5
+        F.DATA_MATRIX,
+        F.PDF_417,
+        F.AZTEC,
+      ].filter(Boolean);
+    } catch(e) {
+      Scanner._supportedFormats = undefined; // biarkan library pakai default
+    }
+    return Scanner._supportedFormats;
+  },
+
+  // ══════════════════════════════════════════
+  // PRE-WARM — minta izin kamera di background
+  // Panggil saat app pertama load, sebelum user buka scanner
+  // ══════════════════════════════════════════
+  async prewarm() {
+    if (Scanner._prewarmed) return;
+    try {
+      const constraints = {
+        video: { facingMode: { ideal: 'environment' } }
+      };
+      Scanner._prewarmStream = await navigator.mediaDevices.getUserMedia(constraints);
+      Scanner._prewarmed = true;
+
+      // Simpan camera id dari track supaya _start langsung pakai
+      const track = Scanner._prewarmStream.getVideoTracks()[0];
+      if (track) {
+        const settings = track.getSettings();
+        if (settings.deviceId) {
+          Scanner._preferredCamId = settings.deviceId;
+        }
+      }
+    } catch(e) {
+      // Izin ditolak — biarkan, scanner tetap bisa jalan dengan fallback
+    }
+  },
+
+  // ── Stop dan lepas pre-warm stream ──
+  _releasePrewarm() {
+    if (Scanner._prewarmStream) {
+      Scanner._prewarmStream.getTracks().forEach(t => t.stop());
+      Scanner._prewarmStream = null;
+    }
   },
 
   open(context, title, ctxLabel = '') {
@@ -48,6 +112,8 @@ const Scanner = {
     Scanner._renderTujTabs();
     Scanner._updateUI();
     UI.Page.show('pgScan');
+
+    // _start langsung, prewarm sudah berjalan di background
     Scanner._start();
   },
 
@@ -69,7 +135,6 @@ const Scanner = {
       wrap.style.display = 'block';
 
       if (!tracks.length) {
-        // Single track — info bar sederhana
         wrap.innerHTML = `
           <div class="scan-combo-label">Tujuan Aktif</div>
           <div class="scan-combo-info">
@@ -81,11 +146,9 @@ const Scanner = {
         return;
       }
 
-      // Multi-track — tab horizontal, tampilkan counter termasuk yang di detailScanMap
       const svc = STATE.currentSvc || '';
       const tabsHtml = tracks.map(t => {
         const isActive = t.noTrack === STATE.currentNoTrack;
-        // Hitung AWB: kalau aktif pakai scanItems, kalau tidak pakai detailScanMap
         const cnt = isActive
           ? STATE.scanItems.length
           : ((STATE.detailScanMap || {})[t.noTrack] || []).length;
@@ -96,7 +159,6 @@ const Scanner = {
         </div>`;
       }).join('');
 
-      // Hitung total semua AWB belum disimpan
       const totalPending = STATE.scanItems.length +
         Object.values(STATE.detailScanMap || {}).reduce((s, a) => s + a.length, 0);
 
@@ -131,7 +193,6 @@ const Scanner = {
       return;
     }
 
-    // Tab horizontal
     const tabsHtml = keys.map(t => {
       const cnt      = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
       const isActive = t === active;
@@ -210,9 +271,7 @@ const Scanner = {
     else CreatePage.openAddIbTujModal();
   },
 
-  // ── Pilih tujuan/track di mode detail — TANPA confirm, AWB disimpan sementara ──
   _selectDetailTrack(noTrack, tujuan) {
-    // Flush AWB aktif ke detailScanMap (bukan dibuang)
     if (STATE.scanItems.length) {
       if (!STATE.detailScanMap) STATE.detailScanMap = {};
       if (!STATE.detailScanMap[STATE.currentNoTrack]) STATE.detailScanMap[STATE.currentNoTrack] = [];
@@ -223,11 +282,9 @@ const Scanner = {
       STATE.scanItems = [];
     }
 
-    // Ganti tracking aktif
     STATE.currentNoTrack = noTrack;
     STATE.currentTuj     = tujuan;
 
-    // Restore AWB yang sudah pernah di-scan ke tujuan ini (jika ada)
     if (STATE.detailScanMap?.[noTrack]?.length) {
       STATE.scanItems = [...STATE.detailScanMap[noTrack]];
       delete STATE.detailScanMap[noTrack];
@@ -247,7 +304,6 @@ const Scanner = {
     Scanner._updateUI();
   },
 
-  // ── Render tab tujuan (DIPERTAHANKAN) ──
   _renderTujTabs() {
     const wrap = document.getElementById('scanTujTabsWrap');
     if (!wrap) return;
@@ -342,15 +398,15 @@ const Scanner = {
     STATE.scanItems = [];
   },
 
-async close() {
+  async close() {
     await Scanner._stop();
     if (STATE.scanContext === 'detail' && STATE.scanOpenedFrom !== 'create') {
-        UI.Page.show('pgDetail');
+      UI.Page.show('pgDetail');
     } else {
-        STATE.scanOpenedFrom = '';
-        UI.Page.show('pgCreate');
+      STATE.scanOpenedFrom = '';
+      UI.Page.show('pgCreate');
     }
-},
+  },
 
   _doneCreate() {
     if (STATE.scanItems.length) Scanner._flushToActive();
@@ -366,17 +422,40 @@ async close() {
     });
   },
 
+  // ══════════════════════════════════════════
+  // _start — kamera aktif secepat mungkin
+  // Pre-warm stream dipakai langsung via deviceId agar nol delay
+  // ══════════════════════════════════════════
   _start() {
-    document.getElementById('reader').innerHTML = '';
+    // Jangan reset innerHTML dulu — biarkan prewarm stream mengisi
+    // Hanya bersihkan kalau memang kosong
+    const readerEl = document.getElementById('reader');
+    if (!readerEl.querySelector('video')) readerEl.innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
     Scanner._paused = false;
-    const h5 = new Html5Qrcode("reader");
+
+    // Lepas prewarm stream SEBELUM html5-qrcode start
+    // (html5-qrcode buka stream sendiri; dua stream bersamaan bisa konflik di mobile)
+    Scanner._releasePrewarm();
+
+    const h5 = new Html5Qrcode('reader');
     STATE.html5QrCode = h5;
-    const cfg = { fps: 15, qrbox: { width: 250, height: 190 }, aspectRatio: 1.4 };
+
+    // Config: tambah semua format barcode + qr
+    const formats = Scanner._getFormats();
+    const cfg = {
+      fps: 20,                          // lebih tinggi = lebih responsif
+      qrbox: { width: 260, height: 160 },
+      aspectRatio: 1.4,
+      ...(formats ? { formatsToSupport: formats } : {}),
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true  // pakai native BarcodeDetector jika ada (Android/Chrome) — jauh lebih cepat
+      }
+    };
 
     if (Scanner._preferredCamId) {
       h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
-        .then(() => STATE.isScannerRunning = true)
+        .then(() => { STATE.isScannerRunning = true; })
         .catch(() => {
           Scanner._preferredCamId = null;
           Scanner._startViaEnumerate(h5, cfg);
@@ -389,23 +468,29 @@ async close() {
   _startViaEnumerate(h5, cfg) {
     Html5Qrcode.getCameras()
       .then(cams => {
-        if (!cams?.length) return Scanner._startFacing('environment');
+        if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
         const back  = cams.find(c => /back|rear|env/i.test(c.label));
         const camId = back ? back.id : cams[cams.length - 1].id;
         Scanner._preferredCamId = camId;
         h5.start(camId, cfg, Scanner._onSuccess, () => {})
-          .then(() => STATE.isScannerRunning = true)
-          .catch(() => Scanner._startFacing('environment'));
+          .then(() => { STATE.isScannerRunning = true; })
+          .catch(() => Scanner._startFacing('environment', h5, cfg));
       })
-      .catch(() => Scanner._startFacing('environment'));
+      .catch(() => Scanner._startFacing('environment', h5, cfg));
   },
 
-  _startFacing(mode) {
-    const cfg = { fps: 15, qrbox: { width: 250, height: 190 } };
-    STATE.html5QrCode.start({ facingMode: mode }, cfg, Scanner._onSuccess, () => {})
-      .then(() => STATE.isScannerRunning = true)
+  _startFacing(mode, h5Inst, cfg) {
+    const h5 = h5Inst || STATE.html5QrCode;
+    if (!h5) return;
+    const _cfg = cfg || {
+      fps: 20,
+      qrbox: { width: 260, height: 160 },
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
+      .then(() => { STATE.isScannerRunning = true; })
       .catch(() => {
-        if (mode === 'environment') Scanner._startFacing('user');
+        if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
         else document.getElementById('camErr').style.display = 'block';
       });
   },
@@ -435,7 +520,7 @@ async close() {
     Scanner._paused = true;
     setTimeout(() => { Scanner._paused = false; }, 1500);
     Scanner.beep();
-    Scanner.addItem(text);
+    Scanner.addItem(text.trim());
   },
 
   addItem(awb) {
@@ -453,7 +538,6 @@ async close() {
       }
     }
 
-    // Cek duplikat di detailScanMap (mode detail multi-tujuan)
     if (STATE.scanContext === 'detail' && STATE.detailScanMap) {
       for (const [, awbs] of Object.entries(STATE.detailScanMap)) {
         if (awbs.includes(awb)) { UI.Toast.error('AWB sudah ada di tujuan lain'); return; }
@@ -493,7 +577,6 @@ async close() {
     const btnSave = document.getElementById('btnSaveScan');
     const btnDone = document.getElementById('btnDoneCreate');
 
-    // Untuk detail: aktifkan tombol jika ada scanItems ATAU ada di detailScanMap
     const totalPending = STATE.scanItems.length +
       Object.values(STATE.detailScanMap || {}).reduce((s, a) => s + a.length, 0);
 
@@ -529,7 +612,6 @@ async close() {
     if (inp.value.trim()) { Scanner.addItem(inp.value); inp.value = ''; }
   },
 
-  // ── Helper: reload list & update home setelah save AWB ──
   _reloadListAfterSave() {
     const type = STATE.currentDetailType || STATE.createType || 'ob';
     const act  = type === 'ob' ? 'getObList' : type === 'hvs' ? 'getHvsList' : 'getIbList';
@@ -538,12 +620,10 @@ async close() {
       if (type === 'ob')       STATE.obData  = list;
       else if (type === 'hvs') STATE.hvsData = list;
       else                     STATE.ibData  = list;
-      // Update currentDetailItem jika sedang di detail page
       if (STATE.currentNoTrack) {
         const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
         if (fresh) STATE.currentDetailItem = fresh;
       }
-      // Update home stats & list langsung tanpa tunggu GtwRealtime
       HomePage.render();
       HomePage.updateStats();
       DataLoader.loadScanAwbs();
@@ -588,10 +668,8 @@ async close() {
       return;
     }
 
-    // ── Context: detail — kumpulkan SEMUA AWB dari semua tujuan lalu kirim parallel ──
     UI.Loading.show('Menyimpan AWB...');
     try {
-      // Gabungkan detailScanMap + scanItems aktif
       const allMap = { ...(STATE.detailScanMap || {}) };
       if (STATE.scanItems.length && STATE.currentNoTrack) {
         if (!allMap[STATE.currentNoTrack]) allMap[STATE.currentNoTrack] = [];
@@ -603,7 +681,6 @@ async close() {
       const entries = Object.entries(allMap).filter(([, awbs]) => awbs.length);
       if (!entries.length) { UI.Loading.hide(); UI.Toast.error('Tidak ada AWB'); return; }
 
-      // Kirim parallel untuk semua noTrack
       const results = await Promise.all(entries.map(([nt, awbs]) =>
         API.post('addAwbToTrack', {
           noTrack: nt,
@@ -619,20 +696,15 @@ async close() {
       const total = results.reduce((s, r) => s + (r.added || 0), 0);
       UI.Toast.success(`✅ ${total} AWB disimpan`);
 
-      // Reset semua
       STATE.scanItems     = [];
       STATE.detailScanMap = {};
 
       Scanner._renderTujCombobox();
       Scanner._updateUI();
 
-      // ── FIX: Langsung reload list & update home tanpa nunggu GtwRealtime ──
       Scanner._reloadListAfterSave();
-
-      // Reload detail page juga (non-blocking)
       DetailPage.reloadData();
 
-      // Hitung index foto berikutnya lalu langsung ke halaman foto
       STATE.photoStartIndex = 0;
       try {
         const _item = STATE.currentDetailItem;
