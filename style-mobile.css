@@ -577,7 +577,7 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   background: var(--ink2);
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
-  max-height: 190px; overflow-y: auto;
+  overflow-y: auto;
   margin-top: 8px;
 }
 .scan-item {
