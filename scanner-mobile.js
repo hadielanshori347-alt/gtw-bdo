@@ -426,100 +426,104 @@ const Scanner = {
   // _start — kamera aktif secepat mungkin
   // Pre-warm stream dipakai langsung via deviceId agar nol delay
   // ══════════════════════════════════════════
-  _start() {
-    // Jangan reset innerHTML dulu — biarkan prewarm stream mengisi
-    // Hanya bersihkan kalau memang kosong
+_start() {
     const readerEl = document.getElementById('reader');
     if (!readerEl.querySelector('video')) readerEl.innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
     Scanner._paused = false;
-
-    // Lepas prewarm stream SEBELUM html5-qrcode start
-    // (html5-qrcode buka stream sendiri; dua stream bersamaan bisa konflik di mobile)
     Scanner._releasePrewarm();
-
     const h5 = new Html5Qrcode('reader');
     STATE.html5QrCode = h5;
-
-    // Config: tambah semua format barcode + qr
     const formats = Scanner._getFormats();
     const cfg = {
-      fps: 20,                          // lebih tinggi = lebih responsif
+      fps: 20,
       qrbox: { width: 300, height: 300 },
       aspectRatio: 1.0,
       ...(formats ? { formatsToSupport: formats } : {}),
-      experimentalFeatures: {
-        useBarCodeDetectorIfSupported: true  // pakai native BarcodeDetector jika ada (Android/Chrome) — jauh lebih cepat
-      }
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
-
-   if (Scanner._preferredCamId) {
-  h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
-    .then(() => { 
-      STATE.isScannerRunning = true;
-      Scanner._injectScanOverlay();  // ← di dalam .then()
-    })
-    .catch(() => {
-      Scanner._preferredCamId = null;
-      Scanner._startViaEnumerate(h5, cfg);
-    });
-  return;
-}
-Scanner._startViaEnumerate(h5, cfg);
-
-_startViaEnumerate(h5, cfg) {
-  Html5Qrcode.getCameras()
-    .then(cams => {
-      if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
-      const back  = cams.find(c => /back|rear|env/i.test(c.label));
-      const camId = back ? back.id : cams[cams.length - 1].id;
-      Scanner._preferredCamId = camId;
-      h5.start(camId, cfg, Scanner._onSuccess, () => {})
+    if (Scanner._preferredCamId) {
+      h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
         .then(() => {
           STATE.isScannerRunning = true;
-          Scanner._injectScanOverlay();  // ← tambahkan
+          Scanner._injectScanOverlay();
         })
-        .catch(() => Scanner._startFacing('environment', h5, cfg));
-    })
-    .catch(() => Scanner._startFacing('environment', h5, cfg));
-},
+        .catch(() => {
+          Scanner._preferredCamId = null;
+          Scanner._startViaEnumerate(h5, cfg);
+        });
+      return;
+    }
+    Scanner._startViaEnumerate(h5, cfg);
+  },                                        // ← TUTUP _start() DI SINI
 
-_startFacing(mode, h5Inst, cfg) {
-  const h5 = h5Inst || STATE.html5QrCode;
-  if (!h5) return;
-  const _cfg = cfg || {
-    fps: 20,
-    qrbox: { width: 300, height: 300 },  // ← fix dari 260x160
-    aspectRatio: 1.0,                     // ← tambahkan
-    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-  };
-  h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
-    .then(() => {
-      STATE.isScannerRunning = true;
-      Scanner._injectScanOverlay();  // ← tambahkan
-    })
-    .catch(() => {
-      if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
-      else document.getElementById('camErr').style.display = 'block';
-    });
-},
+  _startViaEnumerate(h5, cfg) {
+    Html5Qrcode.getCameras()
+      .then(cams => {
+        if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
+        const back  = cams.find(c => /back|rear|env/i.test(c.label));
+        const camId = back ? back.id : cams[cams.length - 1].id;
+        Scanner._preferredCamId = camId;
+        h5.start(camId, cfg, Scanner._onSuccess, () => {})
+          .then(() => {
+            STATE.isScannerRunning = true;
+            Scanner._injectScanOverlay();
+          })
+          .catch(() => Scanner._startFacing('environment', h5, cfg));
+      })
+      .catch(() => Scanner._startFacing('environment', h5, cfg));
+  },                                        // ← TUTUP _startViaEnumerate() DI SINI
 
-async _stop() {
-  Scanner._paused = false;
-  if (STATE.html5QrCode && STATE.isScannerRunning) {
-    try { await STATE.html5QrCode.stop(); } catch(e) {}
-  }
-  STATE.isScannerRunning = false;
-  STATE.html5QrCode = null;
-  try {
-    const videos = document.querySelectorAll('#reader video');
-    videos.forEach(v => {
-      if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
-    });
-  } catch(e) {}
-  document.getElementById('reader').innerHTML = '';
-  document.getElementById('camErr').style.display = 'none';
-},
+  _startFacing(mode, h5Inst, cfg) {
+    const h5 = h5Inst || STATE.html5QrCode;
+    if (!h5) return;
+    const _cfg = cfg || {
+      fps: 20,
+      qrbox: { width: 300, height: 300 },
+      aspectRatio: 1.0,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    };
+    h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
+      .then(() => {
+        STATE.isScannerRunning = true;
+        Scanner._injectScanOverlay();
+      })
+      .catch(() => {
+        if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
+        else document.getElementById('camErr').style.display = 'block';
+      });
+  },                                        // ← TUTUP _startFacing() DI SINI
+
+  async _stop() {
+    Scanner._paused = false;
+    if (STATE.html5QrCode && STATE.isScannerRunning) {
+      try { await STATE.html5QrCode.stop(); } catch(e) {}
+    }
+    STATE.isScannerRunning = false;
+    STATE.html5QrCode = null;
+    try {
+      const videos = document.querySelectorAll('#reader video');
+      videos.forEach(v => {
+        if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+      });
+    } catch(e) {}
+    document.getElementById('reader').innerHTML = '';
+    document.getElementById('camErr').style.display = 'none';
+  },
+
+  _injectScanOverlay() {
+    const readerEl = document.getElementById('reader');
+    if (!readerEl || readerEl.querySelector('.scan-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'scan-overlay';
+    overlay.innerHTML = `
+      <div class="scan-frame">
+        <div class="scan-corner-br"></div>
+        <div class="scan-corner-bl"></div>
+        <div class="scan-line"></div>
+      </div>`;
+    readerEl.appendChild(overlay);
+  },
   
   _onSuccess(text) {
     if (Scanner._paused) return;
