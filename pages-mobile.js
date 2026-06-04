@@ -3,8 +3,6 @@
 // ════════════════════════════════════════════
 const HomePage = {
 
-const HomePage = {
-
 render() {
   const el = document.getElementById('homeList');
   el.innerHTML = `
