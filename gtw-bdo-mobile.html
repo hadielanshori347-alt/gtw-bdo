@@ -157,24 +157,30 @@
   </div>
 
   <div class="scroll-content" id="homeScroll">
-    <div class="stats-row">
-      <div class="stat-card blue">
-        <div class="stat-label">Total AWB</div>
-        <div class="stat-value" id="statAwb">0</div>
+  <div class="stats-wrap">
+    <div class="stats-toggle">
+      <button class="stgl-btn active" id="stglHarian" onclick="HomePage.switchStatsMode('harian')">Hari Ini</button>
+      <button class="stgl-btn" id="stglSemua" onclick="HomePage.switchStatsMode('semua')">Semua</button>
+    </div>
+    <div class="stats-band">
+      <div class="stats-band-item" onclick="HomePage.openStatsFilter(null)">
+        <div class="sbi-label">Total AWB</div>
+        <div class="sbi-val blue" id="statAwb">0</div>
       </div>
-      <div class="stat-card green">
-        <div class="stat-label">Selesai</div>
-        <div class="stat-value" id="statSelesai">0</div>
+      <div class="sbi-div"></div>
+      <div class="stats-band-item" onclick="HomePage.openStatsFilter('selesai')">
+        <div class="sbi-label">Selesai</div>
+        <div class="sbi-val green" id="statSelesai">0</div>
       </div>
-      <div class="stat-card orange">
-        <div class="stat-label">Proses</div>
-        <div class="stat-value" id="statProses">0</div>
+      <div class="sbi-div"></div>
+      <div class="stats-band-item" onclick="HomePage.openStatsFilter('proses')">
+        <div class="sbi-label">Proses</div>
+        <div class="sbi-val orange" id="statProses">0</div>
       </div>
     </div>
-    <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
-    <div class="safe-pad"></div>
   </div>
-
+  <div id="homeList"><div class="scan-empty" style="margin-top:24px">Memuat data...</div></div>
+  <div class="safe-pad"></div>
 </div>
 
 <!-- ═══ SEARCH PAGE ═══ -->
