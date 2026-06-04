@@ -1579,3 +1579,44 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   justify-content: center;
   padding: 0 4px;
 }
+
+/* ── Scanner overlay dengan garis animasi ── */
+#reader { position: relative; }
+#reader > div:first-child { border: none !important; }
+
+.scan-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  z-index: 10; display: flex;
+  align-items: center; justify-content: center;
+}
+.scan-frame {
+  position: relative;
+  width: 72vw; max-width: 300px;
+  height: 72vw; max-height: 300px;
+}
+.scan-frame::before, .scan-frame::after,
+.scan-corner-br, .scan-corner-bl {
+  content: ''; position: absolute;
+  width: 28px; height: 28px;
+  border-color: #a78bfa; border-style: solid;
+}
+.scan-frame::before  { top:0;    left:0;  border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
+.scan-frame::after   { top:0;    right:0; border-width:3px 3px 0 0; border-radius:0 4px 0 0; }
+.scan-corner-br      { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
+.scan-corner-bl      { bottom:0; left:0;  border-width:0 0 3px 3px; border-radius:0 0 0 4px; }
+
+.scan-line {
+  position: absolute; left:4px; right:4px; height:2px;
+  background: linear-gradient(90deg, transparent, #a78bfa, #c4b5fd, #a78bfa, transparent);
+  border-radius: 2px;
+  box-shadow: 0 0 8px 2px rgba(167,139,250,0.6);
+  animation: scanMove 2s ease-in-out infinite;
+}
+@keyframes scanMove {
+  0%  { top:10%; opacity:1; }
+  45% { top:85%; opacity:1; }
+  50% { top:85%; opacity:0.3; }
+  55% { top:10%; opacity:0.3; }
+  60% { top:10%; opacity:1; }
+  100%{ top:10%; opacity:1; }
+}
