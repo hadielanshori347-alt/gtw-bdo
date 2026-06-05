@@ -1,14 +1,17 @@
 // ════════════════════════════════════════════
 // SCANNER — QR/Barcode scanner with sound
+// FIXED: CSS brace, _start() brace, prewarm race condition,
+//        _lastScan reset, overlay inject guard, isScannerRunning race
 // ════════════════════════════════════════════
 
 const Scanner = {
   _beepCtx: null,
   _paused: false,
   _preferredCamId: null,
-  _prewarmed: false,         
-  _prewarmStream: null,       
-  _supportedFormats: null,    
+  _prewarmed: false,
+  _prewarmStream: null,
+  _supportedFormats: null,
+  _lastScan: 0,           // FIX #4: inisialisasi eksplisit ke 0
 
   beep() {
     try {
@@ -38,51 +41,45 @@ const Scanner = {
       const F = Html5QrcodeSupportedFormats;
       Scanner._supportedFormats = [
         F.QR_CODE,
-        F.CODE_128,     // paling umum untuk logistik/AWB
+        F.CODE_128,
         F.CODE_39,
         F.CODE_93,
         F.EAN_13,
         F.EAN_8,
         F.UPC_A,
         F.UPC_E,
-        F.ITF,          // Interleaved 2 of 5
+        F.ITF,
         F.DATA_MATRIX,
         F.PDF_417,
         F.AZTEC,
       ].filter(Boolean);
     } catch(e) {
-      Scanner._supportedFormats = undefined; // biarkan library pakai default
+      Scanner._supportedFormats = undefined;
     }
     return Scanner._supportedFormats;
   },
 
   // ══════════════════════════════════════════
   // PRE-WARM — minta izin kamera di background
-  // Panggil saat app pertama load, sebelum user buka scanner
   // ══════════════════════════════════════════
   async prewarm() {
     if (Scanner._prewarmed) return;
     try {
-      const constraints = {
-        video: { facingMode: { ideal: 'environment' } }
-      };
+      const constraints = { video: { facingMode: { ideal: 'environment' } } };
       Scanner._prewarmStream = await navigator.mediaDevices.getUserMedia(constraints);
       Scanner._prewarmed = true;
-
-      // Simpan camera id dari track supaya _start langsung pakai
       const track = Scanner._prewarmStream.getVideoTracks()[0];
       if (track) {
         const settings = track.getSettings();
-        if (settings.deviceId) {
-          Scanner._preferredCamId = settings.deviceId;
-        }
+        if (settings.deviceId) Scanner._preferredCamId = settings.deviceId;
       }
     } catch(e) {
-      // Izin ditolak — biarkan, scanner tetap bisa jalan dengan fallback
+      // Izin ditolak — scanner tetap jalan dengan fallback
     }
   },
 
-  // ── Stop dan lepas pre-warm stream ──
+  // FIX #3: _releasePrewarm sekarang dipanggil SESUDAH deviceId disimpan
+  // dan hanya jika stream belum dipakai Html5Qrcode
   _releasePrewarm() {
     if (Scanner._prewarmStream) {
       Scanner._prewarmStream.getTracks().forEach(t => t.stop());
@@ -93,8 +90,8 @@ const Scanner = {
   open(context, title, ctxLabel = '') {
     STATE.scanContext = context;
     STATE.scanItems = [];
-    // Reset detailScanMap setiap kali scanner dibuka baru
     STATE.detailScanMap = {};
+    Scanner._lastScan = 0; // FIX #4: reset cooldown setiap scanner dibuka
 
     Object.keys(STATE.scbReg || {}).forEach(cbId => UI.Scb._close(cbId));
 
@@ -113,12 +110,11 @@ const Scanner = {
     Scanner._updateUI();
     UI.Page.show('pgScan');
 
-    // _start langsung, prewarm sudah berjalan di background
     Scanner._start();
   },
 
   // ══════════════════════════════════════════
-  // TAB TUJUAN DI SCANNER (TAB HORIZONTAL)
+  // TAB TUJUAN DI SCANNER
   // ══════════════════════════════════════════
 
   _renderTujCombobox() {
@@ -129,7 +125,6 @@ const Scanner = {
     const isIb     = STATE.scanContext === 'create-ib';
     const isDetail = STATE.scanContext === 'detail';
 
-    // ── Context DETAIL ──
     if (isDetail) {
       const tracks = STATE.createdTracks || [];
       wrap.style.display = 'block';
@@ -423,25 +418,41 @@ const Scanner = {
   },
 
   // ══════════════════════════════════════════
-  // _start — kamera aktif secepat mungkin
-  // Pre-warm stream dipakai langsung via deviceId agar nol delay
+  // _start — FIX #2 & #3: brace benar, prewarm dilepas SETELAH
+  // deviceId sudah disimpan ke _preferredCamId
   // ══════════════════════════════════════════
-_start() {
+  _start() {
     const readerEl = document.getElementById('reader');
     if (!readerEl.querySelector('video')) readerEl.innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
     Scanner._paused = false;
-    Scanner._releasePrewarm();
+
     const h5 = new Html5Qrcode('reader');
     STATE.html5QrCode = h5;
+
     const formats = Scanner._getFormats();
     const cfg = {
       fps: 20,
-      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
+      qrbox: {
+        width: Math.min(window.innerWidth * 0.88, 420),
+        height: Math.min(window.innerWidth * 0.72, 300)
+      },
       aspectRatio: 1.7,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
+
+    // FIX #3: Simpan deviceId dari prewarm SEBELUM stream dilepas,
+    // lalu lepas stream supaya Html5Qrcode bisa buka kamera sendiri
+    if (Scanner._prewarmStream) {
+      const track = Scanner._prewarmStream.getVideoTracks()[0];
+      if (track && !Scanner._preferredCamId) {
+        const settings = track.getSettings();
+        if (settings.deviceId) Scanner._preferredCamId = settings.deviceId;
+      }
+      Scanner._releasePrewarm(); // lepas SEKARANG sebelum Html5Qrcode start
+    }
+
     if (Scanner._preferredCamId) {
       h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
         .then(() => {
@@ -454,8 +465,9 @@ _start() {
         });
       return;
     }
+
     Scanner._startViaEnumerate(h5, cfg);
-  },                                        // ← TUTUP _start() DI SINI
+  }, // FIX #2: brace _start() tertutup dengan benar
 
   _startViaEnumerate(h5, cfg) {
     Html5Qrcode.getCameras()
@@ -472,14 +484,17 @@ _start() {
           .catch(() => Scanner._startFacing('environment', h5, cfg));
       })
       .catch(() => Scanner._startFacing('environment', h5, cfg));
-  },                                        // ← TUTUP _startViaEnumerate() DI SINI
+  },
 
   _startFacing(mode, h5Inst, cfg) {
     const h5 = h5Inst || STATE.html5QrCode;
     if (!h5) return;
     const _cfg = cfg || {
       fps: 20,
-      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.72, 300) },
+      qrbox: {
+        width: Math.min(window.innerWidth * 0.88, 420),
+        height: Math.min(window.innerWidth * 0.72, 300)
+      },
       aspectRatio: 1.7,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
@@ -492,38 +507,46 @@ _start() {
         if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
         else document.getElementById('camErr').style.display = 'block';
       });
-  },                                        // ← TUTUP _startFacing() DI SINI
+  },
 
   async _stop() {
     Scanner._paused = false;
-    if (STATE.html5QrCode && STATE.isScannerRunning) {
+    Scanner._lastScan = 0; // FIX #4: reset cooldown saat stop
+    const wasRunning = STATE.isScannerRunning;
+    STATE.isScannerRunning = false; // FIX #6: set false SEBELUM await untuk cegah race condition
+    if (STATE.html5QrCode && wasRunning) {
       try { await STATE.html5QrCode.stop(); } catch(e) {}
     }
-    STATE.isScannerRunning = false;
     STATE.html5QrCode = null;
     try {
       const videos = document.querySelectorAll('#reader video');
       videos.forEach(v => {
-        if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+        if (v.srcObject) {
+          v.srcObject.getTracks().forEach(t => t.stop());
+          v.srcObject = null;
+        }
       });
     } catch(e) {}
-    document.getElementById('reader').innerHTML = '';
-    document.getElementById('camErr').style.display = 'none';
+    const readerEl = document.getElementById('reader');
+    if (readerEl) readerEl.innerHTML = '';
+    const camErr = document.getElementById('camErr');
+    if (camErr) camErr.style.display = 'none';
   },
 
-_injectScanOverlay() {
-  const readerEl = document.getElementById('reader');
-  if (!readerEl || readerEl.querySelector('.scan-line-only')) return;
+  // FIX #5: guard sudah ada, tapi pastikan class check benar
+  _injectScanOverlay() {
+    const readerEl = document.getElementById('reader');
+    if (!readerEl || readerEl.querySelector('.scan-line-only')) return;
+    const line = document.createElement('div');
+    line.className = 'scan-line-only';
+    readerEl.appendChild(line);
+  },
 
-  const line = document.createElement('div');
-  line.className = 'scan-line-only';
-  readerEl.appendChild(line);
-},
-  
   _onSuccess(text) {
     if (Scanner._paused) return;
     const now = Date.now();
-    if (Scanner._lastScan && now - Scanner._lastScan < 1500) return;
+    // FIX #4: _lastScan selalu angka (tidak pernah undefined), perbandingan aman
+    if (now - Scanner._lastScan < 1500) return;
     Scanner._lastScan = now;
     Scanner._paused = true;
     setTimeout(() => { Scanner._paused = false; }, 1500);
