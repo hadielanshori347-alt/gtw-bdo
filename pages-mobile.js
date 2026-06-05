@@ -734,8 +734,11 @@ const DetailPage = {
       return `<div class="detail-field"><div class="d-label">${escH(label)}</div><div class="d-value${cls}">${display}</div></div>`;
     }).join('');
 
-    let footer = '<button class="btn btn-outline" style="flex:1" onclick="DetailPage.tambahFoto()">📷 Tambah Foto</button>';
-    if (!isSelesai) footer += '<button class="btn btn-success" style="flex:1" onclick="Scanner.open(\'detail\',\'' + item.no_track + '\',\'\')">+ Tambah AWB</button>';
+    let footer = '';
+    if (!isSelesai) {
+      footer += '<button class="btn btn-outline" style="flex:1" onclick="DetailPage.tambahFoto()">📷 Tambah Foto</button>';
+      footer += '<button class="btn btn-success" style="flex:1" onclick="Scanner.open(\'detail\',\'' + item.no_track + '\',\'\')">+ Tambah AWB</button>';
+    }
     document.getElementById('detailFooter').innerHTML = footer;
     DetailPage._buildMenu(item, type, isSelesai);
   },
@@ -757,6 +760,10 @@ const DetailPage = {
   // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
   async tambahFoto() {
     if (!STATE.currentDetailItem) return;
+    if (STATE.currentDetailItem.status === 'SELESAI') { 
+      UI.Toast.error('Data SELESAI tidak dapat diubah'); 
+      return; 
+    }
     UI.Loading.show('Memeriksa foto...');
     try {
       const act = STATE.currentDetailType === 'ob' ? 'getObList'
