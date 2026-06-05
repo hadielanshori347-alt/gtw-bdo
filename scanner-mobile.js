@@ -1,17 +1,14 @@
 // ════════════════════════════════════════════
 // SCANNER — QR/Barcode scanner with sound
-// v3 FIX: frame overlay, scan sensitivity, CSS cam-wrap
 // ════════════════════════════════════════════
 
 const Scanner = {
   _beepCtx: null,
   _paused: false,
   _preferredCamId: null,
-  _prewarmed: false,
-  _prewarmStream: null,
-  _supportedFormats: null,
-  _lastScan: 0,
-  _overlayInterval: null,
+  _prewarmed: false,         
+  _prewarmStream: null,       
+  _supportedFormats: null,    
 
   beep() {
     try {
@@ -32,44 +29,60 @@ const Scanner = {
     if (navigator.vibrate) navigator.vibrate(60);
   },
 
+  // ══════════════════════════════════════════
+  // FORMAT LIST — QR + semua barcode umum
+  // ══════════════════════════════════════════
   _getFormats() {
     if (Scanner._supportedFormats) return Scanner._supportedFormats;
     try {
       const F = Html5QrcodeSupportedFormats;
       Scanner._supportedFormats = [
         F.QR_CODE,
-        F.CODE_128,
+        F.CODE_128,     // paling umum untuk logistik/AWB
         F.CODE_39,
         F.CODE_93,
         F.EAN_13,
         F.EAN_8,
         F.UPC_A,
         F.UPC_E,
-        F.ITF,
+        F.ITF,          // Interleaved 2 of 5
         F.DATA_MATRIX,
         F.PDF_417,
         F.AZTEC,
       ].filter(Boolean);
     } catch(e) {
-      Scanner._supportedFormats = undefined;
+      Scanner._supportedFormats = undefined; // biarkan library pakai default
     }
     return Scanner._supportedFormats;
   },
 
+  // ══════════════════════════════════════════
+  // PRE-WARM — minta izin kamera di background
+  // Panggil saat app pertama load, sebelum user buka scanner
+  // ══════════════════════════════════════════
   async prewarm() {
     if (Scanner._prewarmed) return;
     try {
-      const constraints = { video: { facingMode: { ideal: 'environment' } } };
+      const constraints = {
+        video: { facingMode: { ideal: 'environment' } }
+      };
       Scanner._prewarmStream = await navigator.mediaDevices.getUserMedia(constraints);
       Scanner._prewarmed = true;
+
+      // Simpan camera id dari track supaya _start langsung pakai
       const track = Scanner._prewarmStream.getVideoTracks()[0];
       if (track) {
         const settings = track.getSettings();
-        if (settings.deviceId) Scanner._preferredCamId = settings.deviceId;
+        if (settings.deviceId) {
+          Scanner._preferredCamId = settings.deviceId;
+        }
       }
-    } catch(e) {}
+    } catch(e) {
+      // Izin ditolak — biarkan, scanner tetap bisa jalan dengan fallback
+    }
   },
 
+  // ── Stop dan lepas pre-warm stream ──
   _releasePrewarm() {
     if (Scanner._prewarmStream) {
       Scanner._prewarmStream.getTracks().forEach(t => t.stop());
@@ -80,8 +93,8 @@ const Scanner = {
   open(context, title, ctxLabel = '') {
     STATE.scanContext = context;
     STATE.scanItems = [];
+    // Reset detailScanMap setiap kali scanner dibuka baru
     STATE.detailScanMap = {};
-    Scanner._lastScan = 0;
 
     Object.keys(STATE.scbReg || {}).forEach(cbId => UI.Scb._close(cbId));
 
@@ -99,8 +112,14 @@ const Scanner = {
     Scanner._renderTujTabs();
     Scanner._updateUI();
     UI.Page.show('pgScan');
+
+    // _start langsung, prewarm sudah berjalan di background
     Scanner._start();
   },
+
+  // ══════════════════════════════════════════
+  // TAB TUJUAN DI SCANNER (TAB HORIZONTAL)
+  // ══════════════════════════════════════════
 
   _renderTujCombobox() {
     const wrap = document.getElementById('scanTujComboWrap');
@@ -110,6 +129,7 @@ const Scanner = {
     const isIb     = STATE.scanContext === 'create-ib';
     const isDetail = STATE.scanContext === 'detail';
 
+    // ── Context DETAIL ──
     if (isDetail) {
       const tracks = STATE.createdTracks || [];
       wrap.style.display = 'block';
@@ -217,6 +237,7 @@ const Scanner = {
 
   _selectTujFromCombo(tuj) {
     Scanner._flushToActive();
+
     const isOb = STATE.scanContext === 'create-ob';
     if (isOb) {
       STATE.obActiveTuj = tuj;
@@ -225,16 +246,21 @@ const Scanner = {
       STATE.ibActiveTuj = tuj;
       if (!STATE.ibScanMap[tuj]) STATE.ibScanMap[tuj] = [];
     }
+
     STATE.scanItems = [];
+
     const drop    = document.getElementById('scanComboDrop');
     const chevron = document.getElementById('scanComboChevron');
     if (drop)    drop.style.display = 'none';
     if (chevron) chevron.style.transform = '';
+
     Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
+
     if (isOb) { CreatePage.renderObTabs(); CreatePage.renderObScanList(); }
     else       { CreatePage.renderIbTabs(); CreatePage.renderIbScanList(); }
+
     UI.Toast.success('Scan ke: ' + tuj);
   },
 
@@ -255,16 +281,20 @@ const Scanner = {
       });
       STATE.scanItems = [];
     }
+
     STATE.currentNoTrack = noTrack;
     STATE.currentTuj     = tujuan;
+
     if (STATE.detailScanMap?.[noTrack]?.length) {
       STATE.scanItems = [...STATE.detailScanMap[noTrack]];
       delete STATE.detailScanMap[noTrack];
     } else {
       STATE.scanItems = [];
     }
+
     Scanner._renderTujCombobox();
     Scanner._updateUI();
+
     UI.Toast.success('Scan ke: ' + tujuan);
   },
 
@@ -277,15 +307,21 @@ const Scanner = {
   _renderTujTabs() {
     const wrap = document.getElementById('scanTujTabsWrap');
     if (!wrap) return;
+
     const isOb = STATE.scanContext === 'create-ob';
     const isIb = STATE.scanContext === 'create-ib';
+
     if (!isOb && !isIb) { wrap.style.display = 'none'; return; }
+
     const hasCombo = !!document.getElementById('scanTujComboWrap');
     if (hasCombo) { wrap.style.display = 'none'; return; }
+
     const map    = isOb ? STATE.obScanMap : STATE.ibScanMap;
     const active = isOb ? STATE.obActiveTuj : STATE.ibActiveTuj;
     const keys   = Object.keys(map || {});
+
     wrap.style.display = 'block';
+
     if (!keys.length) {
       wrap.innerHTML = `
         <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px;font-family:var(--font-head)">Tujuan Scan</div>
@@ -293,6 +329,7 @@ const Scanner = {
         ${Scanner._addTujBtn(isOb)}`;
       return;
     }
+
     const tabs = keys.map(t => {
       const cnt   = (map[t] || []).length + (t === active ? STATE.scanItems.length : 0);
       const isSel = t === active;
@@ -301,11 +338,12 @@ const Scanner = {
         <span class="scan-tuj-cnt">${cnt}</span>
       </div>`;
     }).join('');
+
     wrap.innerHTML = `
       <div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px;font-family:var(--font-head)">Scan ke Tujuan</div>
       <div class="scan-tuj-tabs" style="margin-bottom:8px">${tabs}</div>
       ${active ? `<div style="font-size:11px;color:var(--text3);margin-bottom:10px;letter-spacing:.2px">
-        Aktif: <span style="color:var(--gold2);font-weight:700">${escH(active)}</span>
+        Aktif: <span style="color:var(--gold2);font-weight:700">${escH(active)}</span> — AWB scan masuk ke tujuan ini
       </div>` : ''}
       ${Scanner._addTujBtn(isOb)}`;
   },
@@ -329,6 +367,7 @@ const Scanner = {
 
   _switchTuj(tuj) {
     Scanner._flushToActive();
+
     const isOb = STATE.scanContext === 'create-ob';
     if (isOb) {
       STATE.obActiveTuj = tuj;
@@ -337,7 +376,9 @@ const Scanner = {
       STATE.ibActiveTuj = tuj;
       if (!STATE.ibScanMap[tuj]) STATE.ibScanMap[tuj] = [];
     }
+
     STATE.scanItems = [];
+
     Scanner._renderTujCombobox();
     Scanner._renderTujTabs();
     Scanner._updateUI();
@@ -382,248 +423,112 @@ const Scanner = {
   },
 
   // ══════════════════════════════════════════
-  // _start — kamera aktif dengan config optimal
+  // _start — kamera aktif secepat mungkin
+  // Pre-warm stream dipakai langsung via deviceId agar nol delay
   // ══════════════════════════════════════════
-  _start() {
+_start() {
     const readerEl = document.getElementById('reader');
-    readerEl.innerHTML = '';
+    if (!readerEl.querySelector('video')) readerEl.innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
     Scanner._paused = false;
-
-    // Simpan deviceId dari prewarm SEBELUM stream dilepas
-    if (Scanner._prewarmStream) {
-      const track = Scanner._prewarmStream.getVideoTracks()[0];
-      if (track && !Scanner._preferredCamId) {
-        const s = track.getSettings();
-        if (s.deviceId) Scanner._preferredCamId = s.deviceId;
-      }
-      Scanner._releasePrewarm();
-    }
-
+    Scanner._releasePrewarm();
     const h5 = new Html5Qrcode('reader');
     STATE.html5QrCode = h5;
-
     const formats = Scanner._getFormats();
-
-    // Hitung qrbox yang proporsional — lebih kecil = lebih mudah fokus
-    const vw = Math.min(window.innerWidth, 480);
-    const qw = Math.round(vw * 0.75);   // 75% lebar layar
-    const qh = Math.round(qw * 0.55);   // rasio landscape untuk barcode
-
     const cfg = {
-      fps: 15,
-      qrbox: { width: qw, height: qh },
-      aspectRatio: 16 / 9,
+      fps: 20,
+       qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
+      aspectRatio: 1.7,
       ...(formats ? { formatsToSupport: formats } : {}),
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      // Paksa autofocus terus-menerus untuk barcode
-      videoConstraints: {
-        facingMode: { ideal: 'environment' },
-        focusMode: 'continuous',
-        advanced: [{ focusMode: 'continuous' }]
-      }
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
-
-    const onStarted = () => {
-      STATE.isScannerRunning = true;
-      // Inject overlay setelah video benar-benar ada di DOM
-      Scanner._waitAndInjectOverlay();
-    };
-
     if (Scanner._preferredCamId) {
       h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
-        .then(onStarted)
+        .then(() => {
+          STATE.isScannerRunning = true;
+          Scanner._injectScanOverlay();
+        })
         .catch(() => {
           Scanner._preferredCamId = null;
-          Scanner._startViaEnumerate(h5, cfg, onStarted);
+          Scanner._startViaEnumerate(h5, cfg);
         });
       return;
     }
-    Scanner._startViaEnumerate(h5, cfg, onStarted);
-  },
+    Scanner._startViaEnumerate(h5, cfg);
+  },                                        // ← TUTUP _start() DI SINI
 
-  _startViaEnumerate(h5, cfg, onStarted) {
+  _startViaEnumerate(h5, cfg) {
     Html5Qrcode.getCameras()
       .then(cams => {
-        if (!cams?.length) return Scanner._startFacing('environment', h5, cfg, onStarted);
+        if (!cams?.length) return Scanner._startFacing('environment', h5, cfg);
         const back  = cams.find(c => /back|rear|env/i.test(c.label));
         const camId = back ? back.id : cams[cams.length - 1].id;
         Scanner._preferredCamId = camId;
         h5.start(camId, cfg, Scanner._onSuccess, () => {})
-          .then(onStarted)
-          .catch(() => Scanner._startFacing('environment', h5, cfg, onStarted));
+          .then(() => {
+            STATE.isScannerRunning = true;
+            Scanner._injectScanOverlay();
+          })
+          .catch(() => Scanner._startFacing('environment', h5, cfg));
       })
-      .catch(() => Scanner._startFacing('environment', h5, cfg, onStarted));
-  },
+      .catch(() => Scanner._startFacing('environment', h5, cfg));
+  },                                        // ← TUTUP _startViaEnumerate() DI SINI
 
-  _startFacing(mode, h5Inst, cfg, onStarted) {
+  _startFacing(mode, h5Inst, cfg) {
     const h5 = h5Inst || STATE.html5QrCode;
     if (!h5) return;
     const _cfg = cfg || {
-      fps: 15,
-      qrbox: { width: Math.round(Math.min(window.innerWidth, 480) * 0.75), height: 160 },
-      aspectRatio: 16 / 9,
+      fps: 20,
+      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
+      aspectRatio: 1.7,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
     h5.start({ facingMode: mode }, _cfg, Scanner._onSuccess, () => {})
-      .then(() => { if (onStarted) onStarted(); else { STATE.isScannerRunning = true; Scanner._waitAndInjectOverlay(); } })
+      .then(() => {
+        STATE.isScannerRunning = true;
+        Scanner._injectScanOverlay();
+      })
       .catch(() => {
-        if (mode === 'environment') Scanner._startFacing('user', h5, _cfg, onStarted);
+        if (mode === 'environment') Scanner._startFacing('user', h5, _cfg);
         else document.getElementById('camErr').style.display = 'block';
       });
-  },
-
-  // ══════════════════════════════════════════
-  // _waitAndInjectOverlay — tunggu video ready
-  // lalu inject frame + hapus UI bawaan Html5Qrcode
-  // ══════════════════════════════════════════
-  _waitAndInjectOverlay() {
-    // Bersihkan interval lama jika ada
-    if (Scanner._overlayInterval) clearInterval(Scanner._overlayInterval);
-
-    let attempts = 0;
-    Scanner._overlayInterval = setInterval(() => {
-      attempts++;
-      const readerEl = document.getElementById('reader');
-      if (!readerEl) { clearInterval(Scanner._overlayInterval); return; }
-
-      const video = readerEl.querySelector('video');
-      if (!video || video.readyState < 2) {
-        // Video belum siap, coba lagi
-        if (attempts > 40) clearInterval(Scanner._overlayInterval); // timeout 4 detik
-        return;
-      }
-
-      clearInterval(Scanner._overlayInterval);
-      Scanner._overlayInterval = null;
-
-      // Hapus semua elemen UI bawaan Html5Qrcode (border box, teks, dll)
-      readerEl.querySelectorAll('div, img').forEach(el => {
-        if (el !== video && !el.classList.contains('scan-overlay-frame') && !el.classList.contains('scan-line-only')) {
-          el.style.display = 'none';
-        }
-      });
-
-      // Inject overlay custom jika belum ada
-      if (!readerEl.querySelector('.scan-overlay-frame')) {
-        Scanner._buildOverlay(readerEl, video);
-      }
-    }, 100);
-  },
-
-  _buildOverlay(readerEl, video) {
-    // Pastikan #reader punya posisi relative
-    readerEl.style.position = 'relative';
-
-    const vw = video.offsetWidth  || readerEl.offsetWidth  || window.innerWidth;
-    const vh = video.offsetHeight || readerEl.offsetHeight || 220;
-
-    // Ukuran kotak scan: 75% lebar, 55% lebar untuk tinggi (cocok barcode landscape)
-    const bw = Math.round(vw * 0.75);
-    const bh = Math.round(bw * 0.55);
-    const bx = Math.round((vw - bw) / 2);
-    const by = Math.round((vh - bh) / 2);
-
-    // Wrapper overlay (full size, pointer-events none)
-    const overlay = document.createElement('div');
-    overlay.className = 'scan-overlay-frame';
-    overlay.style.cssText = `
-      position:absolute; inset:0;
-      pointer-events:none; z-index:10;
-    `;
-
-    // Warna gelap di sisi luar kotak (4 sisi)
-    const dim = 'rgba(0,0,0,0.55)';
-    overlay.innerHTML = `
-      <!-- Atas -->
-      <div style="position:absolute;top:0;left:0;right:0;height:${by}px;background:${dim}"></div>
-      <!-- Bawah -->
-      <div style="position:absolute;bottom:0;left:0;right:0;height:${vh - by - bh}px;background:${dim}"></div>
-      <!-- Kiri -->
-      <div style="position:absolute;top:${by}px;left:0;width:${bx}px;height:${bh}px;background:${dim}"></div>
-      <!-- Kanan -->
-      <div style="position:absolute;top:${by}px;right:0;width:${vw - bx - bw}px;height:${bh}px;background:${dim}"></div>
-
-      <!-- Sudut-sudut frame (putih) -->
-      <!-- Kiri atas -->
-      <div style="position:absolute;top:${by}px;left:${bx}px;width:28px;height:4px;background:#fff;border-radius:2px 0 0 0"></div>
-      <div style="position:absolute;top:${by}px;left:${bx}px;width:4px;height:28px;background:#fff;border-radius:2px 0 0 0"></div>
-      <!-- Kanan atas -->
-      <div style="position:absolute;top:${by}px;right:${vw - bx - bw}px;width:28px;height:4px;background:#fff;border-radius:0 2px 0 0"></div>
-      <div style="position:absolute;top:${by}px;right:${vw - bx - bw - 4}px;width:4px;height:28px;background:#fff;border-radius:0 2px 0 0"></div>
-      <!-- Kiri bawah -->
-      <div style="position:absolute;bottom:${vh - by - bh}px;left:${bx}px;width:28px;height:4px;background:#fff;border-radius:0 0 0 2px"></div>
-      <div style="position:absolute;bottom:${vh - by - bh - 28}px;left:${bx}px;width:4px;height:28px;background:#fff;border-radius:0 0 0 2px"></div>
-      <!-- Kanan bawah -->
-      <div style="position:absolute;bottom:${vh - by - bh}px;right:${vw - bx - bw}px;width:28px;height:4px;background:#fff;border-radius:0 0 2px 0"></div>
-      <div style="position:absolute;bottom:${vh - by - bh - 28}px;right:${vw - bx - bw - 4}px;width:4px;height:28px;background:#fff;border-radius:0 0 2px 0"></div>
-
-      <!-- Scan line animasi (dalam kotak) -->
-      <div class="scan-line-only" style="
-        position:absolute;
-        top:${by}px; left:${bx + 8}px; right:${vw - bx - bw + 8}px;
-        height:2px;
-        background:linear-gradient(90deg,transparent,rgba(255,255,255,0.9),rgba(255,255,255,0.6),rgba(255,255,255,0.9),transparent);
-        border-radius:2px;
-        box-shadow:0 0 6px 1px rgba(255,255,255,0.4);
-        animation:scanMoveBox 1.8s ease-in-out infinite;
-        --box-top:${by}px; --box-bot:${by + bh}px;
-      "></div>
-    `;
-
-    // Inject keyframe animasi yang menggunakan posisi kotak aktual
-    if (!document.getElementById('scan-overlay-style')) {
-      const style = document.createElement('style');
-      style.id = 'scan-overlay-style';
-      style.textContent = `
-        @keyframes scanMoveBox {
-          0%   { top: ${by + 4}px;       opacity: 1; }
-          45%  { top: ${by + bh - 4}px;  opacity: 1; }
-          50%  { top: ${by + bh - 4}px;  opacity: 0.2; }
-          55%  { top: ${by + 4}px;       opacity: 0.2; }
-          60%  { top: ${by + 4}px;       opacity: 1; }
-          100% { top: ${by + 4}px;       opacity: 1; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    readerEl.appendChild(overlay);
-  },
+  },                                        // ← TUTUP _startFacing() DI SINI
 
   async _stop() {
-    // Bersihkan interval overlay
-    if (Scanner._overlayInterval) {
-      clearInterval(Scanner._overlayInterval);
-      Scanner._overlayInterval = null;
-    }
-    // Hapus style animasi
-    const st = document.getElementById('scan-overlay-style');
-    if (st) st.remove();
-
     Scanner._paused = false;
-    Scanner._lastScan = 0;
-    const wasRunning = STATE.isScannerRunning;
-    STATE.isScannerRunning = false;
-    if (STATE.html5QrCode && wasRunning) {
+    if (STATE.html5QrCode && STATE.isScannerRunning) {
       try { await STATE.html5QrCode.stop(); } catch(e) {}
     }
+    STATE.isScannerRunning = false;
     STATE.html5QrCode = null;
     try {
-      document.querySelectorAll('#reader video').forEach(v => {
+      const videos = document.querySelectorAll('#reader video');
+      videos.forEach(v => {
         if (v.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
       });
     } catch(e) {}
-    const readerEl = document.getElementById('reader');
-    if (readerEl) readerEl.innerHTML = '';
-    const camErr = document.getElementById('camErr');
-    if (camErr) camErr.style.display = 'none';
+    document.getElementById('reader').innerHTML = '';
+    document.getElementById('camErr').style.display = 'none';
   },
 
+  _injectScanOverlay() {
+    const readerEl = document.getElementById('reader');
+    if (!readerEl || readerEl.querySelector('.scan-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'scan-overlay';
+    overlay.innerHTML = `
+      <div class="scan-frame">
+        <div class="scan-corner-br"></div>
+        <div class="scan-corner-bl"></div>
+        <div class="scan-line"></div>
+      </div>`;
+    readerEl.appendChild(overlay);
+  },
+  
   _onSuccess(text) {
     if (Scanner._paused) return;
     const now = Date.now();
-    if (now - Scanner._lastScan < 1500) return;
+    if (Scanner._lastScan && now - Scanner._lastScan < 1500) return;
     Scanner._lastScan = now;
     Scanner._paused = true;
     setTimeout(() => { Scanner._paused = false; }, 1500);
@@ -809,6 +714,7 @@ const Scanner = {
 
       Scanner._renderTujCombobox();
       Scanner._updateUI();
+
       Scanner._reloadListAfterSave();
       DetailPage.reloadData();
 
