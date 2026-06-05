@@ -597,11 +597,21 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
 .cam-wrap {
   background: #000; flex-shrink: 0;
   position: relative; overflow: hidden;
-  height: 35vw; max-height: 260px;
+  height: 56vw;           
+  max-height: 320px;      
+  min-height: 200px;
 }
 .cam-wrap video  { width: 100% !important; height: 100% !important; object-fit: cover; display: block; }
 #reader          { width: 100%; height: 100%; }
 #reader video    { width: 100% !important; height: 100% !important; object-fit: cover; }
+
+.cam-wrap,
+.cam-wrap > #reader {
+  flex-shrink: 0 !important;
+  height: 56vw !important;
+  max-height: 320px !important;
+  min-height: 200px !important;
+}
 
 .cam-err {
   background: rgba(245,158,11,.1);
