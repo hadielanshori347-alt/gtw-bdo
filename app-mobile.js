@@ -74,10 +74,7 @@ Scanner._stop = Scanner._stop || function() {};
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', async function() {
-  // Prewarm camera
-  navigator.mediaDevices?.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then(s => s.getTracks().forEach(t => t.stop()))
-    .catch(() => {});
+  Scanner.prewarm();
 
   // Init all scbs
   UI.Scb.init('scbSvc',    'inpSvc',    'dropSvc',    [], v => {
