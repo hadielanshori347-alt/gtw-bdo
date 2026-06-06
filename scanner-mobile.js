@@ -579,6 +579,9 @@ _start() {
     Scanner._updateUI();
   },
 
+  // ════════════════════════════════════════════
+  // FIX: Override _updateUI untuk hitung total AWB dari semua source
+  // ════════════════════════════════════════════
   _updateUI() {
     const isOb     = STATE.scanContext === 'create-ob';
     const isIb     = STATE.scanContext === 'create-ib';
@@ -590,16 +593,31 @@ _start() {
     const btnSave = document.getElementById('btnSaveScan');
     const btnDone = document.getElementById('btnDoneCreate');
 
-    const totalPending = STATE.scanItems.length +
-      Object.values(STATE.detailScanMap || {}).reduce((s, a) => s + a.length, 0);
+    // ── FIX: Hitung total AWB dari semua source ──
+    let totalAwb = STATE.scanItems.length || 0;
 
+    // Tambah dari detailScanMap jika dalam mode detail
+    if (STATE.scanContext === 'detail' && STATE.detailScanMap) {
+      totalAwb += Object.values(STATE.detailScanMap).reduce((s, a) => s + a.length, 0);
+    }
+
+    // Tambah dari scanMap jika dalam mode create-ob/ib
+    if (STATE.scanContext === 'create-ob' && STATE.obScanMap) {
+      totalAwb += Object.values(STATE.obScanMap).reduce((s, a) => s + a.length, 0);
+    }
+    if (STATE.scanContext === 'create-ib' && STATE.ibScanMap) {
+      totalAwb += Object.values(STATE.ibScanMap).reduce((s, a) => s + a.length, 0);
+    }
+
+    // ── ENABLE tombol jika ada AWB ──
+    btnSave.disabled = totalAwb === 0;
+
+    // Update text
     if (STATE.scanContext === 'detail') {
-      btnSave.disabled = totalPending === 0;
-      btnSave.innerText = totalPending > 0
-        ? `Simpan Semua (${totalPending} AWB) & Foto`
+      btnSave.innerText = totalAwb > 0
+        ? `Simpan Semua (${totalAwb} AWB) & Foto`
         : 'Simpan & Foto';
     } else {
-      btnSave.disabled = !STATE.scanItems.length;
       btnSave.innerText = isCreate && active ? `Simpan ke "${active}"` : 'Simpan & Foto';
     }
 
