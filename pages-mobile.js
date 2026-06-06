@@ -758,11 +758,16 @@ const DetailPage = {
     document.getElementById('ddMenu').innerHTML = html;
   },
 
-  async unduhFoto() {
+async unduhFoto() {
     const item = STATE.currentDetailItem;
     if (!item) return;
     const urls = DetailPage._collectFotoUrls(item);
     if (!urls.length) { UI.Toast.error('Tidak ada foto untuk diunduh'); return; }
+
+    if (urls.length > 1) {
+      if (!confirm(`Ada ${urls.length} foto. Download semua?`)) return;
+    }
+
     UI.Toast.success(`⬇️ Mengunduh ${urls.length} foto...`);
     for (let i = 0; i < urls.length; i++) {
       try {
@@ -776,14 +781,17 @@ const DetailPage = {
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(bUrl), 1500);
-        if (i < urls.length - 1) await new Promise(r => setTimeout(r, 800));
+        if (i < urls.length - 1) {
+          UI.Toast.show(`⬇️ Foto ${i + 1}/${urls.length} selesai...`, 'success');
+          await new Promise(r => setTimeout(r, 800));
+        }
       } catch (e) {
         window.open(urls[i], '_blank');
         if (i < urls.length - 1) await new Promise(r => setTimeout(r, 600));
       }
     }
+    UI.Toast.success(`✅ Semua foto tersimpan di Downloads`);
   },
-
   close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
   // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
   async tambahFoto() {
@@ -797,22 +805,7 @@ const DetailPage = {
       const act = STATE.currentDetailType === 'ob' ? 'getObList'
                 : STATE.currentDetailType === 'hvs' ? 'getHvsList' : 'getIbList';
       const r = await API.get(act);
-      const list = r.list || [];
-      const fresh = list.find(d => d.no_track === STATE.currentNoTrack);
-      if (fresh) {
-        STATE.currentDetailItem = fresh;
-        // update state array juga
-        const arr = STATE.currentDetailType === 'ob' ? STATE.obData
-                  : STATE.currentDetailType === 'hvs' ? STATE.hvsData : STATE.ibData;
-        const idx = arr.findIndex(d => d.no_track === STATE.currentNoTrack);
-        if (idx !== -1) arr[idx] = fresh;
-      }
-    } catch(e) { /* gagal reload, pakai state lokal */ }
-    UI.Loading.hide();
-    // Hitung index foto berikutnya dari data fresh
-    STATE.photoStartIndex = DetailPage._collectFotoUrls(STATE.currentDetailItem).length;
-    Photo.go();
-  },
+      const list = r.list ||
 
   // Kumpulkan semua URL foto dari item
   _collectFotoUrls(item) {
