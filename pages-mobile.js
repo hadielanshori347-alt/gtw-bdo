@@ -748,15 +748,43 @@ const DetailPage = {
     if (!isSelesai) {
       html += `<div class="dd-item" onclick="UI.Menu.close();Scanner.open('detail','${escQ(item.no_track)}','')">📷 Tambah AWB</div>`;
       html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.tambahFoto()">🖼️ Tambah Foto</div>`;
+      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.unduhFoto()">⬇️ Unduh Foto</div>`;
       html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.markSelesai()">✓ Tandai Selesai</div>`;
       html += `<div class="dd-item danger" onclick="UI.Menu.close();DetailPage.deleteItem()">🗑 Hapus</div>`;
+    } else {
+      html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.unduhFoto()">⬇️ Unduh Foto</div>`;
     }
     html += `<div class="dd-item" onclick="UI.Menu.close();DetailPage.openAwbModal()">📋 View List AWB</div>`;
     document.getElementById('ddMenu').innerHTML = html;
   },
 
-  close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
+  async unduhFoto() {
+    const item = STATE.currentDetailItem;
+    if (!item) return;
+    const urls = DetailPage._collectFotoUrls(item);
+    if (!urls.length) { UI.Toast.error('Tidak ada foto untuk diunduh'); return; }
+    UI.Toast.success(`⬇️ Mengunduh ${urls.length} foto...`);
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        const res  = await fetch(urls[i]);
+        const blob = await res.blob();
+        const bUrl = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = bUrl;
+        a.download = `gtw_bdo_${item.no_track || 'foto'}_${i + 1}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(bUrl), 1500);
+        if (i < urls.length - 1) await new Promise(r => setTimeout(r, 800));
+      } catch (e) {
+        window.open(urls[i], '_blank');
+        if (i < urls.length - 1) await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  },
 
+  close() { UI.Menu.close(); UI.Page.show('pgHome'); HomePage.render(); HomePage.updateStats(); },
   // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
   async tambahFoto() {
     if (!STATE.currentDetailItem) return;
