@@ -796,17 +796,23 @@ async unduhFoto() {
   // ── Tambah Foto — reload dulu dari server agar photoStartIndex akurat ──
   async tambahFoto() {
     if (!STATE.currentDetailItem) return;
-    if (STATE.currentDetailItem.status === 'SELESAI') { 
-      UI.Toast.error('Data SELESAI tidak dapat diubah'); 
-      return; 
+    if (STATE.currentDetailItem.status === 'SELESAI') {
+      UI.Toast.error('Data SELESAI tidak dapat diubah');
+      return;
     }
     UI.Loading.show('Memeriksa foto...');
     try {
       const act = STATE.currentDetailType === 'ob' ? 'getObList'
                 : STATE.currentDetailType === 'hvs' ? 'getHvsList' : 'getIbList';
-      const r = await API.get(act);
-      const list = r.list ||
-
+      const r    = await API.get(act);
+      const list = r.list || [];
+      const item = list.find(d => d.no_track === STATE.currentDetailItem.no_track);
+      if (item) STATE.currentDetailItem = item;
+      UI.Loading.hide();
+      Photo.open();
+    } catch(e) { UI.Loading.hide(); UI.Toast.error('Error: ' + e.message); }
+  },
+  
   // Kumpulkan semua URL foto dari item
   _collectFotoUrls(item) {
     if (!item) return [];
