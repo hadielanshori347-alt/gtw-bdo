@@ -431,31 +431,36 @@ _start() {
     if (!readerEl.querySelector('video')) readerEl.innerHTML = '';
     document.getElementById('camErr').style.display = 'none';
     Scanner._paused = false;
-    Scanner._releasePrewarm();
+
     const h5 = new Html5Qrcode('reader');
     STATE.html5QrCode = h5;
     const formats = Scanner._getFormats();
     const cfg = {
       fps: 20,
-       qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
+      qrbox: { width: Math.min(window.innerWidth * 0.88, 420), height: Math.min(window.innerWidth * 0.52, 220) },
       aspectRatio: 1.7,
       ...(formats ? { formatsToSupport: formats } : {}),
       experimentalFeatures: { useBarCodeDetectorIfSupported: true }
     };
+
     if (Scanner._preferredCamId) {
       h5.start(Scanner._preferredCamId, cfg, Scanner._onSuccess, () => {})
         .then(() => {
           STATE.isScannerRunning = true;
           Scanner._injectScanOverlay();
+          Scanner._releasePrewarm(); // ← stop prewarm SETELAH h5 running
         })
         .catch(() => {
           Scanner._preferredCamId = null;
+          Scanner._releasePrewarm();
           Scanner._startViaEnumerate(h5, cfg);
         });
       return;
     }
+
+    Scanner._releasePrewarm();
     Scanner._startViaEnumerate(h5, cfg);
-  },                                        // ← TUTUP _start() DI SINI
+  },                                        
 
   _startViaEnumerate(h5, cfg) {
     Html5Qrcode.getCameras()
