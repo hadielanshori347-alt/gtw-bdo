@@ -1612,3 +1612,10 @@ html, body { height: 100%; overflow: hidden; font-family: var(--font); backgroun
   60% { top:10%; opacity:1; }
   100%{ top:10%; opacity:1; }
 }
+
+/* ─── Android WebView Fix ─── */
+@supports not (height: 100dvh) {
+  #pgScan, #pgPhoto { height: 100vh !important; height: -webkit-fill-available !important; }
+}
+#pgScan { height: 100dvh; }
+#pgPhoto { height: 100dvh; }
